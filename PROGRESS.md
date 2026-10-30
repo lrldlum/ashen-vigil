@@ -189,3 +189,20 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Story ties: keeper lines (sealed, open, slain) and an ending line on both endings.
 - Co-op: the host is authoritative for ballistae (prog bells), chests, mimics, bolts and stones (snap shots), and the boss (the guest derives the gust from state). Wind is simulated locally per client.
 - Tests: `test/J.mjs` (27 checks). milestoneE's lore total now counts the keep.
+
+## Milestone K — The Astral Spire
+- New stage `spire` (THE ASTRAL SPIRE), a gothic observatory reached by the Star Lift in the Ash Shrine (x 80). The lift stays still until the Castellan falls (`?spireopen` for testing). Bonfire ORRERY VIGIL.
+- Drawn in code: lancet windows and ribbed domes, a turning star field, the arena orrery overhead (it turns faster each phase), and shimmering gravity tides.
+  - **Gravity tides:** pulsing low-gravity zones (`def.lowg`) lift players, so jumps go higher (`stats.floated`).
+  - **Star platforms:** `def.stars` platforms hold you only while lit. They blink before going dark (`stats.starStands`).
+  - **Starfall:** telegraphed falling stars near the open domes (`def.starfall`).
+- Collectible: four star lenses (`bellKind:'lens'`). Turning them all to the sky unseals the `sp_orrery` cage. Lore a2 hints at it.
+- Routes and secrets: high gallery by chain and a low crypt; hidden chests ch_s2/ch_s3; mimics ch_s4/ch_s6; lore a1–a3.
+- **The Starbound Astronomer** (`astronomer`, 64 hp):
+  - star cinematic, three phases;
+  - attacks: fanned star lances, a gravity well that drags players in (phase 2+), perching at her telescope with star shots, comets (phase 3) and charge;
+  - in phase 3 the whole arena goes low-gravity.
+- **Signature weapon:** ASTRONOMER'S STARLANCE (spear). Its 'nova' special bursts in a starlight ring; isolated damage is within 0.7–1.3× FROSTBRAND.
+- Story ties: keeper lines (sealed, open, slain), an ending line on both endings, and lore a3 tying her to the Castellan.
+- Co-op: the host is authoritative for lenses, chests, mimics, star shots and the boss (the guest derives the well and the low gravity from boss state). Gravity tides and star platforms run locally per client from the shared clock.
+- Tests: `test/K.mjs` (27 checks). milestoneE's lore total counts the spire.

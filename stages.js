@@ -235,3 +235,24 @@ STAGE_DEFS.keep=composeStage({pre:'kp',name:'THE RUINED RAMPART KEEP',world:3360
 STAGE_DEFS.keep.cages.push({id:'kp_balcage',x:1250,y:-60,lock:'kp_ballistae'});
 STAGE_DEFS.keep.lore=[{id:'k1',x:90,y:156},{id:'k2',x:1360,y:-60},{id:'k3',x:2940,y:156}];
 STAGE_DEFS.shrine.gate={x:540};// the Keep Gate (a barred postern in the shrine's east wall)
+// ---------------- milestone K: THE ASTRAL SPIRE — a gothic observatory; gravity tides lift you in pulsing zones, star platforms flicker in and out,
+// starfall rains near the open domes, four star lenses must be turned to the sky (collectible) to unseal the orrery cage; lord: the Starbound Astronomer
+STAGE_DEFS.spire=composeStage({pre:'sp',name:'THE ASTRAL SPIRE',world:3360,top:-204,bottom:364,theme:'spire',side:1,
+  bonfire:1600,bonfireName:'ORRERY VIGIL',next:'shrine',bellLock:'sp_lenses',bellKind:'lens',
+  pal:{sky0:'#05041a',sky1:'#0a0826',sky2:'#120e34',sky3:'#1c1644',sky4:'#2a2258',far:'#0c0a1e',farW:'#2e2a5a',farW2:'#a8a0e8',near:'#06051a',nearW:'#2a2648',
+   gTop:'#b8b0d8',g1:'#4e4a6a',g2:'#3e3a58',gM:'#1c1a2a',gD:'#2a2840',b0:'#121022',bM:'#06050c',bH:'#221e36',mist:'rgba(170,160,240,.10)',haze1:'rgba(20,16,50,.55)',haze2:'rgba(34,28,70,.6)',mist2:'rgba(200,190,255,.08)',pil:0x121022,pilH:0x2a2648},
+  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
+  lowg:[{r:[1000,-210,1608,-52],period:6},{r:[2210,-210,2720,-100],period:5,off:2}],
+  stars:[[1640,-80,30,3],[1700,-104,30,3.6],[2140,-60,36,4]],
+  starfall:[700,1400,2050,2600],
+  items:[{id:'s_herald',x:1370,y:-104,item:'herald'},{id:'s_ring',x:620,y:300,item:'iron'}],
+  puddles:[[1700,22],[2240,16]],
+  bells:[{id:'ln1',x:1120,y:-60},{id:'ln2',x:1530,y:-60},{id:'ln3',x:2300,y:-100},{id:'ln4',x:2000,y:156}],
+  boss:{kind:'astronomer',name:'THE STARBOUND ASTRONOMER',sub:'LORD OF THE ASTRAL SPIRE',slain:'THE STARS GO DARK',hp:64,card:'THE LAST STAR-READER IS SILENT. THE SKY IS OURS TO READ.',
+   phases:['THE HEAVENS TURN','THE SKY FALLS'],reward:'starlance'},
+  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
+ [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'STAR TRIAL'],['tower',2150,'COMET RUN',9],['slagfall',2830],['ledge',2896]],
+ {});
+STAGE_DEFS.spire.cages.push({id:'sp_orrery',x:1250,y:-60,lock:'sp_lenses'});
+STAGE_DEFS.spire.lore=[{id:'a1',x:90,y:156},{id:'a2',x:1360,y:-60},{id:'a3',x:2940,y:156}];
+STAGE_DEFS.shrine.lift={x:80};// the Star Lift (an orrery cage near the shrine's west end)
