@@ -727,7 +727,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(P.state==='drink'){b.setVelocityX(body.velocity.x*.8);const h=Math.min(P.healLeft,TUNE.flaskHeal/TUNE.flaskT*dt);P.hp=Math.min(P.hpMax,P.hp+h);P.healLeft-=h;
    if(Math.random()<.5)this.fx.fire(P.x+rnd(-4,4),P.y-rnd(2,14),1,1,.5);if(P.t>TUNE.flaskT){P.state='idle';P.healLeft=0}}
   else if(P.state==='cast'){if(Math.random()<.6){const hx=P.x+P.f*7,hy=P.y-14;MIRACLES[P.spell]?this.fx.spark(hx,hy-2,1,0xffe8a0,40):P.spell==='bolt'?this.fx.spark(hx,hy,1,C.bolt,40):this.fx.star(hx+rnd(-3,3),hy+rnd(-3,3))}
-   if(P.t>.22&&!P.castDone){P.castDone=true;MIRACLES[P.spell]?this.castMiracle(P.spell):P.spell==='ice'?this.castIce(P.x+P.f*16,P.f,'p',P.y):P.spell==='dome'?this.castDome(P.x,'p',0,P.y):this.castBolt()}if(P.t>.42){P.state='idle';P.castDone=false}}
+   if(P.t>.22&&!P.castDone){P.castDone=true;typeof SPELLBOOK!=='undefined'&&SPELLBOOK[P.spell]&&!SPELLBOOK[P.spell].legacy?this.spFire(P.spell):MIRACLES[P.spell]?this.castMiracle(P.spell):P.spell==='ice'?this.castIce(P.x+P.f*16,P.f,'p',P.y):P.spell==='dome'?this.castDome(P.x,'p',0,P.y):this.castBolt()}if(P.t>.42){P.state='idle';P.castDone=false}}
   else if(P.state==='hurt'){if(P.t>.3)P.state='idle'}
   else if(P.state==='rest'){if(P.t>1.4)P.state='idle'}
   this.swimStep(dt,inp,dir,on);this.windStep(dt,on);this.gravStep(dt,on);this.blightStep(dt);
@@ -1575,7 +1575,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(D.hub&&near(D.keeper,18))return'Talk';if(D.hub&&near(D.exit,16))return'Travel';
   if(this.bonfire&&Math.abs(P.x-this.bonfire.x)<TUNE.restR)return'Rest';return null}
  // button glyph: Xbox A (green disc) when a pad is connected, else the keyboard key [E]
- keyGlyph(g,x,y,label,col=0xffe2a8){const pad=typeof PAD!=='undefined'&&PAD.connected();if(pad){g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0x3fb950);g.fillRect(x+1,y-1,7,9);g.fillRect(x,y,9,7);drawText(g,'A',x+2,y,0x0b2a12,1,0x3fb950);return drawText(g,label,x+12,y,col)}drawText(g,'[E] '+label,x,y,col)}
+ keyGlyph(g,x,y,label,col=0xffe2a8){const pad=typeof PAD!=='undefined'&&PAD.connected();if(pad){g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0x3fb950);g.fillRect(x+1,y-1,7,9);g.fillRect(x,y,9,7);drawText(g,'A',x+2,y,0x0b2a12,1,0x3fb950);return drawText(g,label,x+12,y,col)}g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0xd8d0ee);g.fillRect(x+1,y-1,7,1);g.fillRect(x+1,y+7,7,1);g.fillRect(x,y,1,7);g.fillRect(x+8,y,1,7);drawText(g,'E',x+2,y,0xffe2a8,1,0x1e1a12);return drawText(g,label,x+12,y,col)}
  interact(){const P=this.player,D=this.def,near=(x,r=14)=>Math.abs(P.x-x)<r;
   for(const c of this.shortcuts||[]){if(c.open||Math.abs(P.y-GY)>24)continue;if(near(c.lever,14)&&P.x>c.x){this.openShortcut(c);return true}if(P.x<c.x&&near(c.x-6,16)){this.say('BARRED FROM THE FAR SIDE - FIND A WAY AROUND',1.4);this.sfx('clang',.2);return true}}
   for(const c of this.chests)if(c.st==='shut'&&near(c.x,14)&&Math.abs(P.y-c.y)<16){this.openChest(c);return true}

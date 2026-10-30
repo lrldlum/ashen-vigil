@@ -52,9 +52,9 @@ ok('hub_leveling',R.lvl.opts[0]==='LEVEL UP'&&!R.lvl.opts.includes('TRAVEL TO TH
 await ev(()=>{tp(S().def.exit-30);idle()});await wait(300);await shot('e10_shrine_exit_arch');await ev(()=>{tp(S().def.exit);idle()});await wait(250);await ev(()=>press('restP'));await wait(1500);await ready();
 R.exit=await ev(()=>({sid:S().sid,lords:S().sv.lords,inv:S().sv.inv.includes('talisman')}));
 await ev(()=>{const s=S();tp(s.bonfire.x+4);window.__inp=()=>s.menu?{}:{restP:1}});await pg.waitForFunction(()=>!!S().menu,null,{timeout:5000});R.travelOpt=await ev(()=>S().mainOpts());await shot('e11_bonfire_travel_to_shrine');
-await ev(()=>{const s=S();s.menu.sel=s.mainOpts().indexOf('TRAVEL TO THE SHRINE');s.menuKey('ok')});await wait(1500);await ready();R.back=await ev(()=>({sid:S().sid,next:S().sv.hubNext,ret:S().sv.retBonfire}));
-await ev(()=>{tp(S().def.exit);idle()});await wait(250);await ev(()=>press('restP'));await wait(1500);await ready();R.back2=await ev(()=>({sid:S().sid,x:Math.round(S().player.x),bonfire:S().bonfire.x}));
-ok('shrine_exit_and_bonfire_travel',R.exit.sid==='cathedral'&&R.exit.inv&&R.travelOpt.includes('TRAVEL TO THE SHRINE')&&R.back.sid==='shrine'&&R.back.next==='cathedral'&&R.back2.sid==='cathedral'&&Math.abs(R.back2.x-R.back2.bonfire)<30,{exit:R.exit,opts:R.travelOpt,back:R.back,back2:R.back2});
+await ev(()=>{const s=S();s.menu.sel=s.mainOpts().indexOf('TRAVEL TO HOME');s.menuKey('ok');idle()});await wait(1500);await ready();R.back=await ev(()=>({sid:S().sid,next:S().sv.hubNext,ret:S().sv.retBonfire}));
+await ev(()=>{idle();S().menu=null;tp(S().def.exit)});await wait(250);await ev(()=>press('restP'));await wait(1500);await ready();R.back2=await ev(()=>({sid:S().sid,x:Math.round(S().player.x),bonfire:S().bonfire.x}));
+ok('shrine_exit_and_bonfire_travel',R.exit.sid==='cathedral'&&R.exit.inv&&R.travelOpt.includes('TRAVEL TO HOME')&&R.back.sid==='shrine'&&R.back.next==='cathedral'&&R.back2.sid==='cathedral'&&Math.abs(R.back2.x-R.back2.bonfire)<30,{exit:R.exit,opts:R.travelOpt,back:R.back,back2:R.back2});
 // 7. faith miracles scale with FTH
 await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await go('?play&mute&slot=3&class=cleric');
 R.mir=await ev(()=>new Promise(async res=>{const s=S(),P=s.player,o={};const w=ms=>new Promise(r=>setTimeout(r,ms));arena();
