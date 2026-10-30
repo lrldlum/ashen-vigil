@@ -79,12 +79,13 @@ async function stage(sid){const T=ST[sid],p=T.pre,sh=(n)=>pg.screenshot({path:`$
  await ev(()=>{const s=S();s.pb.setPosition(3020,140);s.player.inv=999;idle()});await pg.waitForFunction(()=>S().cine&&S().cine.t>2.4,null,{timeout:15000});
  r.cine=await ev(()=>({bars:S().bars,kind:S().boss.kind,name:S().def.boss.name,rise:+S().boss.rise.toFixed(2)}));await sh('09_lord_intro');
  await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:8000});
- const sample=async(ms)=>ev(ms=>new Promise(res=>{const seen=new Set(),t0=performance.now();const f=()=>{const s=S(),B=s.boss;if(!B)return res([...seen]);s.player.inv=999;s.player.hp=100;if(B.state==='wind')seen.add(B.next);if(performance.now()-t0>ms)return res([...seen]);requestAnimationFrame(f)};f()}),ms);
+ // stop: optional early exit once a phase-3 signature attack shows (the pick is random, ~3 picks per 14 s made this flaky)
+ const sample=async(ms,stop)=>ev(([ms,stop])=>new Promise(res=>{const seen=new Set(),t0=performance.now();const f=()=>{const s=S(),B=s.boss;if(!B)return res([...seen]);s.player.inv=999;s.player.hp=100;if(B.state==='wind')seen.add(B.next);if(performance.now()-t0>ms||(stop&&stop.some(k=>seen.has(k))))return res([...seen]);requestAnimationFrame(f)};f()}),[ms,stop]);
  r.p1=await sample(9000);await sh('10_lord_phase1');
  await ev(()=>{const B=S().boss;B.hp=B.hpMax*.6});await wait(400);r.ph2=await ev(()=>({phase:S().boss.phase,state:S().boss.state}));
  r.p2=await sample(10000);await sh('11_lord_phase2');
  await ev(()=>{const B=S().boss;B.hp=B.hpMax*.3});await wait(400);r.ph3=await ev(()=>({phase:S().boss.phase,state:S().boss.state}));
- r.p3=await sample(14000);await sh('12_lord_phase3');
+ r.p3=await sample(40000,['requiem','inferno']);await sh('12_lord_phase3');
  ok(sid+'_lord_intro_cinematic',r.cine.bars>.9&&r.cine.kind===(sid==='cathedral'?'cantor':'king'),r.cine);
  ok(sid+'_lord_three_phases',r.ph2.phase===2&&r.ph2.state==='roar'&&r.ph3.phase===3&&r.ph3.state==='roar'&&r.p3.some(a=>a==='requiem'||a==='inferno'),{p1:r.p1,ph2:r.ph2,p2:r.p2,ph3:r.ph3,p3:r.p3});
  await ev(()=>{S().boss.hp=0});await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});

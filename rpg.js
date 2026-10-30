@@ -51,6 +51,7 @@ const ARMORS={
  leather:{name:'HUNTER LEATHERS',w:5,poise:3,abs:.1,pal:{b:0x9a6a3a,s:0x5a3a1c,h:0xd8a060,c:0x4a2a14}},
  herald:{name:'HERALD MAIL',w:10,poise:9,abs:.16,pal:{b:0x7aa0d8,s:0x3a5088,h:0xd8e8ff,c:0xd8a040}},
  knight:{name:'EMBER PLATE',w:12,poise:12,abs:.18,pal:null},// the original orange ember knight
+ apron:{name:'ASHWROUGHT APRON',w:8,poise:7,abs:.15,pal:{b:0x6a3a24,s:0x3a1e12,h:0xd08850,c:0xff8a3a}},// milestone H
  rime:{name:'RIMEBOUND SHROUD',w:7,poise:6,abs:.14,pal:{b:0xb8d0ec,s:0x5a7aa0,h:0xf0f8ff,c:0x2a4a7a}},// milestone G
  iron:{name:'IRON BULWARK',w:20,poise:22,abs:.26,pal:{b:0x8a8a9a,s:0x4a4a5a,h:0xd0d0e0,c:0x6a1a14}}};
 // spells (INT): need a catalyst (staff in the right hand or a wand in either hand)

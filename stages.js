@@ -158,3 +158,31 @@ STAGE_DEFS.belltower=composeStage({pre:'bt',name:'THE FROZEN BELL TOWER',world:3
 STAGE_DEFS.belltower.cages.push({id:'bt_bellcage',x:1250,y:-60,lock:'bt_bells'});
 STAGE_DEFS.belltower.lore=[{id:'b1',x:90,y:156},{id:'b2',x:1360,y:-60},{id:'b3',x:2940,y:156}];
 STAGE_DEFS.shrine.stair={x:40};// the Frozen Stair (left end of the shrine)
+
+// ---------------------------------------------------------------------------
+// Milestone H: THE BURNING CATACOMB FORGE — an optional stage down the Ember Descent in the Ash Shrine (opens once the Rimebound Toller is still).
+// Routes branch: a HIGH road over the hanging forge gantry (chain up at 1000, strike the anvils on the gantry, drop at 1600) or the LOW road through
+// the slag pool and the anvil steps; both meet at the bonfire and again before the arena. Five FORGE ANVILS are the collectible: strike them all
+// and the seal on the bellows-cage breaks. Lord: THE ASHWROUGHT SMITH.
+TPL.gantry=(x,id)=>({chain:[[x,-52,x+8,156],[x+600,-52,x+608,156]],
+  oneway:[[x+8,-60,x+180,-52],[x+232,-60,x+420,-52],[x+472,-60,x+600,-52]],
+  solid:[[x+300,-136,x+316,-100],[x+316,-104,x+420,-100],[x+300,-140,x+420,-136]],plats:[[x+196,-84,24],[x+440,-84,24]],back:[[x+316,-136,x+420,-104]],
+  covers:[{id:id+'_h',r:[x+316,-136,x+420,-104]}],braziers:[[x+120,-60],[x+540,-60]],
+  enemies:[['wraith',x+150,-110],['hollow',x+330,-60],['imp',x+520,-60]]});
+TPL.slagfall=(x,id)=>({spikes:[[x+40,148,x+64,156],[x+120,148,x+144,156]],plats:[[x+16,124,32],[x+88,108,40],[x+168,120,32]],braziers:[[x+100,156]],enemies:[['knight',x+100]]});
+STAGE_DEFS.catacomb=composeStage({pre:'cf',name:'THE BURNING CATACOMB FORGE',world:3360,top:-204,bottom:364,theme:'catacomb',side:1,
+  bonfire:1600,bonfireName:'ANVIL VIGIL',next:'shrine',bellLock:'cf_anvils',bellKind:'anvil',
+  pal:{sky0:'#0e0606',sky1:'#160909',sky2:'#200c0a',sky3:'#2e120c',sky4:'#44180e',far:'#170807',farW:'#4a1c10',farW2:'#c0601c',near:'#0c0404',nearW:'#5a2010',
+   gTop:'#c89070',g1:'#5c3a30',g2:'#4c3028',gM:'#241410',gD:'#361e18',b0:'#180a08',bM:'#0a0403',bH:'#2a120c',lava:1,mist:'rgba(255,140,60,.09)',haze1:'rgba(60,20,12,.55)',haze2:'rgba(96,34,16,.6)',mist2:'rgba(220,90,40,.08)',pil:0x180a08,pilH:0x40201a},
+  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],// arena: the Smith climbs the crucible gantry at 3130 and hurls molten ingots
+  items:[{id:'h_apron',x:1370,y:-104,item:'apron'},{id:'h_axe',x:560,y:300,item:'axe'}],
+  puddles:[],spikes:[[2640,148,2664,156]],
+  bells:[{id:'anvil1',x:250,y:36},{id:'anvil2',x:1100,y:-60},{id:'anvil3',x:1272,y:252},{id:'anvil4',x:2300,y:-100},{id:'anvil5',x:1500,y:-60}],
+  boss:{kind:'smith',name:'THE ASHWROUGHT SMITH',sub:'LORD OF THE CATACOMB FORGE',slain:'THE FORGE GOES COLD',hp:62,card:'THE LAST ANVIL IS SILENT. THE KEEPER WILL FEEL THE COLD.',
+   phases:['THE BELLOWS BREATHE','THE CRUCIBLE POURS'],reward:'ashmaul'},
+  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2740],['wraith',2860]]},
+ [['pillarRoom',160],['lavaRise',300],['gantry',1000],['forge',1100],['ossuary',1720,'ANVIL TRIAL'],['tower',2150,'SLAG RUN',9],['slagfall',2830],['ledge',2896]],
+ {hollow:'husk',knight:'cinderknight',wraith:'wisp',imp:'magmaw'});
+STAGE_DEFS.catacomb.cages.push({id:'cf_anvilcage',x:1250,y:-60,lock:'cf_anvils'});
+STAGE_DEFS.catacomb.lore=[{id:'f1',x:90,y:156},{id:'f2',x:1360,y:-60},{id:'f3',x:2940,y:156}];
+STAGE_DEFS.shrine.descent={x:470};// the Ember Descent (a grate in the shrine floor, right of the keeper)
