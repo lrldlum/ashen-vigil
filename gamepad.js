@@ -48,7 +48,7 @@ const PAD=(()=>{
    if(slot!==0)return;// menus follow the first pad
    if(md==='menu'){if(edge(idx,'u',s.mUp,now,1))key('ArrowUp');if(edge(idx,'d',s.mDn,now,1))key('ArrowDown');if(edge(idx,'l',s.mL,now,1))key('ArrowLeft');if(edge(idx,'r',s.mR,now,1))key('ArrowRight');
     if(edge(idx,'a',s.A,now))key('Enter');if(edge(idx,'b',s.B,now))key('Escape');if(edge(idx,'s',s.START,now))key('Enter');for(const k in L)if(k!=='held')delete L[k]}
-   else if(md==='pause'){if(edge(idx,'s',s.START,now)||edge(idx,'b',s.B,now))key('Escape');if(edge(idx,'y',s.Y,now))key('t');for(const k in L)if(k!=='held')delete L[k]}
+   else if(md==='pause'){if(edge(idx,'s',s.START,now)||edge(idx,'b',s.B,now))key('Escape');if(edge(idx,'y',s.Y,now))key('t');if(edge(idx,'a',s.A,now))key('Enter');if(edge(idx,'l',s.mL,now))key('ArrowLeft');if(edge(idx,'r',s.mR,now))key('ArrowRight');for(const k in L)if(k!=='held')delete L[k]}
    else{for(const k of['u','d','l','r','a','b'])edge(idx,k,s[{u:'mUp',d:'mDn',l:'mL',r:'mR',a:'A',b:'B'}[k]],now);if(edge(idx,'s',s.START,now)){key('Escape');delete L.START}}});
   if(toastEl&&toastT&&now>toastT){toastEl.style.display='none';toastT=0}
   ui();if(hintEl){const G=window.__G,t=G&&G.scene.getScene('title');hintEl.style.display=(!slots.length&&t&&t.sys.isActive())?'block':'none'}requestAnimationFrame(poll)}
