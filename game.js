@@ -117,6 +117,25 @@ function drawSpike(ga,gn,x,by,h,hw,t,lean){// crystal spike, light from left
  const hh=Math.round(h);for(let i=0;i<hh;i++){const k=i/hh;const w=Math.max(0,Math.round(hw*(1-k)*(1+.15*Math.sin(k*9))));const cx=x+Math.round(lean*k*hh*.25);
   for(let dx=-w;dx<=w;dx++){let c=dx<=-w+0?C.ice1:dx<0?C.ice2:dx===0?C.ice1:dx<w?C.ice3:C.ice4;if(k>.85)c=C.ice0;ga.fillStyle(c,1);ga.fillRect(cx+dx,by-i,1,1)}}
  px(ga,x+Math.round(lean*hh*.25),by-hh,0xffffff)}
+// Frost dome, matched to reference: full hemisphere, bright 2px shell, glowing elliptical base ring, inner crystals
+function drawDome(ga,x,gy,r,a,t,seed){x=Math.round(x);r=Math.max(2,Math.round(r));const R=seedRand(seed);
+ // body: faint banded fill (chords), brighter toward the shell
+ for(let yy=0;yy<r;yy+=2){const w=Math.round(Math.sqrt(r*r-yy*yy));ga.fillStyle(C.ice4,a*(.05+.06*(yy/r)));ga.fillRect(x-w,gy-yy-1,2*w+1,2)}
+ // hex lattice
+ for(let yy=3;yy<r-2;yy+=6)for(let xx=-r;xx<=r;xx+=7){const ox=xx+((yy/6|0)%2?3:0);if(ox*ox+yy*yy<(r-3)*(r-3))px(ga,x+ox,gy-yy,C.ice2,a*.45)}
+ // shell glow + 2px shell
+ const N=Math.max(24,Math.round(r*3.4));
+ for(let i=0;i<=N;i+=3){const an=Math.PI+i/N*Math.PI;glow(ga,x+Math.cos(an)*r,gy+Math.sin(an)*r,4,C.ice3,a*.12)}
+ for(let i=0;i<=N;i++){const an=Math.PI+i/N*Math.PI,c=Math.cos(an),s=Math.sin(an);
+  px(ga,x+c*r,gy+s*r,C.ice1,a);px(ga,x+c*(r-1),gy+s*(r-1),C.ice2,a*.8);
+  const tr=((i/N)+t*.6)%1;if(tr<.04||Math.abs(tr-.5)<.02)px(ga,x+c*r,gy+s*r,0xffffff,a)}
+ // base ring (ellipse) with glow
+ const rx=Math.round(r*1.18),ry=Math.max(3,Math.round(r*.14));glow(ga,x,gy,rx*.6,C.ice3,a*.12);
+ for(let i=0;i<Math.round(rx*7);i++){const an=i/Math.round(rx*7)*Math.PI*2;const yy=gy-1+Math.sin(an)*ry;px(ga,x+Math.cos(an)*rx,yy,Math.sin(an)>0?0xffffff:C.ice1,a);px(ga,x+Math.cos(an)*(rx-1),yy,C.ice2,a*.6)}
+ for(let k=0;k<6;k++)glow(ga,x+Math.cos(k/6*6.283+t)*rx,gy-1+Math.sin(k/6*6.283+t)*ry,4,C.ice1,a*.25);
+ // inner crystals
+ const n=Math.round(r/6);for(let k=0;k<n;k++){const sx=x+Math.round((R()*2-1)*r*.85),h=4+R()*r*.35;drawSpike(ga,null,sx,gy-1,h,1.6,1,(R()-.5)*.8)}
+ if(R()<.6)sparkle(ga,x+(R()*2-1)*r*.7,gy-R()*r*.8,2,C.ice1,a)}
 // ===================================================================
 class Boot extends Phaser.Scene{constructor(){super('boot')}
  preload(){['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
@@ -234,6 +253,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(const x of this.braziers)if(Math.abs(x-this.cam.scrollX-160)<200){this.fx.fire(x,GY-15,2,2);if(Math.random()<.06)this.fx.ember(x,GY-18,1)}
   if(Math.abs(this.bonfire.x-P.x)<240){const n=this.bonfire.lit?2:1;for(let i=0;i<n;i++)this.fx.fire(this.bonfire.x,GY-3,1,this.bonfire.lit?4:2,this.bonfire.lit?1.3:.7);if(Math.random()<.15)this.fx.ember(this.bonfire.x,GY-8,1)}
   if(this.cam.scrollX>ARENA_L-320&&Math.random()<.6)this.fx.snow(this.cam.scrollX+rnd(-20,340),-2);
+  if(Q.get('still')==='dome'&&!this._sd&&this.t>2.5){this._sd=1;this.novas.push({dome:1,harmless:1,x:this.player.x+70,y:GY,R:80,grow:.5,t:0,m:3});setTimeout(()=>window.__dome=1,900)}
   if(Q.get('still')==='bolt'&&!this._sb&&this.t>2.5){this._sb=1;this.castBolt();setTimeout(()=>window.__bolt=1,130)}
   this.fx.update(dt);
   // camera look-ahead
@@ -307,7 +327,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
     if(o.target&&o.target.e)this.damageEnemy(o.target.e,3,this.player.f);if(o.target&&o.target.boss)this.damageBoss(3);this.hitstop(.05)}
    if(o.t>.5)this.bolts.splice(i,1)}
   for(let i=this.novas.length-1;i>=0;i--){const n=this.novas[i];n.t+=dt;
-   if(n.dome){const r=n.R*ease(Math.min(1,n.t/n.grow));if(!n.done&&n.t>n.grow*.9){n.done=true;const d=Math.hypot(this.player.x-n.x,(this.player.y-6)-n.y);if(d<n.R)this.hurtPlayer(22,n.x)}
+   if(n.dome){const r=n.R*ease(Math.min(1,n.t/n.grow));if(!n.done&&n.t>n.grow*.9){n.done=true;const d=Math.hypot(this.player.x-n.x,(this.player.y-6)-n.y);if(!n.harmless&&d<n.R)this.hurtPlayer(22,n.x)}
     if(n.t>n.grow&&!n.burst){n.burst=true;for(let a=0;a<40;a++){const an=Math.PI+a/40*Math.PI;this.fx.add({k:'shard',x:n.x+Math.cos(an)*r,y:n.y+Math.sin(an)*r,vx:Math.cos(an)*40,vy:Math.sin(an)*40,l:0,m:rnd(.4,.8)})}this.cam.shake(160,.01)}}
    if(n.t>n.m)this.novas.splice(i,1)}
   // wraith frost orbs
@@ -341,7 +361,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
     if(B.cd<0){const r=Math.random();B.next=adx<40?(r<.6?'slam':'nova'):(r<.45?'charge':r<.8?'slam':'nova');if(!B.phase2&&B.next==='nova'&&Math.random()<.5)B.next='slam';B.state='wind';B.t=0}}
    else if(B.state==='wind'){const wt=B.next==='charge'?.5:B.next==='nova'?.6:.55;if(Math.random()<.7)this.fx.star(B.x+B.f*rnd(4,16),B.y-rnd(20,36));
     if(B.t>wt){B.state=B.next;B.t=0;if(B.next==='slam'){this.cam.shake(220,.02);this.fx.dust(B.x+B.f*16,GY,16);this.castIce(B.x+B.f*20,B.f,'b');this.sfx('death',.25);this.fx.shard(B.x+B.f*16,GY,16,120)}
-     if(B.next==='nova'){this.novas.push({dome:1,x:B.x,y:GY,R:B.phase2?72:58,grow:.55,t:0,m:1.1});this.sfx('parry',.35)}
+     if(B.next==='nova'){this.novas.push({dome:1,x:B.x,y:GY,R:B.phase2?86:70,grow:.5,t:0,m:1.3});this.sfx('parry',.35)}
      if(B.next==='charge'){B.f=Math.sign(dx)||1}}}
    else if(B.state==='slam'){if(B.t<.1&&Math.abs(P.x-(B.x+B.f*16))<16)this.hurtPlayer(24,B.x);if(B.t>.6){B.state='walk';B.cd=rnd(.8,1.6)*(B.phase2?.7:1)}}
    else if(B.state==='nova'){if(B.t>1){B.state='walk';B.cd=rnd(.8,1.4)}}
@@ -349,7 +369,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
     if(Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<26)this.hurtPlayer(20,B.x);
     if(B.x<ARENA_L+20||B.x>ARENA_R-20||B.t>.9){B.x=clamp(B.x,ARENA_L+20,ARENA_R-20);B.state='walk';B.cd=rnd(.6,1.2);this.cam.shake(150,.015);this.fx.dust(B.x,GY,12)}}
    B.x=clamp(B.x,ARENA_L+16,ARENA_R-16);
-   if(!B.phase2&&B.hp<B.hpMax*.5){B.phase2=true;this.say('THE WARDEN\'S RIME DEEPENS',1.8);this.novas.push({dome:1,x:B.x,y:GY,R:80,grow:.6,t:0,m:1.2});this.cam.shake(300,.02)}
+   if(!B.phase2&&B.hp<B.hpMax*.5){B.phase2=true;this.say('THE WARDEN\'S RIME DEEPENS',1.8);this.novas.push({dome:1,x:B.x,y:GY,R:96,grow:.6,t:0,m:1.4});this.cam.shake(300,.02)}
    if(B.hp<=0){this.bossState='dying';B.t=0;this.sfx('death',.6);this.say('WARDEN SLAIN',3);this.cam.shake(600,.02)}}
   if(this.bossState==='dying'){if(Math.random()<.9)this.fx.shard(B.x+rnd(-10,10),B.y-rnd(0,34),2,120);if(Math.random()<.3)this.fx.spark(B.x+rnd(-8,8),B.y-rnd(0,30),4,C.ice2);
    if(B.t>2.2){this.bossState='dead';this.fx.soul(B.x,B.y-16,60);this.souls+=2000;this.gateL.body.enable=false;this.sv={bonfire:this.bonfire.lit,souls:this.souls,bossDown:true};Save.write(this.sv);this.say('VICTORY ACHIEVED - PROGRESS SAVED',4);this.boss=null}}}
@@ -358,7 +378,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.cine={t:0};this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,900,'Sine.easeInOut')}
  updateCine(dt){const c=this.cine;if(!c)return;c.t+=dt;const B=this.boss;this.bars=Math.min(1,c.t/.5);
   if(c.t>.9&&c.t<1.6){B.rise=ease((c.t-.9)/.7);if(Math.random()<.9)this.fx.shard(B.x+rnd(-14,14),GY,2,80);if(!c.shk){c.shk=1;this.cam.shake(700,.012);this.sfx('charge',.5)}}
-  if(c.t>1.6){B.eyes=Math.min(1,(c.t-1.6)/.3);if(!c.ign){c.ign=1;this.fx.spark(B.x-3,B.y-29,14,C.ice1,90);this.novas.push({dome:1,x:B.x,y:GY,R:40,grow:.4,t:0,m:.8,harmless:1});this.flashA=.25}}
+  if(c.t>1.6){B.eyes=Math.min(1,(c.t-1.6)/.3);if(!c.ign){c.ign=1;this.fx.spark(B.x-3,B.y-29,14,C.ice1,90);this.novas.push({dome:1,x:B.x,y:GY,R:64,grow:.45,t:0,m:1.2,harmless:1});this.flashA=.25}}
   if(c.t>3.8){this.bars=Math.max(0,1-(c.t-3.8)/.4)}
   if(c.t>4.2){this.cine=null;this.bars=0;this.bossState='fight';B.state='walk';B.rise=1;this.cam.startFollow(this.pb,true,.12,0,Math.round(this.camOff),0)}}
  // ---------------- render ----------------
@@ -375,11 +395,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    glow(ga,s.x,GY-h*.4,6+h*.45,C.ice4,.12);glow(ga,s.x,GY-3,8+h*.25,C.ice3,.14);drawSpike(ga,g,s.x,GY-1,h,ICEP.hw*(s.owner==='b'?1.3:1),gt,s.lean);ga.fillStyle(C.ice2,.7);ga.fillRect(s.x-7,GY-1,15,1);for(let k=0;k<3;k++)px(ga,s.x+((k*5+Math.floor(s.t*20))%14)-7,GY-2,C.ice1,.8)}
   // novas / domes
   for(const n of this.novas){const k=n.t/n.m;
-   if(n.dome){const r=n.R*ease(Math.min(1,n.t/n.grow)),a=n.t>n.grow?Math.max(0,1-(n.t-n.grow)/(n.m-n.grow)):1;
-    for(let i=0;i<=64;i++){const an=Math.PI+i/64*Math.PI;px(ga,n.x+Math.cos(an)*r,n.y+Math.sin(an)*r,C.ice1,a)}
-    // hex lattice inside dome
-    for(let yy=0;yy<r;yy+=5)for(let xx=-r;xx<=r;xx+=6){const ox=xx+((yy/5)%2?3:0);if(ox*ox+yy*yy<r*r*.92)px(ga,n.x+ox,n.y-yy,C.ice2,a*.55)}
-    for(let i=0;i<96;i++){const an=i/96*Math.PI*2;px(ga,n.x+Math.cos(an)*(r+6),GY-1+Math.sin(an)*3,i%3?C.ice1:0xffffff,a)}glow(ga,n.x-r*.5,GY-1,5,C.ice2,a*.2);glow(ga,n.x+r*.5,GY-1,5,C.ice2,a*.2);glow(ga,n.x,GY-2,r*.5,C.ice3,a*.12)}
+   if(n.dome){const r=n.R*ease(Math.min(1,n.t/n.grow)),a=n.t>n.grow?Math.max(0,1-(n.t-n.grow)/(n.m-n.grow)):1;drawDome(ga,n.x,GY,r,a,this.t,n.seed||(n.seed=ri(1,999)))}
    else if(n.fire){glow(ga,n.x,n.y,6+k*16,C.f2,.35*(1-k));}
    else if(n.bolt){glow(ga,n.x,n.y-3,8+k*12,C.bolt,.4*(1-k))}}
   // bolts
