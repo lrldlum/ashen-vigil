@@ -390,9 +390,7 @@ class Title extends Phaser.Scene{constructor(){super('title')}
    [['R',WEAPONS[CL.main].name],['L',CL.off?WEAPONS[CL.off].name:'-'],['A',ARMORS[CL.armor].name],['HP '+d.hp+'  ST '+d.st+'  FP '+d.fp,''],['ROLL '+d.roll.kind,'']].forEach(([a,b],i)=>drawText(g,a+(b?'  '+b:''),198,50+i*10,i<3?0xd8d0ee:0x9fd8ff));
    drawText(g,CL.desc,Math.round(W/2-textW(CL.desc)/2),148,0xd8d0ee);heroStyle(WEAPONS[CL.main],false,ARMORS[CL.armor]);drawHero(g,262,122,1,'idle',Math.floor(this.t*2)%2,this.t);heroStyle(null,false,null);
    }
-  if(this.mode==='slots')drawText(g,'ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK',Math.round(W/2-textW('ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK')/2),164,0x5d5990,1,null);
-  if(this.mode==='slots')drawText(g,'V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND',Math.round(W/2-textW('V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND')/2),171,0x5d5990,1,null);
-  if(this.mode==='slots')drawText(g,'XBOX PAD: A JUMP  B ROLL  X ATTACK  START PAUSE',Math.round(W/2-textW('XBOX PAD: A JUMP  B ROLL  X ATTACK  START PAUSE')/2),157,0x7a76b0,1,null)}}
+  {const l1='KEYS: ARROWS  Z JUMP  X ATK  C ROLL  ESC PAUSE',l2='XBOX PAD: A JUMP  B ROLL  X ATK  START PAUSE';if(this.mode==='slots'){drawText(g,l1,Math.round(W/2-textW(l1)/2),164,0x5d5990,1,null);drawText(g,l2,Math.round(W/2-textW(l2)/2),171,0x7a76b0,1,null)}}}}
 // ===================================================================
 class Lab extends Phaser.Scene{constructor(){super('lab')}
  create(){makeBG(this)(0);this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.fx=new FX(this);this.ga=this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);this.gn=this.add.graphics();this.t=0}

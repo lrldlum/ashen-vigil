@@ -21,7 +21,7 @@ const PAD=(()=>{
  const read=g=>{const ax=g.axes[0]||0,ay=g.axes[1]||0,o={};for(const k in B)o[k]=pressed(g,B[k]);
   o.l=o.L||ax<-DZ;o.r=o.R||ax>DZ;o.up=o.UP||ay<-.5;o.dn=o.DN||ay>.5;o.mUp=o.UP||ay<-.5;o.mDn=o.DN||ay>.5;o.mL=o.L||ax<-.5;o.mR=o.R||ax>.5;o.any=g.buttons.some((b,i)=>pressed(g,i))||Math.abs(ax)>DZ||Math.abs(ay)>DZ;return o};
  const ui=()=>{if(hintEl||!document.body)return;const css='position:fixed;left:50%;transform:translateX(-50%);font:12px monospace;color:#f0e6c8;background:rgba(10,8,20,.85);border:1px solid #6a5a8a;padding:3px 8px;pointer-events:none;z-index:50;';
-  hintEl=document.createElement('div');hintEl.id='padHint';hintEl.style.cssText=css+'bottom:6px;opacity:.75;display:none';hintEl.textContent='Controller? Press any button';document.body.appendChild(hintEl);
+  hintEl=document.createElement('div');hintEl.id='padHint';hintEl.style.cssText=css+'top:6px;opacity:.75;display:none';hintEl.textContent='Controller? Press any button';document.body.appendChild(hintEl);
   toastEl=document.createElement('div');toastEl.id='padToast';toastEl.style.cssText=css+'top:8px;display:none';document.body.appendChild(toastEl)};
  const toast=(m)=>{ui();if(!toastEl)return;toastEl.textContent=m;toastEl.style.display='block';toastT=performance.now()+2500;PAD.lastToast=m};
  const connect=g=>{if(slots.includes(g.index))return;slots.push(g.index);seen=true;if(hintEl)hintEl.style.display='none';toast('Controller connected'+(slots.length>1?' (P'+slots.length+')':''))};
