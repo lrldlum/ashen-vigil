@@ -114,23 +114,23 @@
  },
  "wj3": true,
  "towerAt": {
-  "x": 1852,
-  "y": -145,
+  "x": 1850,
+  "y": -144,
   "camY": -204
  },
  "walljump_tower": {
   "pass": true,
   "v": {
-   "x": 1852,
-   "y": -145,
+   "x": 1850,
+   "y": -144,
    "camY": -204
   }
  },
  "vertical_camera_up": {
   "pass": true,
   "v": {
-   "x": 1852,
-   "y": -145,
+   "x": 1850,
+   "y": -144,
    "camY": -204
   }
  },
@@ -144,7 +144,7 @@
   "bodyOn": true
  },
  "timerWin": true,
- "timerWinSecs": 5.428,
+ "timerWinSecs": 5.425,
  "timerEnd": {
   "done": 1,
   "left": 3.57,
@@ -169,7 +169,7 @@
  "timer_challenge_cleared_by_running": {
   "pass": true,
   "v": {
-   "secs": 5.428,
+   "secs": 5.425,
    "done": 1,
    "left": 3.57,
    "spikeHits": 0,
@@ -345,11 +345,11 @@
   }
  },
  "demo": true,
- "demoSecs": 40.94,
+ "demoSecs": 44.334,
  "demo_ai_reaches_boss": {
   "pass": true,
   "v": {
-   "secs": 40.94
+   "secs": 44.334
   }
  },
  "no_page_errors": {

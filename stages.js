@@ -43,5 +43,60 @@ const STAGE_DEFS={
    {id:'c_waves',type:'waves',name:'OSSUARY TRIAL',zone:[2600,200,2840,300],gates:[[2568,180,2576,300],[2856,180,2864,300]],
     waves:[[['hollow',2640,300],['hollow',2780,300]],[['knight',2700,300],['imp',2620,300],['hollow',2800,300]]]}],
   braziers:[[1200,300],[1400,300],[2660,300],[2780,300]],
+  bonfire:1600,bonfireName:'GATE VIGIL',next:'cathedral',theme:'ramparts',
+  plats:[[430,128,48],[540,108,40],[1000,124,64],[1110,100,48],[1820,126,56],[1930,104,40],[2160,118,48],[2290,96,48],[2400,120,40]],
+  puddles:[[262,18],[702,14],[1250,22],[1676,16],[2082,20],[2608,14],[3080,24],[3236,16]],
+  boss:{kind:'warden',name:'FROST WARDEN',sub:'KEEPER OF THE ASHEN RAMPARTS',slain:'WARDEN SLAIN',hp:40,card:'THE FROST WARDEN IS ASH. THE GATE STANDS OPEN.'},
   enemies:[['hollow',360],['imp',520],['hollow',720],['wraith',900],['knight',1180],['imp',1260],['wraith',1300],['imp',1900],['hollow',2020],['wraith',2250],['knight',2460],['imp',2600],['hollow',2760],['wraith',2850],
    ['hollow',600,20],['wraith',780,-30],['hollow',1260,300],['knight',1400,300],['wraith',2010,-150],['imp',2160,-100]]}};
+
+// ---------------------------------------------------------------------------
+// Milestone C: reusable room templates (each is the ramparts room, re-anchored at x).
+// A stage = list of [template, x] + its own palette, enemies, hazards and lord.
+const TPL={
+ pillarRoom(x,id){return{solid:[[x,-4,x+16,124],[x+48,36,x+64,124],[x+48,36,x+136,44],[x+48,-4,x+136,4],[x+128,4,x+136,36],
+   [x+144,20,x+288,28],[x+320,20,x+448,28],[x+480,20,x+628,28],[x+660,20,x+768,28]],
+  chain:[[x+136,12,x+144,156]],covers:[{id:id+'_h',r:[x+48,-4,x+136,44]}],cages:[{id:id+'_c1',x:x+108,y:36},{id:id+'_c2',x:x+736,y:20}],
+  enemies:[['hollow',x+368,20],['wraith',x+548,-30]]}},
+ crypt(x,id){return{carve:[[x,180,x+472,300],[x-56,260,x,300],[x+48,156,x+80,180],[x+440,156,x+472,180]],solid:[[x+432,180,x+440,260]],
+  oneway:[[x+48,156,x+80,164],[x+440,156,x+472,164]],covers:[{id:id+'_h',r:[x-56,260,x,300]}],cages:[{id:id+'_c1',x:x-36,y:300}],
+  braziers:[[x+152,300],[x+352,300]],enemies:[['hollow',x+212,300],['knight',x+352,300]]}},
+ tower(x,id,name,limit=9){return{solid:[[x,-124,x+16,124],[x+48,-100,x+64,124],[x+64,-100,x+224,-92],[x+256,-100,x+380,-92],[x+412,-100,x+560,-92],[x+560,-100,x+668,-92],
+   [x+572,-148,x+668,-140],[x+660,-140,x+668,-116]],spikes:[[x+300,-108,x+324,-100],[x+460,-108,x+484,-100]],back:[[x+572,-140,x+660,-100]],
+  cages:[{id:id+'_c1',x:x+192,y:-100},{id:id+'_c2',x:x+630,y:-100}],
+  challenges:[{id:id+'_run',type:'timer',name,zone:[x+68,-140,x+110,-100],limit,cage:id+'_c2',gates:[[x+560,-196,x+568,-100]]}],
+  enemies:[['wraith',x+330,-150],['imp',x+480,-100]]}},
+ ossuary(x,id,name){return{carve:[[x,180,x+384,300],[x-56,260,x-16,300],[x+8,156,x+40,180],[x+352,156,x+384,180]],
+  oneway:[[x+8,156,x+40,164],[x+352,156,x+384,164]],chain:[[x+360,156,x+368,300]],covers:[{id:id+'_h',r:[x-56,260,x-16,300]}],
+  breakables:[{id:id+'_b',r:[x-16,268,x,300]}],cages:[{id:id+'_c1',x:x+300,y:300,lock:id+'_trial'},{id:id+'_c2',x:x-40,y:300}],
+  challenges:[{id:id+'_trial',type:'waves',name,zone:[x+80,200,x+320,300],gates:[[x+48,180,x+56,300],[x+336,180,x+344,300]],
+   waves:[[['hollow',x+120,300],['hollow',x+260,300]],[['knight',x+180,300],['imp',x+100,300],['hollow',x+280,300]]]}],
+  braziers:[[x+140,300],[x+260,300]]}},
+ ledge(x,id){return{chain:[[x,12,x+8,156]],solid:[[x+8,20,x+72,28]],cages:[{id:id+'_c1',x:x+56,y:20}]}}};
+const KEYS=['carve','solid','oneway','chain','spikes','back','covers','breakables','cages','challenges','braziers','enemies'];
+function composeStage(base,parts,remap){const d={...base};KEYS.forEach(k=>d[k]=[...(base[k]||[])]);
+ parts.forEach(([n,x,...a])=>{const r=TPL[n](x,base.pre+'_'+n+x,...a);KEYS.forEach(k=>{if(r[k])d[k].push(...r[k])})});
+ const rk=k=>remap[k]||k;d.enemies=d.enemies.map(([k,x,y])=>[rk(k),x,y]);
+ d.challenges.forEach(c=>{if(c.waves)c.waves=c.waves.map(w=>w.map(([k,x,y])=>[rk(k),x,y]))});return d}
+STAGE_DEFS.cathedral=composeStage({pre:'s2',name:'CATHEDRAL OF THE PALE CHOIR',world:3360,top:-204,bottom:364,theme:'cathedral',
+  bonfire:1560,bonfireName:'CHANCEL VIGIL',next:'cinderdeep',
+  pal:{sky0:'#0a0f1c',sky1:'#0f1626',sky2:'#152034',sky3:'#1c2c46',sky4:'#263a5a',far:'#121a2e',farW:'#2a3d63',farW2:'#5a7aaa',near:'#0a0f1e',nearW:'#2e4a78',
+   gTop:'#c8def4',g1:'#6c80a8',g2:'#5a6c92',gM:'#2c385a',gD:'#3a4870',b0:'#0f1830',bM:'#070b16',bH:'#1a2846',mist:'rgba(170,200,240,.14)',haze1:'rgba(30,44,74,.55)',haze2:'rgba(40,58,92,.6)',mist2:'rgba(130,160,210,.09)',pil:0x0f1830,pilH:0x2a3c64},
+  plats:[[560,128,48],[1450,120,48],[2120,118,48],[2560,112,40]],puddles:[[120,18],[640,14],[1500,22],[2240,16],[3080,24],[3236,16]],
+  shafts:[420,980,1480,2050,2600,3160],spikes:[[2640,148,2664,156]],
+  boss:{kind:'cantor',name:'THE PALE CANTOR',sub:'LORD OF THE PALE CHOIR',slain:'CANTOR SILENCED',hp:54,card:'THE CHOIR FALLS SILENT. THE DEEP BURNS BELOW.',
+   phases:['THE CHOIR JOINS THE HYMN','THE REQUIEM BEGINS']},
+  enemies:[['hollow',340],['wraith',600],['knight',760],['hollow',900],['imp',1180],['wraith',1300],['hollow',1900],['knight',2100],['wraith',2250],['imp',2520],['hollow',2740],['wraith',2860]]},
+ [['tower',200,'CHOIR RUN',9],['ossuary',1000,'PALE CHOIR TRIAL'],['pillarRoom',1700],['crypt',2380],['ledge',2896]],
+ {hollow:'acolyte',knight:'sentinel',wraith:'chorister'});
+STAGE_DEFS.cinderdeep=composeStage({pre:'s3',name:'THE BURNING CINDERDEEP',world:3360,top:-204,bottom:364,theme:'cinderdeep',
+  bonfire:1760,bonfireName:'FORGE VIGIL',next:null,
+  pal:{sky0:'#110505',sky1:'#1a0807',sky2:'#260b08',sky3:'#38120a',sky4:'#521c0c',far:'#1c0907',farW:'#5a2010',farW2:'#b04a18',near:'#100404',nearW:'#6a2410',
+   gTop:'#d07040',g1:'#5a2c22',g2:'#4a231c',gM:'#22100c',gD:'#331611',b0:'#1a0907',bM:'#0b0403',bH:'#2a100c',lava:1,mist:'rgba(255,110,40,.10)',haze1:'rgba(70,20,10,.55)',haze2:'rgba(110,34,12,.6)',mist2:'rgba(200,70,30,.08)',pil:0x1a0907,pilH:0x3a160e},
+  plats:[[860,124,48],[1460,118,48],[2440,112,40]],puddles:[],
+  spikes:[[820,148,844,156],[1540,148,1564,156],[2580,148,2604,156]],
+  boss:{kind:'king',name:'VULCREST THE CINDER KING',sub:'LORD OF THE BURNING DEEP',slain:'THE KING IS ASH',hp:60,card:'THE CINDER KING IS ASH. THE FIRST FLAME WAITS.',
+   phases:['THE FORGE ROARS','THE DEEP ERUPTS']},
+  enemies:[['hollow',200],['imp',520],['knight',700],['wraith',1000],['hollow',1250],['imp',1400],['wraith',1520],['hollow',2010],['knight',2150],['wraith',2420],['imp',2660],['hollow',2800]]},
+ [['crypt',300],['pillarRoom',900],['ossuary',1950,'CINDER TRIAL'],['tower',2200,'FURNACE RUN',10],['ledge',2896]],
+ {hollow:'husk',knight:'cinderknight',wraith:'wisp',imp:'magmaw'});

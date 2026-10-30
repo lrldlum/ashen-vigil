@@ -54,3 +54,19 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Fix found while testing: the ossuary chain ended one tile below the floor, so the player couldn't climb out. Extended it to y156.
 - Tests: `node test/milestoneB.mjs` → 26/26, `node test/milestoneA.mjs` → 17/17. Clip: `node test/clipB.mjs /tmp/fB` then ffmpeg concat (see A).
 - Gaps: rim light used instead of zoom; only stage 1 has exploration; enemy AI doesn't use climbables.
+
+## Milestone C — stages 2 and 3, lords, stage link (done)
+- **Room templates** (`TPL` in stages.js): `pillarRoom`, `crypt`, `tower`, `ossuary` and `ledge` are the stage-1 rooms re-anchored at any x. `composeStage(base, [[tpl,x,...]], remap)` builds a full stage def, gives every secret an id unique to that stage, and remaps base enemy kinds to the stage's own kinds.
+- **Stage 2, Cathedral of the Pale Choir** (`?stage=cathedral`): pale ice-stone palette, snowfall, stained-glass light shafts and frozen floor spikes. Enemies: acolyte, sentinel (armoured, 8 HP) and chorister (fires a 3-note spread). Rooms: Choir Run (9 s timer), Pale Choir Trial (2 waves), 3 hidden rooms, a cracked wall and 8 embers. Bonfire: Chancel Vigil.
+  - **Lord: the Pale Cantor.** Intro: descends from above under snow. Phase 1: hymn (ring of notes), glide, bell-toll slam (ice spikes). Phase 2 at 66%: a second, faster hymn ring and spikes on both sides. Phase 3 at 33%: requiem (telegraphed icicle rain). Each phase change has a 1.3 s roar during which it can't be damaged.
+- **Stage 3, the Burning Cinderdeep** (`?stage=cinderdeep`): ember-red palette, rising ash and lava pits (spike tiles drawn as lava, with light and bubbles). Enemies: husk, cinderknight and wisp (fireballs), plus magmaw. Rooms: Furnace Run (10 s timer), Cinder Trial, the same set of secrets and 8 embers. Bonfire: Forge Vigil.
+  - **Lord: Vulcrest the Cinder King.** Intro: rises from lava. Phase 1: hammer slam with a line of eruptions, fire charge. Phase 2: meteor rain. Phase 3: inferno floor waves you have to jump.
+- **Link:** each stage's palette, textures and level are cached per stage. The save records `stage`, and secret ids accumulate across stages. Stage 1's lord shows a STAGE CLEAR card with ONWARD to stage 2, and stage 2 leads to stage 3. Stage 3's lord shows VICTORY with NG+, which restarts at stage 1. Best time is stored per stage (`ashenVigil.best.<stage>`; stage 3's is the full-run time).
+- **A test change:** the A test's victory check now expects ONWARD to stage 2. NG+ is tested at the final lord in milestoneC.mjs.
+- **Tests:** `node test/milestoneC.mjs` → 35/35, `milestoneA.mjs` → 17/17, `milestoneB.mjs` → 26/26. Clip: `node test/clipC.mjs /tmp/fC`, then the ffmpeg concat step.
+- **Gaps:**
+  - Stages 2 and 3 reuse stage 1's room shapes, so the layouts look alike.
+  - Lords share one arena layout.
+  - Magmaw behaves exactly like the imp.
+  - Sound effects are reused.
+  - The title screen always uses the stage 1 backdrop.

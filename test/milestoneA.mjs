@@ -54,8 +54,9 @@ ok('boss_windup_>=0.5s',R.tell&&R.tell.windup>=.6,R.tell);
 await pg.waitForTimeout(150);await pg.screenshot({path:S+'12_boss_tell.png'});
 await ev(pg,()=>{__G.scene.getScene('stage').boss.hp=0});await pg.waitForFunction(()=>__G.scene.getScene('stage').victory&&__G.scene.getScene('stage').victory.t>1,null,{timeout:12000});
 await pg.screenshot({path:S+'13_victory.png'});R.victory=await ev(pg,()=>({card:!!__G.scene.getScene('stage').victory}));
-await pg.keyboard.press('Enter');await pg.waitForTimeout(2500);R.ng=await ev(pg,()=>{const s=__G.scene.getScene('stage');return{ng:s.ng,bossState:s.bossState,victory:!!s.victory}});
-ok('victory_card_then_ngplus',R.victory.card&&R.ng.ng===1&&R.ng.bossState!=='dead'&&!R.ng.victory,{...R.victory,...R.ng});
+await pg.keyboard.press('Enter');await pg.waitForTimeout(2500);R.ng=await ev(pg,()=>{const s=__G.scene.getScene('stage');return{ng:s.ng,sid:s.sid,bossState:s.bossState,victory:!!s.victory}});
+// milestone C: stage 1's card now leads ONWARD to stage 2 (NG+ moved to the final lord; covered in milestoneC.mjs)
+ok('victory_card_then_onward',R.victory.card&&R.ng.sid==='cathedral'&&R.ng.bossState!=='dead'&&!R.ng.victory,{...R.victory,...R.ng});
 await pg.close();
 // --- touch controls (landscape phone) using real CDP touch events
 pg=await page('?play&mute',{vp:{width:844,height:390},touch:1});await ev(pg,()=>localStorage.clear());

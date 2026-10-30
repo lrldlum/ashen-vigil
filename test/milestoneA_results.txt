@@ -83,8 +83,9 @@
    "bonfire": true,
    "souls": 777,
    "bossDown": false,
+   "stage": "ramparts",
    "deaths": 1,
-   "time": 13.413116666666612,
+   "time": 13.529813333333292,
    "ng": 0,
    "freed": [],
    "found": [],
@@ -108,8 +109,9 @@
     "bonfire": true,
     "souls": 777,
     "bossDown": false,
+    "stage": "ramparts",
     "deaths": 1,
-    "time": 13.413116666666612,
+    "time": 13.529813333333292,
     "ng": 0,
     "freed": [],
     "found": [],
@@ -172,15 +174,15 @@
   }
  },
  "tell": {
-  "next": "slam",
-  "windup": 0.7,
+  "next": "charge",
+  "windup": 0.6,
   "eyeFlash": true
  },
  "boss_windup_>=0.5s": {
   "pass": true,
   "v": {
-   "next": "slam",
-   "windup": 0.7,
+   "next": "charge",
+   "windup": 0.6,
    "eyeFlash": true
   }
  },
@@ -188,22 +190,24 @@
   "card": true
  },
  "ng": {
-  "ng": 1,
+  "ng": 0,
+  "sid": "cathedral",
   "bossState": "cine",
   "victory": false
  },
- "victory_card_then_ngplus": {
+ "victory_card_then_onward": {
   "pass": true,
   "v": {
    "card": true,
-   "ng": 1,
+   "ng": 0,
+   "sid": "cathedral",
    "bossState": "cine",
    "victory": false
   }
  },
  "touch": {
   "touchEnabled": true,
-  "moved": 65,
+  "moved": 67,
   "atkState": "atk",
   "jumpVy": -160
  },
@@ -211,7 +215,7 @@
   "pass": true,
   "v": {
    "touchEnabled": true,
-   "moved": 65,
+   "moved": 67,
    "atkState": "atk",
    "jumpVy": -160
   }
