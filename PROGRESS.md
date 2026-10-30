@@ -79,3 +79,13 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - INT spells scale with catalyst; 3 save slots on title (Delete twice erases), class select "CHOOSE YOUR ORIGIN".
 - Weapon/armor pickups placed in stages 1–3. Lord arenas made distinct (cathedral rose window + platforms, cinderdeep lava falls + platforms). Room layouts still share templates.
 - Tests: node test/milestoneD.mjs 15/15; A 17/17, B 26/26, C 35/35. Clip: node test/clipD.mjs /tmp/fD + ffmpeg concat -> clips/D.mp4. Before shots: test/shotsDbefore.mjs vs 80873be on :8172.
+
+## Tester r3 fixes (between D and E)
+- P1 chain-top: chain snap is now tile+3 (body stays inside the chain tile) and climbing off the top / jumping off near the top mantles onto an adjacent ledge (climb-over-the-top). Roof A and the ledge ember in all 3 stages are reachable with plain UP, UP+RIGHT, or UP+JUMP+RIGHT (test/r3fix.mjs).
+- P2 Ember Run: gate is closed until the run starts (verified), and a timer clear is now pushed to sv.chDone and saved; `done` also reads chDone.
+- P2 unique rooms: stage 2 gets the Nave (choir columns, bell-rope chains, loft) and Belfry (stacked bell-frame planks); stage 3 gets the Lava Rise (cinder pool crossed on stones) and the Forge (stepped anvil blocks over ember pits). All underground, so the shared templates and their tests are untouched.
+- P2 Cinderdeep readability: cool cyan rim light + faint blue halo on the hero in Cinderdeep only.
+- P2 NG+ decision: NG+ is a new journey — embers, hidden rooms, trials and broken walls reset (explicitly written as empty arrays) so they can be re-earned; character, souls, inventory, lore and endings carry over. The victory card labels embers "(NG+n)".
+- P2 Magmaw: own behaviour — lurks submerged in the floor, surfaces near you, spits two arcing lava globs, sinks.
+- P2 SFX: 12 new synthesized sounds (menu, pickup, chime, crumble, clang, slam, lava, heal, thunder, buff, talk, fanfare) replace the reused ones.
+- P3: title backdrop follows the highlighted slot's stage; best times all use `ashenVigil.best.<stage>` (legacy key migrated); souls counter has a dark backing.

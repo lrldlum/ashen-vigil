@@ -271,15 +271,15 @@ class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.
   ctx.putImageData(img,0,0);return cv}}
 // ===================================================================
 class Boot extends Phaser.Scene{constructor(){super('boot')}
- preload(){['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
+ preload(){['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry','menu','pickup','chime','crumble','clang','slam','lava','heal','thunder','buff','talk','fanfare'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
  create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
 // shared parallax
 function makeBG(scene,sx=''){const L=[['sky',0],['far',.15],['near',.4]].map(([k,f])=>[scene.add.tileSprite(0,0,W,H,k+sx).setOrigin(0).setScrollFactor(0).setDepth(-10+f),f]);
- return(cx,cy=0)=>L.forEach(([s,f])=>{s.tilePositionX=cx*f;s.y=f?clamp(Math.round(-cy*f*.6),-50,60):0})}
+ const fn=(cx,cy=0)=>L.forEach(([s,f])=>{s.tilePositionX=cx*f;s.y=f?clamp(Math.round(-cy*f*.6),-50,60):0});fn.L=L;return fn}
 // ===================================================================
 class Title extends Phaser.Scene{constructor(){super('title')}
  create(){Object.assign(C,BASEPAL);this.bg=makeBG(this);this.fx=new FX(this);this.ga=this.add.graphics().setBlendMode(Phaser.BlendModes.ADD).setDepth(5);this.gn=this.add.graphics().setDepth(4);this.gt=this.add.graphics().setDepth(6);
-  this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.t=0;heroStyle(null,false,null);
+  this.gnd=this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.bgSid='ramparts';this.t=0;heroStyle(null,false,null);
   // milestone D: 3 save slots + class select
   this.saves=[0,1,2].map(i=>Save.load(i));this.mode='slots';this.sel=Save.slot;this.csel=0;this.erase=-1;
   const k=this.input.keyboard;k.on('keydown',e=>this.key(e.key));
@@ -292,7 +292,10 @@ class Title extends Phaser.Scene{constructor(){super('title')}
   else{if(up)this.csel=(this.csel+9)%10;if(dn)this.csel=(this.csel+1)%10;if(k==='Escape'||k==='c'||k==='C')this.mode='slots';
    if(ok){const c=CLASS_ORDER[this.csel],CL=CLASSES[c];Save.write({cls:c,stats:RPG.classStats(c),eq:{main:CL.main,off:CL.off,armor:CL.armor},inv:[CL.main,CL.off,CL.armor,...(CL.extra||[])].filter(Boolean),bonfire:false,souls:0,bossDown:false,stage:'ramparts'});this.go(true)}}}
  go(isNew){if(this.gone)return;this.gone=1;this.cameras.main.fadeOut(400,7,5,15);this.time.delayedCall(420,()=>this.scene.start('stage',{fresh:false}))}
- update(_,d){const dt=d/1000;this.t+=dt;this.bg(this.t*8);const ga=this.ga,gn=this.gn,g=this.gt;ga.clear();gn.clear();g.clear();
+ // r3 P3: the title backdrop shows the highlighted save's current stage
+ setBackdrop(){const s=this.mode==='slots'&&this.saves[this.sel],sid=s&&STAGE_DEFS[s.stage]?s.stage:'ramparts';if(sid===this.bgSid)return;this.bgSid=sid;const tx=sid==='ramparts'?'':'_'+sid,D=STAGE_DEFS[sid];
+  genTextures(this,tx,D.pal);this.bg.L.forEach(([s],i)=>s.setTexture(['sky','far','near'][i]+tx));if(this.textures.exists('ground'+tx))this.gnd.setTexture('ground'+tx)}
+ update(_,d){const dt=d/1000;this.t+=dt;this.setBackdrop();this.bg(this.t*8);const ga=this.ga,gn=this.gn,g=this.gt;ga.clear();gn.clear();g.clear();
   // bonfire + kneeling knight silhouette
   const bx=200,by=GY;if(Math.random()<.9)this.fx.fire(bx,by-3,2,3);if(Math.random()<.2)this.fx.ember(bx,by-8,1);this.fx.update(dt);
   glow(ga,bx,by-6,26+Math.sin(this.t*9)*1.5,C.f2,.16);line(gn,bx,by-1,bx+2,by-16,0x8b86a8);line(gn,bx-2,by-13,bx+4,by-12,0x8b86a8);gn.fillStyle(0x2a2245).fillRect(bx-6,by-2,13,2);
@@ -376,7 +379,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.gateL=solid(ARENA_L-8,0,8,GY,false);this.gateL.body.enable=false;
   // exploration objects (milestone B)
   this.breakables=(D.breakables||[]).filter(b=>!sv.broken.includes(b.id)).map(b=>({...b,hp:3,flash:0,body:solid(b.r[0],b.r[1],b.r[2]-b.r[0],b.r[3]-b.r[1])}));
-  this.chs=(D.challenges||[]).map(c=>({...c,active:0,armed:1,done:c.type==='waves'?sv.chDone.includes(c.id):sv.freed.includes(c.cage),live:[],gateObjs:c.gates.map(r=>({r,closed:false,body:solid(r[0],r[1],r[2]-r[0],r[3]-r[1])}))}));
+  this.chs=(D.challenges||[]).map(c=>({...c,active:0,armed:1,done:sv.chDone.includes(c.id)||(c.type==='timer'&&sv.freed.includes(c.cage)),live:[],gateObjs:c.gates.map(r=>({r,closed:false,body:solid(r[0],r[1],r[2]-r[0],r[3]-r[1])}))}));
   this.chs.forEach(c=>this.setGates(c,c.type==='timer'&&!c.done));
   this.cages=(D.cages||[]).map(c=>({...c,freed:sv.freed.includes(c.id),locked:!!c.lock&&!sv.chDone.includes(c.lock),bob:rnd(0,6)}));
   this.covers=(D.covers||[]).map(c=>{const k='cov_'+c.id;if(!this.textures.exists(k))this.textures.addCanvas(k,this.lv.paint(c.r,true));
@@ -499,37 +502,41 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(on&&!['roll','hurt'].includes(P.state)&&L.kAt(cx-3,P.y-2)!==K_SPIKE&&L.kAt(cx+3,P.y-2)!==K_SPIKE&&L.kAt(cx,P.y+3)!==K_SPIKE)P.safe={x:cx,y:P.y};
   const chainHere=L.kAt(cx,cy)===K_CHAIN,chainBelow=L.kAt(cx,P.y+4)===K_CHAIN;
   if(P.state==='climb'){body.setAllowGravity(false);const v=(inp.dn?1:0)-(inp.up?1:0);b.setVelocity(0,v*62);if(v)P.run+=dt*8;
+   // r3 P1: climb-over-the-top — a ledge beside the chain near the climber's feet is mantled onto instead of bonking its underside
+   if(P.buf>0||(v<0&&!chainHere)){const tx0=Math.floor(cx/TS)*TS;for(const s of dir?[dir]:[1,-1]){const ex=s>0?tx0+TS+1:tx0-2;
+     for(let yy=Math.floor(P.y-34);yy<=P.y+2;yy++){if(L.kAt(ex,yy)!==K_EMPTY&&L.kAt(ex,yy)!==K_CHAIN&&L.kAt(ex,yy-1)===K_EMPTY&&L.kAt(ex,yy-14)===K_EMPTY){
+      P.buf=0;body.setAllowGravity(true);b.setPosition(ex+s*4,yy-8);b.setVelocity(s*40,0);P.state='idle';P.climbCd=.3;P.f=s;this.fx.dust(ex,yy,4,s);this.stats.mantles=(this.stats.mantles||0)+1;return true}}}}
    if(P.buf>0){P.buf=0;body.setAllowGravity(true);b.setVelocity(dir*90,-230);P.state='jump';P.climbCd=.3;this.sfx('jump',.25);return true}
    if(!chainHere&&!(v>0&&chainBelow)){body.setAllowGravity(true);if(v<0){b.setVelocity(dir*60,-190);P.climbCd=.35}P.state='fall';return true}
    if(on&&v>0&&!chainBelow){body.setAllowGravity(true);P.state='idle'}
    return true}
   const free=!['roll','rollrec','atk','cast','hurt','rest','drink','parry'].includes(P.state);
   if(free&&P.climbCd<=0&&((chainHere&&(inp.up||(inp.dn&&!on)))||(on&&inp.dn&&chainBelow&&!chainHere))){
-   P.state='climb';P.t=0;b.x=Math.floor(cx/TS)*TS+4;b.setVelocity(0,0);body.setAllowGravity(false);if(!chainHere){P.dropT=.3;b.y+=3}this.stats.climbs=(this.stats.climbs||0)+1;return true}
+   P.state='climb';P.t=0;b.x=Math.floor(cx/TS)*TS+3;b.setVelocity(0,0);body.setAllowGravity(false);if(!chainHere){P.dropT=.3;b.y+=3}this.stats.climbs=(this.stats.climbs||0)+1;return true}
   body.setAllowGravity(true);return false}
  updateCamY(dt){const P=this.player,on=this.pb.body.blocked.down,D=this.def;let ty=this.camTY;
   if(on||P.state==='climb'||P.state==='wall')ty=P.y-156+(P.state==='climb'&&this.inp.dn?50:0);
   if(P.y-this.camY<56)ty=Math.min(ty,P.y-56);if(P.y-this.camY>170)ty=Math.max(ty,P.y-170);
   this.camTY=ty;this.camY=lerp(this.camY,ty,1-Math.pow(.004,dt));if(P.y-this.camY>176)this.camY=P.y-176;this.camY=clamp(this.camY,D.top,D.bottom-H);this.cam.scrollY=Math.round(this.camY)}
  setGates(ch,closed){for(const g of ch.gateObjs){g.closed=closed;g.body.body.enable=closed}}
- hitBreakable(k){k.hp--;k.flash=.1;const r=k.r,mx=(r[0]+r[2])/2,my=(r[1]+r[3])/2;this.fx.dust(mx,my,8);this.fx.spark(mx,my,8,0xb0a8d8,100);this.sfx('hit',.35);this.cam.shake(90,.008);
-  if(k.hp<=0){k.body.body.enable=false;k.body.destroy();for(let i=0;i<20;i++)this.fx.add({k:'dust',x:rnd(r[0],r[2]),y:rnd(r[1],r[3]),vx:rnd(-40,40),vy:rnd(-60,-10),l:0,m:rnd(.4,.8),sz:2});this.cam.shake(200,.014);this.sfx('death',.25);this.pop('THE WALL GIVES WAY',mx,r[1]-8);this.sv.broken.push(k.id);Save.write(this.sv)}}
+ hitBreakable(k){k.hp--;k.flash=.1;const r=k.r,mx=(r[0]+r[2])/2,my=(r[1]+r[3])/2;this.fx.dust(mx,my,8);this.fx.spark(mx,my,8,0xb0a8d8,100);this.sfx('crumble',.25);this.cam.shake(90,.008);
+  if(k.hp<=0){k.body.body.enable=false;k.body.destroy();for(let i=0;i<20;i++)this.fx.add({k:'dust',x:rnd(r[0],r[2]),y:rnd(r[1],r[3]),vx:rnd(-40,40),vy:rnd(-60,-10),l:0,m:rnd(.4,.8),sz:2});this.cam.shake(200,.014);this.sfx('crumble',.5);this.pop('THE WALL GIVES WAY',mx,r[1]-8);this.sv.broken.push(k.id);Save.write(this.sv)}}
  freeCage(c){c.freed=true;this.sv.freed.push(c.id);this.gainSouls(50);Save.write(this.sv);const n=this.cages.filter(q=>q.freed).length;
   this.fx.spark(c.x,c.y-8,20,C.f1,140);this.fx.spark(c.x,c.y-8,10,0x8b86a8,120);this.fx.ember(c.x,c.y-8,24,2);for(let i=0;i<30;i++)this.fx.fire(c.x+rnd(-4,4),c.y-8-i*2,1,2,1.4);
-  this.novas.push({x:c.x,y:c.y-8,t:0,m:.5,parry:1});this.sfx('bonfire',.5);this.sfx('souls',.4);this.pop('EMBER FREED '+n+'/'+this.cages.length,c.x,c.y-26,0xffb04a);this.cam.shake(120,.008);if(this.hs<=0)this.hitstop(.06)}
+  this.novas.push({x:c.x,y:c.y-8,t:0,m:.5,parry:1});this.sfx('chime',.5);this.sfx('souls',.4);this.pop('EMBER FREED '+n+'/'+this.cages.length,c.x,c.y-26,0xffb04a);this.cam.shake(120,.008);if(this.hs<=0)this.hitstop(.06)}
  spawnWave(ch){ch.live=ch.waves[ch.wave].map(([k,x,y])=>{const e=this.spawnEnemy(k,x,y);e.temp=1;e.state=k==='imp'?'hop':'chase';this.fx.ember(x,y-8,16,1.6);this.fx.fire(x,y-2,12,4,1.2);return e});this.say(ch.name+' - WAVE '+(ch.wave+1),1.6)}
  updateLevel(dt){const P=this.player;
   for(const c of this.covers){const r=c.r,inside=P.x>r[0]-2&&P.x<r[2]+2&&P.y-7>r[1]&&P.y-7<r[3]+2;c.a=lerp(c.a,inside?0:1,1-Math.pow(.001,dt));c.img.setAlpha(c.a);
-   if(inside&&!c.found){c.found=true;this.sv.found.push(c.id);Save.write(this.sv);this.pop('HIDDEN ROOM',P.x,P.y-26,0x9ff0dc);this.sfx('souls',.4)}}
+   if(inside&&!c.found){c.found=true;this.sv.found.push(c.id);Save.write(this.sv);this.pop('HIDDEN ROOM',P.x,P.y-26,0x9ff0dc);this.sfx('chime',.35)}}
   for(const k of this.breakables)k.flash-=dt;
   for(const ch of this.chs){const z=ch.zone,inZ=P.x>z[0]&&P.x<z[2]&&P.y>z[1]&&P.y<=z[3]+1&&!P.dead;
    if(ch.type==='timer'){if(!inZ&&!ch.active)ch.armed=1;
     if(!ch.active&&!ch.done&&inZ&&ch.armed){ch.active=1;ch.armed=0;ch.t=ch.limit;this.setGates(ch,false);this.say(ch.name+' - REACH THE CAGE',2);this.sfx('charge',.4);this.cam.shake(120,.006)}
-    if(ch.active){ch.t-=dt;const cg=this.cages.find(c=>c.id===ch.cage);if(cg&&cg.freed){ch.active=0;ch.done=1;this.say('CHALLENGE CLEARED',2)}
-     else if(ch.t<=0){ch.active=0;this.setGates(ch,true);this.say('TOO SLOW - THE GATE SEALS',2);this.sfx('death',.25);this.cam.shake(150,.01)}}}
-   else{if(!ch.active&&!ch.done&&inZ){ch.active=1;ch.wave=0;this.setGates(ch,true);this.cam.shake(220,.012);this.sfx('death',.3);this.spawnWave(ch)}
+    if(ch.active){ch.t-=dt;const cg=this.cages.find(c=>c.id===ch.cage);if(cg&&cg.freed){ch.active=0;ch.done=1;if(!this.sv.chDone.includes(ch.id))this.sv.chDone.push(ch.id);Save.write(this.sv);this.say('CHALLENGE CLEARED',2)}
+     else if(ch.t<=0){ch.active=0;this.setGates(ch,true);this.say('TOO SLOW - THE GATE SEALS',2);this.sfx('clang',.45);this.cam.shake(150,.01)}}}
+   else{if(!ch.active&&!ch.done&&inZ){ch.active=1;ch.wave=0;this.setGates(ch,true);this.cam.shake(220,.012);this.sfx('clang',.5);this.spawnWave(ch)}
     if(ch.active&&ch.live.every(e=>e.dead)){ch.wave++;if(ch.wave<ch.waves.length)this.spawnWave(ch);else{ch.active=0;ch.done=1;this.setGates(ch,false);this.sv.chDone.push(ch.id);Save.write(this.sv);
-      for(const c of this.cages)if(c.lock===ch.id){c.locked=false;this.fx.spark(c.x,c.y-8,16,C.f1,120)}this.say('TRIAL CLEARED - THE SEAL BREAKS',2.5);this.sfx('bonfire',.5)}}}}}
+      for(const c of this.cages)if(c.lock===ch.id){c.locked=false;this.fx.spark(c.x,c.y-8,16,C.f1,120)}this.say('TRIAL CLEARED - THE SEAL BREAKS',2.5);this.sfx('fanfare',.45)}}}}}
  // per-stage atmosphere: stained-glass light shafts (cathedral), lava glow (cinderdeep)
  drawStageFX(g,ga){const D=this.def,t=this.t,cX=this.cam.scrollX,cY=this.cam.scrollY;
   // distinct lord arenas: cathedral rose window + choir balconies, cinder lava falls
@@ -647,19 +654,19 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(e('up'))this.menuKey('up');else if(e('dn'))this.menuKey('down');else if(e('l'))this.menuKey('left');else if(e('r'))this.menuKey('right');
   else if(inp.jumpP||inp.atkP||inp.restP&&M.t>.3)this.menuKey('ok');else if(inp.rollP)this.menuKey('back')}
  eqOpts(row){const inv=this.sv.inv;if(row===0)return inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='main');if(row===1)return[null,...inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='off')];return['none',...inv.filter(i=>ARMORS[i]&&i!=='none')]}
- menuKey(k){const M=this.menu;if(!M)return;const sv=this.sv;this.sfx('roll',.12);
+ menuKey(k){const M=this.menu;if(!M)return;const sv=this.sv;this.sfx('menu',.2);
   if(M.mode==='main'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;else if(k==='ok'){if(M.sel===0){M.mode='level';M.sel=0;M.pend={...sv.stats};M.spent=0}else if(M.sel===1){M.mode='equip';M.sel=0}else this.menu=null}else this.menu=null;return}
   if(M.mode==='level'){const L=RPG.level(sv.cls,M.pend);
    if(k==='up')M.sel=(M.sel+8)%9;else if(k==='down')M.sel=(M.sel+1)%9;
    else if(k==='right'&&M.sel<8){const st=STATS[M.sel],c=RPG.cost(L);if(this.souls-M.spent>=c&&M.pend[st]<99){M.pend[st]++;M.spent+=c}else this.pop('NOT ENOUGH SOULS',this.player.x,this.player.y-30,0xd8402a)}
    else if(k==='left'&&M.sel<8){const st=STATS[M.sel];if(M.pend[st]>sv.stats[st]){M.pend[st]--;M.spent-=RPG.cost(L-1)}}
-   else if(k==='ok'){if(M.spent>0){this.souls-=M.spent;sv.stats={...M.pend};sv.souls=this.souls;this.applyBuild(true);Save.write(sv);this.sfx('bonfire',.5);this.fx.ember(this.player.x,this.player.y-8,30,2);this.say('LEVEL '+this.lvl,1.8);this.stats.levelUps=(this.stats.levelUps||0)+1}M.mode='main';M.sel=0}
+   else if(k==='ok'){if(M.spent>0){this.souls-=M.spent;sv.stats={...M.pend};sv.souls=this.souls;this.applyBuild(true);Save.write(sv);this.sfx('fanfare',.4);this.fx.ember(this.player.x,this.player.y-8,30,2);this.say('LEVEL '+this.lvl,1.8);this.stats.levelUps=(this.stats.levelUps||0)+1}M.mode='main';M.sel=0}
    else if(k==='back'){M.mode='main';M.sel=0}return}
   if(M.mode==='equip'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;
    else if(k==='left'||k==='right'){const o=this.eqOpts(M.sel),key=['main','off','armor'][M.sel],i=o.indexOf(sv.eq[key]);sv.eq[key]=o[(i+(k==='right'?1:o.length-1))%o.length];this.applyBuild(false);Save.write(sv)}
    else{M.mode='main';M.sel=1}}}
  updatePickups(){const P=this.player;for(let i=this.items.length-1;i>=0;i--){const it=this.items[i];if(Math.abs(P.x-it.x)<10&&Math.abs(P.y-it.y)<20&&!P.dead){this.items.splice(i,1);
-   if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=(WEAPONS[it.item]||ARMORS[it.item]).name;this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('souls',.4);this.fx.spark(it.x,it.y-6,14,C.f1,90)}}}
+   if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=(WEAPONS[it.item]||ARMORS[it.item]).name;this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('pickup',.45);this.fx.spark(it.x,it.y-6,14,C.f1,90)}}}
  // ---------------- spells ----------------
  castIce(x,f,owner,gy=GY){const V=ICEP;for(let i=0;i<V.n;i++){const sx=Math.round(x+i*V.step*f);if(this.lv&&Math.abs(this.lv.floorAt(sx,gy-6)-gy)>4)break;this.spells.push({k:'spike',gy,x:sx,t:-i*.045,h:lerp(V.hMin,V.hMax,Math.abs(Math.sin(i*2.3+x))),lean:rnd(-.4,.4),owner,hit:false})}this.cam.shake(80,.004)}
  castDome(x,owner,harmless,gy=GY){this.novas.push({dome:1,owner,harmless,x,y:gy,R:TUNE.domeR,grow:.45,t:0,m:1.8});this.cam.shake(160,.008);this.fx.shard(x,gy,20,120)}
@@ -707,6 +714,12 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    else if(e.base==='wraith'){e.f=Math.sign(dx)||1;const ty=e.gy-44+Math.sin(e.t*2.2)*8;b.y+=(ty-b.y)*dt*3;b.x+=clamp(dx-e.f*70,-1,1)*22*dt*(adx>50?1:-.5);
     if(Math.random()<.3){if(e.k==='wisp')this.fx.fire(b.x,b.y+4,1,3,.8);else this.fx.add({k:'shard',x:b.x+rnd(-3,3),y:b.y+6,vx:0,vy:rnd(4,12),l:0,m:.5})}
     if(e.cd<0&&adx<170&&this.clearLine(b.x,b.y,P.x,P.y-8)){e.cd=2.4;e.cast=.4}if(e.cast>0){e.cast-=dt;if(e.cast<=0){const a=Math.atan2(P.y-8-b.y,dx),L=ELOOK[e.k]||{},sp=e.k==='chorister'?[-.28,0,.28]:[0];for(const o of sp)this.shots.push({x:b.x,y:b.y,vx:Math.cos(a+o)*(L.shot?75:85),vy:Math.sin(a+o)*(L.shot?75:85),t:0,c:L.shot,dmg:e.k==='wisp'?16:12});this.sfx('shot',.15)}}}
+   else if(e.k==='magmaw'){// r3 P2: magmaw has its own behaviour — lurks submerged in the cinder floor, surfaces near you, spits two arcing lava globs, sinks again
+    const on=b.body.blocked.down;e.f=Math.sign(dx)||1;if(!e.mst){e.mst='sub';e.mt=0}e.mt+=dt;
+    if(e.mst==='sub'){if(on)b.setVelocityX(clamp(dx,-1,1)*30*(adx>40?1:-1));if(Math.random()<.15)this.fx.fire(b.x+rnd(-4,4),b.body.bottom-1,1,2,.5);if(adx<100&&e.cd<0&&e.mt>.6){e.mst='rise';e.mt=0;b.setVelocityX(0);this.fx.dust(b.x,b.body.bottom,6)}}
+    else if(e.mst==='rise'){b.setVelocityX(0);if(e.mt>.35){e.mst='spit';e.mt=0;this.sfx('lava',.35);for(const k of[.8,1.15]){const tvx=clamp(dx*k,-110,110);this.shots.push({x:b.x,y:b.y-6,vx:tvx,vy:-150,g:300,t:0,c:'fire',dmg:14})}}}
+    else if(e.mst==='spit'){b.setVelocityX(0);if(e.mt>.8){e.mst='sub';e.mt=0;e.cd=rnd(1.4,2.2)}}
+    e.state=e.mst==='sub'?'idle':'hop'}
    else if(e.base==='imp'){const on=b.body.blocked.down;e.f=Math.sign(dx)||1;if(Math.random()<.3)this.fx.fire(b.x,b.y-3,1,2,.6);
     if(e.state==='idle'&&adx<130)e.state='hop';
     if(e.state==='hop'&&on&&e.cd<0){b.setVelocity(e.f*rnd(50,80),-rnd(150,200));e.cd=rnd(.5,.9);this.fx.dust(b.x,b.body.bottom,3)}
@@ -725,7 +738,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
     if(B.cd<0){const r=Math.random();B.next=adx<40?(r<.6?'slam':'nova'):(r<.45?'charge':r<.8?'slam':'nova');if(!B.phase2&&B.next==='nova'&&Math.random()<.5)B.next='slam';
      B.state='wind';B.t=0;B.wt=B.next==='charge'?.6:B.next==='nova'?.75:.7;B.eyeFlash=.3;this.sfx('charge',.4)}}
    else if(B.state==='wind'){if(Math.random()<.7)this.fx.star(B.x+B.f*rnd(4,16),B.y-rnd(20,36));
-    if(B.t>B.wt){B.state=B.next;B.t=0;if(B.next==='slam'){this.cam.shake(220,.02);this.fx.dust(B.x+B.f*16,GY,16);this.castIce(B.x+B.f*20,B.f,'b');this.sfx('death',.25);this.fx.shard(B.x+B.f*16,GY,16,120)}
+    if(B.t>B.wt){B.state=B.next;B.t=0;if(B.next==='slam'){this.cam.shake(220,.02);this.fx.dust(B.x+B.f*16,GY,16);this.castIce(B.x+B.f*20,B.f,'b');this.sfx('slam',.5);this.fx.shard(B.x+B.f*16,GY,16,120)}
      if(B.next==='nova'){this.novas.push({dome:1,owner:'b',x:B.x,y:GY,R:B.phase2?104:92,grow:.5,t:0,m:1.4});this.sfx('parry',.35)}
      if(B.next==='charge'){B.f=Math.sign(dx)||1}}}
    else if(B.state==='slam'){if(B.t<.1&&Math.abs(P.x-(B.x+B.f*16))<16)this.hurtPlayer(24,B.x,'boss');if(B.state==='slam'&&B.t>.6){B.state='walk';B.cd=rnd(.8,1.6)*(B.phase2?.7:1)}}
@@ -739,7 +752,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(this.bossState==='dying'){if(Math.random()<.9)this.fx.shard(B.x+rnd(-10,10),B.y-rnd(0,34),2,120);if(Math.random()<.3)this.fx.spark(B.x+rnd(-8,8),B.y-rnd(0,30),4,C.ice2);
    if(B.t>2.2)this.finishBoss(B)}}
  finishBoss(B){this.bossState='dead';this.fx.soul(B.x,B.y-16,60);this.gainSouls((B.kind==='warden'?2000:3000)*(1+this.ng));this.gateL.body.enable=false;this.shots.length=0;this.flames=[];
-  const bk='ashenVigil.best'+(this.sid==='ramparts'?'':'.'+this.sid);
+  const bk='ashenVigil.best.'+this.sid;// r3 P3: one naming scheme for every stage (legacy ramparts key migrated below)
+  {const old=localStorage.getItem('ashenVigil.best');if(old&&!localStorage.getItem('ashenVigil.best.ramparts'))try{localStorage.setItem('ashenVigil.best.ramparts',old)}catch(e){}}
   Object.assign(this.sv,{bonfire:this.bonfire.lit,souls:this.souls,bossDown:true,time:this.playT});{const b=+localStorage.getItem(bk)||0;this.bestNew=!b||this.playT<b;if(this.bestNew)try{localStorage.setItem(bk,String(Math.round(this.playT)))}catch(e){}this.best=this.bestNew?this.playT:b}Save.write(this.sv);this.boss=null;
   this.time.delayedCall(1600,()=>{this.victory={t:0,sel:0,clear:!!this.def.next};this.physics.pause()})}
  // ---------------- lords (milestone C): the Pale Cantor (cathedral) and Vulcrest the Cinder King (cinderdeep), 3 phases each ----------------
@@ -773,7 +787,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    else{if(Math.random()<.9)this.fx.shard(B.x+rnd(-10,10),B.y-rnd(0,40),2,120);if(Math.random()<.3)this.fx.star(B.x+rnd(-12,12),B.y-rnd(0,50),0xb8a8ff)}
    if(B.t>2.2)this.finishBoss(B)}}
  lordStrike(B,dx){const P=this.player,king=B.kind==='king',p=B.phase;B.t=0;const n=B.next;
-  if(n==='slam'){B.state='slam';this.cam.shake(240,.02);this.fx.dust(B.x+B.f*16,GY,16);this.sfx('death',.25);
+  if(n==='slam'){B.state='slam';this.cam.shake(240,.02);this.fx.dust(B.x+B.f*16,GY,16);this.sfx('slam',.5);
    if(king){for(let i=1;i<=3+p;i++)this.time.delayedCall(i*110,()=>{if(this.boss)this.explode(clamp(B.x+B.f*(14+i*24),ARENA_L+8,ARENA_R-8),GY-6,true)})}
    else{this.castIce(B.x+B.f*20,B.f,'b');if(p>=2)this.castIce(B.x-B.f*20,-B.f,'b');this.sfx('bonfire',.3)}}
   else if(n==='charge'){B.state='charge';B.f=Math.sign(dx)||1}
@@ -847,7 +861,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  victoryTap(p){const V=this.victory;if(V.t<.8)return;if(p.y>=121&&p.y<132)V.sel=0;else if(p.y>=132&&p.y<143)V.sel=1;else return;this.victoryGo()}
  victoryGo(){const V=this.victory;if(V.gone)return;V.gone=1;this.cam.fadeOut(500,7,5,15);
   this.time.delayedCall(520,()=>{if(V.sel===0&&V.clear){Save.write({...this.sv,stage:this.def.next,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}
-   else if(V.sel===0){const s=this.sv;Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:s.deaths,time:this.playT,ng:this.ng+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked});this.scene.restart({fresh:false})}else this.scene.start('title')})}
+   else if(V.sel===0){const s=this.sv;Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:s.deaths,time:this.playT,ng:this.ng+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings});this.scene.restart({fresh:false})}else this.scene.start('title')})}
  // ---------------- render ----------------
  render(dt){const g=this.gn,ga=this.ga,cam=this.cam,P=this.player;g.clear();ga.clear();this.lights.length=0;this.bgf(cam.scrollX,cam.scrollY);this.mist.forEach((m,i)=>{m.tilePositionX=cam.scrollX*(.2+i*.05)+this.t*(4+i*3);m.y=Math.round(GY-34-i*36-cam.scrollY*(i?.4:1))});const t=this.t;
   for(const[x,by]of this.braziers){g.fillStyle(0x0d0a1c);g.fillRect(x-1,by-12,3,12);g.fillRect(x-4,by-14,9,2);g.fillRect(x-3,by-12,7,1);g.fillRect(x-3,by-1,7,1);
@@ -906,7 +920,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(st==='parry')fr=P.t<TUNE.parryWin?0:1;
   else if(st==='climb')fr=Math.floor(P.run)%2;
   if(P.land>0&&st==='idle')st='rollrec';
-  const pf=P.pflash>0;if(pf)P.pflash--;drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});HERO.rim(ga,x,y,f,pf?0xffe2a8:C.f2,pf?.9:.32);if(pf)glow(ga,x,y-8,16,C.f1,.3);
+  const pf=P.pflash>0;if(pf)P.pflash--;drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.32);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);
   if(P.state==='atk'){const m=this.move();if(P.t>=m.h0-.02&&P.t<m.h1+.08){const k=(P.t-m.h0+.02)/(m.h1-m.h0+.1);
     if(m.arc)drawSlash(ga,x+f*2,y-10-(m.spin?0:0),f,k,this.wp===WEAPONS.longsword&&!P.heavy?SLASH:m.arc,P.combo===1);
     else if(m.stab){const L=(m.reach||12)+6,yy=y-9+(P.combo===1?-2:P.combo===2?1:0);for(let i=0;i<L;i++){const a=(1-Math.abs(i/L-k))*.8;if(a>0)px(ga,x+f*(4+i),yy,i>L-4?0xffffff:C.f1,a)}glow(ga,x+f*(4+L*k),yy,4,C.f2,.3)}
@@ -937,6 +951,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    for(let k=-3;k<=3;k+=2)px(g,x+k+Math.round(Math.sin(this.t*9+k)),cy+6,c);
    g.fillStyle(0x0a0818);g.fillRect(x-2+f,cy-3,4,3);px(ga,x-1+f,cy-2,0xe8f6ff);px(ga,x+1+f,cy-2,0xe8f6ff);
    if(e.cast>0){const cc=e.k==='wisp'?C.f2:e.k==='chorister'?0xb8a8ff:C.ice2;glow(ga,x+f*6,cy,4+(.4-e.cast)*10,cc,.35);sparkle(ga,x+f*6,cy,2,e.k==='wisp'?C.f0:C.ice1)}}
+  else if(e.k==='magmaw'&&e.mst!=='rise'&&e.mst!=='spit'){const bl=Math.sin(this.t*9+(e.x0||0))*.5+.5;g.fillStyle(0x6a1408);g.fillRect(x-5,y-2,11,2);g.fillStyle(fl?0xffffff:0xffa040);g.fillRect(x-3,y-3-Math.round(bl),7,1+Math.round(bl));px(g,x-1+f,y-3,0xfff0a0);glow(ga,x,y-2,7,C.f2,.2);this.light(x,y-2,18,C.f2,.35)}
   else if(e.base==='imp'){const fuse=e.state==='fuse',L=ELOOK[e.k]||{};const c=fl||(fuse&&Math.floor(e.t*20)%2)?0xffffff:L.c||C.f3,l=L.rim?0xffffff:C.f2;const sq=b.body.blocked.down?0:1;
    g.fillStyle(L.rim||0xffb04a,.8);g.fillRect(x-4,y-7-sq,9,7+sq);// orange rim
    g.fillStyle(L.d||0x4a1008);g.fillRect(x-3,y-5-sq,7,5+sq);g.fillStyle(c);g.fillRect(x-3,y-6-sq,7,4+sq);g.fillStyle(l);g.fillRect(x-2,y-6-sq,5,1);px(g,x-1+f,y-4,C.f0);px(g,x+1+f,y-4,C.f0);
@@ -976,7 +991,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    {const nF=this.cages.filter(c=>c.freed).length,str=nF+'/'+this.cages.length,ex=34,ey=26;g.fillStyle(0x07050f);g.fillRect(ex-2,ey-2,textW(str)+11,10);g.fillStyle(C.f2);g.fillRect(ex,ey+1,3,4);g.fillStyle(C.f1);g.fillRect(ex+1,ey,1,4);px(g,ex+1,ey-1,C.f0);glow(ga,ex+1,ey+3,4,C.f2,.25);drawText(g,str,ex+6,ey,nF===this.cages.length?0xffe2a8:0xd8d0ee);const lv='LV '+this.lvl;drawText(g,lv,ex+textW(str)+14,ey,0x8a86c0)}
    for(const ch of this.chs)if(ch.active){const s2=ch.type==='timer'?ch.name+' '+Math.max(0,ch.t).toFixed(1):ch.name+' - WAVE '+(ch.wave+1)+'/'+ch.waves.length;drawText(g,s2,Math.round(W/2-textW(s2)/2),this.touch?22:8,ch.type==='timer'&&ch.t<3&&Math.floor(t*8)%2?0xd8402a:0xffe2a8)}
    if(P.flaskFlash>0){P.flaskFlash-=this.dt;if(Math.floor(t*16)%2)g.fillStyle(0xd8402a).fillRect(4,34,24,1)}
-   const s=String(this.souls),sw=textW(s,2);g.fillStyle(0x9fd8ff);g.fillRect(W-sw-14,7,4,4);g.fillStyle(0xffffff);g.fillRect(W-sw-13,8,2,2);glow(ga,W-sw-12,9,5,C.ice3,.35);drawText(g,s,W-sw-6,5,0xd8d0ee,2);
+   const s=String(this.souls),sw=textW(s,2);g.fillStyle(0x07050f,.72);g.fillRect(W-sw-18,3,sw+16,14);g.fillRect(W-sw-17,2,sw+14,16);g.fillStyle(0x9fd8ff);g.fillRect(W-sw-14,7,4,4);g.fillStyle(0xffffff);g.fillRect(W-sw-13,8,2,2);glow(ga,W-sw-12,9,5,C.ice3,.35);drawText(g,s,W-sw-6,5,0xd8d0ee,2);
    if(this.soulPop&&this.soulPop.t>0){const sp=this.soulPop;sp.t-=this.dt;const ps='+'+sp.n;drawText(g,ps,W-textW(ps)-6,19+Math.round((1.4-sp.t)*3),0x9fd8ff,1,0x07050f,Math.min(1,sp.t*2))}
    if(this.stain){const ds=Math.round(this.stain.x-P.x),ss='SOULS '+(ds>0?'>':'<');drawText(g,ss,W-textW(ss)-6,this.soulPop&&this.soulPop.t>0?27:20,0x5fe0c0,1,0x07050f,.6+.4*Math.sin(t*5))}
    const B=this.boss;if(B&&this.bossState==='fight'){const w=this.touch?140:180,x0=(W-w)/2,y0=H-14;drawText(g,this.def.boss.name+(this.ng?' +'+this.ng:''),x0,y0-7,0xd8d0ee);g.fillStyle(0x7a5a24);g.fillRect(x0-2,y0-2,w+4,7);g.fillStyle(0x07050f);g.fillRect(x0-1,y0-1,w+2,5);g.fillStyle(0x2a1020);g.fillRect(x0,y0,w,3);g.fillStyle(0xb8302a);g.fillRect(x0,y0,Math.max(0,Math.round(w*B.hp/B.hpMax)),3);if(B.kind!=='warden'){g.fillStyle(0xd8b060);for(const k of[.66,.33])g.fillRect(x0+Math.round(w*k),y0-1,1,5)}}
@@ -1014,7 +1029,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const hd=V.clear?'STAGE CLEAR':'VICTORY ACHIEVED';drawText(g,hd,Math.round(W/2-textW(hd,2)/2),40,0xffe2a8,2,0x1a0d22,a);glow(ga,W/2,46,50,C.f2,.08*a);
   const sub=this.def.boss.card||'THE FROST WARDEN IS ASH. THE GATE STANDS OPEN.';drawText(g,sub,Math.round(W/2-textW(sub)/2),60,0x8a86c0,1,null,a);
   const fmt=v=>{v=Math.floor(v);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`},ts=`TIME ${fmt(this.playT)}   BEST ${fmt(this.best||this.playT)}${this.bestNew?' NEW!':''}`;
-  [[ts,72],['DEATHS '+this.sv.deaths,81],['SOULS '+this.souls,90],['EMBERS FREED '+this.cages.filter(c=>c.freed).length+'/'+this.cages.length,99],['HIDDEN ROOMS '+this.covers.filter(c=>c.found).length+'/'+this.covers.length,108]].forEach(([s,y])=>drawText(g,s,Math.round(W/2-textW(s)/2),y,0xd8d0ee,1,null,a));
+  [[ts,72],['DEATHS '+this.sv.deaths,81],['SOULS '+this.souls,90],['EMBERS FREED '+this.cages.filter(c=>c.freed).length+'/'+this.cages.length+(this.ng?' (NG+'+this.ng+')':''),99],['HIDDEN ROOMS '+this.covers.filter(c=>c.found).length+'/'+this.covers.length,108]].forEach(([s,y])=>drawText(g,s,Math.round(W/2-textW(s)/2),y,0xd8d0ee,1,null,a));
   if(V.t>.8){const o=[V.clear?'ONWARD: '+STAGE_DEFS[this.def.next].name:'JOURNEY ON (NG+'+(this.ng+1)+')','RETURN TO TITLE'];o.forEach((s,i)=>{const sel=V.sel===i,str=(sel?'> ':'  ')+s;drawText(g,str,Math.round(W/2-textW(str)/2),124+i*11,sel?0xffe2a8:0x6b67a0)})}}}
 // ===================================================================
 window.__G=new Phaser.Game({type:Phaser.AUTO,width:W,height:H,pixelArt:true,roundPixels:true,backgroundColor:'#0b081d',parent:document.body,

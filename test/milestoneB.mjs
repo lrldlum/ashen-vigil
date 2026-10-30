@@ -105,7 +105,7 @@ await pg.evaluate(()=>{window.S=()=>__G.scene.getScene('stage')});await pg.scree
 await ev(()=>{const s=S();s.cages.filter(c=>!c.freed).forEach(c=>s.freeCage(c))});
 await ev(()=>{const s=S();s.pb.setPosition(3020,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000});
 await ev(()=>{S().boss.hp=0});await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});await pg.screenshot({path:S+'30_victory_embers.png'});
-R.best=await ev(()=>({best:+localStorage.getItem('ashenVigil.best'),stageEnemiesAlive:S().enemies.filter(e=>!e.dead&&e.b.x<2980).length}));ok('best_time_saved',R.best.best>0,R.best);ok('stage_enemies_frozen_at_gate',R.best.stageEnemiesAlive===0,R.best);
+R.best=await ev(()=>({best:+localStorage.getItem('ashenVigil.best.ramparts'),stageEnemiesAlive:S().enemies.filter(e=>!e.dead&&e.b.x<2980).length}));ok('best_time_saved',R.best.best>0,R.best);ok('stage_enemies_frozen_at_gate',R.best.stageEnemiesAlive===0,R.best);
  R.victory=await ev(()=>({embers:S().cages.filter(c=>c.freed).length,rooms:S().covers.filter(c=>c.found).length}));ok('victory_lists_embers',R.victory.embers===8,R.victory);
 await pg.close();
 // r2 extras: favicon, parry flash + pop, hero rim, fg/mist layers
