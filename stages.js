@@ -98,7 +98,7 @@ STAGE_DEFS.cathedral=composeStage({pre:'s2',name:'CATHEDRAL OF THE PALE CHOIR',w
   bonfire:1560,bonfireName:'CHANCEL VIGIL',next:'cinderdeep',
   pal:{sky0:'#0a0f1c',sky1:'#0f1626',sky2:'#152034',sky3:'#1c2c46',sky4:'#263a5a',far:'#121a2e',farW:'#2a3d63',farW2:'#5a7aaa',near:'#0a0f1e',nearW:'#2e4a78',
    gTop:'#c8def4',g1:'#6c80a8',g2:'#5a6c92',gM:'#2c385a',gD:'#3a4870',b0:'#0f1830',bM:'#070b16',bH:'#1a2846',mist:'rgba(170,200,240,.14)',haze1:'rgba(30,44,74,.55)',haze2:'rgba(40,58,92,.6)',mist2:'rgba(130,160,210,.09)',pil:0x0f1830,pilH:0x2a3c64},
-  plats:[[560,128,48],[1450,120,48],[2120,118,48],[2560,112,40],[3030,108,44],[3266,108,44]],
+  plats:[[560,128,48],[1450,120,48],[2120,118,48],[2560,112,40],[3030,116,40],[3270,116,40],[3130,80,80]],// arena: 2-tier choir loft the Cantor glides to
   items:[{id:'i2_herald',x:1460,y:156,item:'herald'},{id:'i2_robe',x:620,y:156,item:'robe'},{id:'i2_dagger',x:2200,y:156,item:'dagger'},{id:'i2_sword',x:2160,y:300,item:'longsword'}],puddles:[[120,18],[640,14],[1500,22],[2240,16],[3080,24],[3236,16]],
   shafts:[420,980,1480,2050,2600,3160],spikes:[[2640,148,2664,156]],
   boss:{kind:'cantor',name:'THE PALE CANTOR',sub:'LORD OF THE PALE CHOIR',slain:'CANTOR SILENCED',hp:54,card:'THE CHOIR FALLS SILENT. THE DEEP BURNS BELOW.',
@@ -110,7 +110,7 @@ STAGE_DEFS.cinderdeep=composeStage({pre:'s3',name:'THE BURNING CINDERDEEP',world
   bonfire:1760,bonfireName:'FORGE VIGIL',next:null,
   pal:{sky0:'#110505',sky1:'#1a0807',sky2:'#260b08',sky3:'#38120a',sky4:'#521c0c',far:'#1c0907',farW:'#5a2010',farW2:'#b04a18',near:'#100404',nearW:'#6a2410',
    gTop:'#d07040',g1:'#5a2c22',g2:'#4a231c',gM:'#22100c',gD:'#331611',b0:'#1a0907',bM:'#0b0403',bH:'#2a100c',lava:1,mist:'rgba(255,110,40,.10)',haze1:'rgba(70,20,10,.55)',haze2:'rgba(110,34,12,.6)',mist2:'rgba(200,70,30,.08)',pil:0x1a0907,pilH:0x3a160e},
-  plats:[[860,124,48],[1460,118,48],[2440,112,40],[3100,116,36],[3220,116,36]],
+  plats:[[860,124,48],[1460,118,48],[2440,112,40],[3100,116,36],[3220,116,36]],lavaPits:[[3040,3084],[3150,3196],[3262,3300]],// arena: pits erupt in phase 2
   items:[{id:'i3_plate',x:1700,y:156,item:'knight'},{id:'i3_leather',x:1100,y:156,item:'leather'},{id:'i3_wand',x:2480,y:156,item:'wand'},{id:'i3_gs',x:560,y:300,item:'greatsword'}],puddles:[],
   spikes:[[820,148,844,156],[1540,148,1564,156],[2580,148,2604,156]],
   boss:{kind:'king',name:'VULCREST THE CINDER KING',sub:'LORD OF THE BURNING DEEP',slain:'THE KING IS ASH',hp:60,card:'THE CINDER KING IS ASH. THE FIRST FLAME WAITS.',
@@ -118,3 +118,15 @@ STAGE_DEFS.cinderdeep=composeStage({pre:'s3',name:'THE BURNING CINDERDEEP',world
   enemies:[['hollow',200],['imp',520],['knight',700],['wraith',1000],['hollow',1250],['imp',1400],['wraith',1520],['hollow',2010],['knight',2150],['wraith',2420],['imp',2660],['hollow',2800]]},
  [['crypt',300],['pillarRoom',900],['ossuary',1950,'CINDER TRIAL'],['tower',2200,'FURNACE RUN',10],['ledge',2896],['lavaRise',1020],['forge',2420]],
  {hollow:'husk',knight:'cinderknight',wraith:'wisp',imp:'magmaw'});
+
+// ---------------------------------------------------------------------------
+// Milestone E: the Ash Shrine hub (reached between stages) + lore stones in every stage
+STAGE_DEFS.shrine=composeStage({pre:'s0',name:'THE ASH SHRINE',world:640,top:-204,bottom:364,theme:'shrine',hub:1,arena:[9000,9100],
+  bonfire:200,bonfireName:'ASH SHRINE',next:null,keeper:300,exit:596,
+  pal:{sky0:'#0c0a12',sky1:'#110e18',sky2:'#17131f',sky3:'#1e1928',sky4:'#282133',far:'#15111c',farW:'#3a2f40',farW2:'#7a6070',near:'#0d0a12',nearW:'#3a2a30',
+   gTop:'#b8a898',g1:'#5e5560',g2:'#4e4652',gM:'#262029',gD:'#342c38',b0:'#16121c',bM:'#09070c',bH:'#221c28',mist:'rgba(200,180,170,.10)',haze1:'rgba(40,30,40,.55)',haze2:'rgba(60,44,52,.6)',mist2:'rgba(160,140,140,.07)',pil:0x16121c,pilH:0x2e2636},
+  plats:[[420,124,48],[500,100,40]],items:[{id:'i0_talisman',x:520,y:100,item:'talisman'}],puddles:[[90,14],[440,16]],enemies:[],
+  lore:[{id:'shrine1',x:120,y:156}]},[],{});
+STAGE_DEFS.ramparts.lore=[{id:'r1',x:420,y:156},{id:'r2',x:1300,y:300},{id:'r3',x:2930,y:156}];
+STAGE_DEFS.cathedral.lore=[{id:'c1',x:300,y:156},{id:'c2',x:600,y:300},{id:'c3',x:1640,y:156}];
+STAGE_DEFS.cinderdeep.lore=[{id:'d1',x:150,y:156},{id:'d2',x:2592,y:252},{id:'d3',x:2930,y:156}];

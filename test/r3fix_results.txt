@@ -1,15 +1,15 @@
-PASS chain_top_roofA_reaches_slab_v0 {"land":{"x":382,"y":20},"top":18,"ok":true}
-PASS chain_top_roofA_reaches_slab_v1 {"land":{"x":383,"y":20},"top":18,"ok":true}
+PASS chain_top_roofA_reaches_slab_v0 {"land":{"x":383,"y":20},"top":18,"ok":true}
+PASS chain_top_roofA_reaches_slab_v1 {"land":{"x":382,"y":20},"top":18,"ok":true}
 PASS chain_top_roofA_reaches_slab_v2 {"land":{"x":383,"y":20},"top":18,"ok":true}
-PASS ledge_chain_ramparts_reaches_ember_slab_v0 {"land":{"x":2911,"y":20},"top":18,"ok":true}
-PASS ledge_chain_ramparts_reaches_ember_slab_v1 {"land":{"x":2910,"y":20},"top":18,"ok":true}
+PASS ledge_chain_ramparts_reaches_ember_slab_v0 {"land":{"x":2910,"y":20},"top":18,"ok":true}
+PASS ledge_chain_ramparts_reaches_ember_slab_v1 {"land":{"x":2911,"y":20},"top":18,"ok":true}
 PASS ledge_chain_ramparts_reaches_ember_slab_v2 {"land":{"x":2911,"y":20},"top":18,"ok":true}
-PASS ledge_chain_cathedral_reaches_ember_slab_v0 {"land":{"x":2910,"y":20},"top":18,"ok":true}
+PASS ledge_chain_cathedral_reaches_ember_slab_v0 {"land":{"x":2911,"y":20},"top":18,"ok":true}
 PASS ledge_chain_cathedral_reaches_ember_slab_v1 {"land":{"x":2911,"y":20},"top":18,"ok":true}
-PASS ledge_chain_cathedral_reaches_ember_slab_v2 {"land":{"x":2911,"y":20},"top":18,"ok":true}
-PASS ledge_chain_cinderdeep_reaches_ember_slab_v0 {"land":{"x":2910,"y":20},"top":18,"ok":true}
+PASS ledge_chain_cathedral_reaches_ember_slab_v2 {"land":{"x":2910,"y":20},"top":18,"ok":true}
+PASS ledge_chain_cinderdeep_reaches_ember_slab_v0 {"land":{"x":2911,"y":20},"top":18,"ok":true}
 PASS ledge_chain_cinderdeep_reaches_ember_slab_v1 {"land":{"x":2911,"y":20},"top":18,"ok":true}
-PASS ledge_chain_cinderdeep_reaches_ember_slab_v2 {"land":{"x":2910,"y":20},"top":18,"ok":true}
+PASS ledge_chain_cinderdeep_reaches_ember_slab_v2 {"land":{"x":2911,"y":20},"top":18,"ok":true}
 PASS ember_run_gate_closed_until_start_and_clear_saved {"before":[true],"started":1,"open":true,"done":1,"saved":["c_run"]}
 PASS no_page_errors []
 PASS 14 / 14

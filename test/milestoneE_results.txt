@@ -1,0 +1,15 @@
+PASS descriptions_for_every_item {"n":22,"missing":[],"maxLen":47,"glyphs":[]}
+PASS items_menu_lists_inventory_spells_flask {"mode":"items","list":["longsword","wand","knight","ice","bolt","dome","flask"]}
+PASS lore_scattered_and_readable {"total":10,"per":{"ramparts":3,"cathedral":3,"cinderdeep":3,"shrine":1},"view":"r1","saved":["r1"],"closed":true}
+PASS hub_reached_between_stages {"opts":["ONWARD: CATHEDRAL OF THE PALE CHOIR","REST AT THE ASH SHRINE","RETURN TO TITLE"],"sid":"shrine","next":"cathedral","lords":["warden"],"keeper":300,"bossState":"dead","enemies":0}
+PASS keeper_dialogue_changes_with_progress {"t1":{"mode":"talk","tier":1,"line":"THE FROST WARDEN IS ASH. I FELT THE CHILL LIFT."},"t0":{"tier":0,"line":"AH. ANOTHER UNKINDLED, STIRRING FROM THE ASH."},"t2":{"tier":2},"t3":{"tier":3}}
+PASS merchant_sells_items_for_souls {"spent":3800,"inv":["talisman","lspear"],"flaskBonus":1,"flasks":1,"saved":true,"poor":"YOU LACK THE SOULS, ASHEN ONE."}
+PASS hub_leveling {"opts":["LEVEL UP","EQUIPMENT","ITEMS AND SPELLS","LEAVE"],"l0":9,"l1":10,"souls":2697}
+PASS shrine_exit_and_bonfire_travel {"exit":{"sid":"cathedral","lords":["warden"],"inv":true},"opts":["LEVEL UP","EQUIPMENT","ITEMS AND SPELLS","TRAVEL TO THE SHRINE","LEAVE"],"back":{"sid":"shrine","next":"cathedral","ret":true},"back2":{"sid":"cathedral","x":1574,"bonfire":1560}}
+PASS faith_miracles_scale_with_fth {"inv":["heal","lspear"],"off":"talisman","heal16":45,"heal40":66,"ls16":2.48,"ls40":3.61,"melee":1.24,"bless":13.7,"blessed":1.66,"noTal":{"fp0":50,"fp1":50.79998000000007,"state":"idle"}}
+PASS herald_and_cleric_start_with_faith_heal {"herald":["talisman",["heal"]],"cleric":["talisman",["heal","lspear"]]}
+PASS distinct_lord_arenas {"loft":{"perch":true,"y":80,"plats":[116,116,80]},"lava":{"pits":3,"phase":2,"hurt":11}}
+PASS two_endings_with_cinematic_and_card {"final":["APPROACH THE FIRST FLAME","RETURN TO TITLE"],"choice":{"phase":"choose","opts":["REKINDLE THE FIRST FLAME","LET THE FLAME FADE"]},"fade":{"kind":"fade","endings":["fade"]},"ng":{"sid":"ramparts","ng":1,"endings":["fade"],"lore":0},"rek":{"kind":"rekindle","card":true,"endings":["fade","rekindle"]},"title":true}
+PASS keeper_remembers_endings 3
+PASS no_page_errors_no_external_requests {"errs":[],"ext":[]}
+PASS 14 / 14

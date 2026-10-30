@@ -7,12 +7,12 @@ const CLASSES={
  knight:    {name:'KNIGHT',    lvl:9, s:[12,11,15,13,12, 9, 9, 7],main:'longsword',off:'wand',  armor:'knight', desc:'STEADFAST PLATE. A LONGSWORD AND A VIGIL WAND.'},
  mercenary: {name:'MERCENARY', lvl:8, s:[11,12,10,10,16,10, 8, 9],main:'dagger',   off:null,    armor:'leather',desc:'FAST BLADE, LIGHT LEATHER.'},
  warrior:   {name:'WARRIOR',   lvl:7, s:[14, 6,12,16, 9, 8, 9,11],main:'greatsword',off:null,   armor:'iron',   desc:'A GREATSWORD AND HEAVY IRON.'},
- herald:    {name:'HERALD',    lvl:9, s:[12,10, 9,12,11, 8,13,11],main:'spear',    off:null,    armor:'herald', desc:'SPEAR AND BLESSED MAIL. FAITH MENDS.'},
+ herald:    {name:'HERALD',    lvl:9, s:[12,10, 9,12,11, 8,13,11],main:'spear',    off:'talisman',  armor:'herald', desc:'SPEAR, TALISMAN AND BLESSED MAIL. KNOWS HEAL.',extra:['heal']},
  thief:     {name:'THIEF',     lvl:5, s:[10,11,10, 9,13,10, 8,14],main:'bow',      off:null,    armor:'leather',desc:'A SHORT BOW. A KNIFE IN THE PACK.',extra:['dagger']},
  assassin:  {name:'ASSASSIN',  lvl:10,s:[10,14,11,10,14,11, 9,10],main:'dagger',   off:'wand',  armor:'leather',desc:'KNIFE IN ONE HAND, WAND IN THE OTHER.'},
  sorcerer:  {name:'SORCERER',  lvl:6, s:[ 9, 9, 7, 7,12,16, 7,12],main:'staff',    off:null,    armor:'robe',   desc:'A CRYSTAL STAFF. FRAIL, BUT THE FROST OBEYS.'},
  pyromancer:{name:'PYROMANCER',lvl:8, s:[11,12,11,12, 9,14,14, 7],main:'axe',      off:'wand',  armor:'robe',   desc:'HAND AXE AND AN EMBER WAND.'},
- cleric:    {name:'CLERIC',    lvl:7, s:[10, 9, 7,12, 8, 7,16,13],main:'axe',      off:null,    armor:'herald', desc:'A HEAVY MACE-AXE. FLASKS HEAL DEEPER.'},
+ cleric:    {name:'CLERIC',    lvl:7, s:[10, 9, 7,12, 8, 7,16,13],main:'axe',      off:'talisman',  armor:'herald', desc:'MACE-AXE AND TALISMAN. HEAL AND LIGHTNING SPEAR.',extra:['heal','lspear']},
  deprived:  {name:'DEPRIVED',  lvl:1, s:[10,10,10,10,10,10,10,10],main:'dagger',   off:null,    armor:'none',   desc:'NOTHING BUT A BROKEN KNIFE.'}};
 const CLASS_ORDER=['knight','mercenary','warrior','herald','thief','assassin','sorcerer','pyromancer','cleric','deprived'];
 // scaling letters -> coefficient; stat bonus curve saturates at 40, soft cap to 99
@@ -42,7 +42,9 @@ const WEAPONS={
  staff:{name:'CRYSTAL STAFF',type:'staff',hand:'main',base:.45,req:{int:10},sc:{int:'D'},w:2,swL:11,cat:1,buff:160,csc:'A',
   light:{t:.36,h0:.1,h1:.18,reach:12,w:20,h:16,mul:1,cost:14,lunge:20,n:1,stab:1},
   heavy:{t:.56,h0:.24,h1:.32,reach:12,w:22,h:22,mul:1.5,cost:24,lunge:30,poise:1,arc:{r:14,th:3,sweep:160,trail:0}}},
- wand:{name:'VIGIL WAND',type:'wand',hand:'off',base:0,req:{int:8},sc:{},w:1,cat:1,buff:100,csc:'C'}};
+ wand:{name:'VIGIL WAND',type:'wand',hand:'off',base:0,req:{int:8},sc:{},w:1,cat:1,buff:100,csc:'C'},
+ // milestone E: faith catalyst for miracles (off hand); miracle power scales with FTH
+ talisman:{name:'EMBER TALISMAN',type:'talisman',hand:'off',base:0,req:{fth:10},sc:{},w:.5,mir:1,buff:100,csc:'B'}};
 const ARMORS={
  none:{name:'NOTHING',w:0,poise:0,abs:0,pal:{b:0x8a7e88,s:0x4a4050,h:0xb8acb8,c:0x3a3040}},
  robe:{name:'CINDER ROBE',w:3,poise:1,abs:.06,pal:{b:0x6a4ab8,s:0x3a2470,h:0xa088e8,c:0x2a1a60}},
@@ -64,9 +66,10 @@ const RPG={
  derive(st,eq){const main=WEAPONS[eq.main],off=WEAPONS[eq.off],arm=ARMORS[eq.armor||'none'];
   const load=25+st.vit*1.5,w=(main?main.w:0)+(off?off.w:0)+arm.w,ratio=w/load;
   const roll=ratio<.3?{kind:'LIGHT',t:.32,v:215,i0:.03,i1:.26,cost:22}:ratio<.7?{kind:'MEDIUM',t:.36,v:170,i0:.04,i1:.24,cost:25}:ratio<=1?{kind:'HEAVY',t:.5,v:110,i0:.06,i1:.2,cost:32}:{kind:'OVERLOADED',t:0,v:0,i0:0,i1:0,cost:0};
-  const cat=main&&main.cat?main:off&&off.cat?off:null;
+  const cat=main&&main.cat?main:off&&off.cat?off:null,tal=off&&off.mir?off:main&&main.mir?main:null;
   return{hp:Math.round(100+(st.vig-10)*5),fp:Math.round(80+(st.int+st.fth-18)*2),st:Math.round(100+(st.end-10)*3),load:+load.toFixed(1),w:+w.toFixed(1),ratio,roll,
-   poise:arm.poise,abs:arm.abs,ar:this.ar(main,st),cat,spell:this.spellBuff(cat,st),heal:40+Math.max(0,(st.fth-10)*1.5),soulMul:1+Math.max(0,st.lck-10)*.02,weak:main&&!this.meets(main,st)}},
+   poise:arm.poise,abs:arm.abs,ar:this.ar(main,st),cat,spell:this.spellBuff(cat,st),heal:40+Math.max(0,(st.fth-10)*1.5),soulMul:1+Math.max(0,st.lck-10)*.02,weak:main&&!this.meets(main,st),tal,mir:this.mirBuff(tal,st)}},
+ mirBuff(tal,st){if(!tal||!this.meets(tal,st))return 0;return tal.buff/100*(1+SCALE[tal.csc]*statCurve(st.fth)*.8)},
  letters(wp){return Object.entries(wp.sc||{}).map(([k,l])=>k.toUpperCase()+' '+l).join(' ')},
  reqs(wp){return Object.entries(wp.req||{}).map(([k,v])=>k.toUpperCase()+' '+v).join(' ')}};
 if(typeof module!=='undefined')module.exports={STATS,CLASSES,CLASS_ORDER,WEAPONS,ARMORS,SPELLS,RPG};

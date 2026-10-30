@@ -90,7 +90,10 @@ async function stage(sid){const T=ST[sid],p=T.pre,sh=(n)=>pg.screenshot({path:`$
  await ev(()=>{S().boss.hp=0});await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});
  r.card=await ev(()=>({clear:S().victory.clear,embers:S().cages.filter(c=>c.freed).length,next:S().def.next,best:+localStorage.getItem('ashenVigil.best.'+S().sid)}));await sh('13_victory_card');
  ok(sid+'_lord_slain_card',r.card.best>0&&(sid==='cathedral'?r.card.clear:!r.card.clear),r.card);
- R[sid]=r;await pg.keyboard.press('Enter');await wait(1500);await ready()}
+ R[sid]=r;await pg.keyboard.press('Enter');
+ // milestone E: the final card leads to the First Flame choice -> ending cinematic -> end card -> JOURNEY ON (NG+)
+ if(sid==='cinderdeep'){await wait(400);await pg.keyboard.press('Enter');await pg.waitForFunction(()=>__G.scene.isActive('ending'),null,{timeout:8000});await wait(1200);await pg.keyboard.press('Enter');await wait(600);await pg.keyboard.press('Enter')}
+ await wait(1500);await ready()}
 await stage('cathedral');
 R.link23=await ev(()=>({sid:S().sid,freed:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).freed.filter(i=>i.startsWith('s2_')).length}));
 ok('link_stage2_to_stage3_keeps_progress',R.link23.sid==='cinderdeep'&&R.link23.freed>=5,R.link23);

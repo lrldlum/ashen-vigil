@@ -151,6 +151,7 @@ function drawDome(ga,x,gy,r,a,t,seed){x=Math.round(x);r=Math.max(2,Math.round(r)
   const h=(4+R()*r*.2)*Math.min(1,a*1.4);drawSpike(ga,null,sx,sy,h,1.2+R()*1.4,1,(R()-.5)*.8)}
  for(let k=0;k<4;k++)if(R()<.7)sparkle(ga,x+(R()*2-1)*r*.8,gy-R()*r*.8,2,C.ice1,a)}
 // ---------- hero: 10x16 figure rasterised per frame into a pixel buffer, then 1px dark outline (Tester r1 visual) ----------
+const itemName=id=>(WEAPONS[id]||ARMORS[id]||SPELLS[id]||MIRACLES[id]||{name:id==='flask'?'EMBER FLASK':String(id).toUpperCase()}).name;
 const HB_W=40,HB_H=34,HB_OX=20,HB_OY=29;
 const HC={o:0x160810,b:C.pl,s:C.plS,h:C.plH,c:C.cape,c2:0x4a120c,st:C.steel,sd:0x8a84a8,gd:C.f1,eye:0x2a0e06,staff:0x6a4a3a,fl:0xffd04a};
 class HeroBuf{constructor(){this.a=new Int32Array(HB_W*HB_H);this.o=new Int32Array(HB_W*HB_H)}
@@ -272,7 +273,7 @@ class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.
 // ===================================================================
 class Boot extends Phaser.Scene{constructor(){super('boot')}
  preload(){['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry','menu','pickup','chime','crumble','clang','slam','lava','heal','thunder','buff','talk','fanfare'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
- create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
+ create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(Q.get('ending'))return this.scene.start('ending',{kind:Q.get('ending')});if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
 // shared parallax
 function makeBG(scene,sx=''){const L=[['sky',0],['far',.15],['near',.4]].map(([k,f])=>[scene.add.tileSprite(0,0,W,H,k+sx).setOrigin(0).setScrollFactor(0).setDepth(-10+f),f]);
  const fn=(cx,cy=0)=>L.forEach(([s,f])=>{s.tilePositionX=cx*f;s.y=f?clamp(Math.round(-cy*f*.6),-50,60):0});fn.L=L;return fn}
@@ -343,7 +344,7 @@ const ELOOK={acolyte:{c:0x8a96b8,s:0x3a4466,rim:0xd8f2ff,eye:0x9fd8ff},sentinel:
  chorister:{c:0xb8c4e0,l:0xffffff,glow:0x9fa8ff,shot:'note'},wisp:{c:0xa02a08,l:0xffd04a,glow:0xff7a1a,shot:'fire'},magmaw:{c:0xffd04a,d:0x6a1408,rim:0xfff0a0}};
 const TBTN=[{k:'l',x:22,y:144,r:13,lab:'<'},{k:'r',x:56,y:144,r:13,lab:'>'},{k:'up',x:39,y:120,r:10,lab:'^'},{k:'dn',x:39,y:163,r:8,lab:'V'},
  {k:'jump',x:298,y:148,r:13,lab:'JUMP'},{k:'atk',x:270,y:162,r:12,lab:'ATK'},{k:'roll',x:270,y:135,r:11,lab:'ROLL'},{k:'parry',x:244,y:162,r:10,lab:'PRY'},{k:'hvy',x:244,y:138,r:9,lab:'HVY'},
- {k:'flask',x:302,y:34,r:9,lab:'EST'},{k:'ice',x:280,y:34,r:9,lab:'ICE'},{k:'bolt',x:258,y:34,r:9,lab:'BLT'},{k:'dome',x:236,y:34,r:9,lab:'DOM'},{k:'pause',x:160,y:10,r:7,lab:'II'}];
+ {k:'flask',x:302,y:34,r:9,lab:'EST'},{k:'ice',x:280,y:34,r:9,lab:'ICE'},{k:'bolt',x:258,y:34,r:9,lab:'BLT'},{k:'dome',x:236,y:34,r:9,lab:'DOM'},{k:'mir',x:214,y:34,r:9,lab:'MIR'},{k:'pause',x:160,y:10,r:7,lab:'II'}];
 class Stage extends Phaser.Scene{constructor(){super('stage')}
  init(d){this.fresh=d.fresh}
  create(){
@@ -398,13 +399,14 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.player={x:sx,y:GY,f:1,hp:100,hpMax:100,fp:80,fpMax:80,st:100,stMax:100,stDelay:0,stFlash:0,state:'idle',t:0,inv:0,run:0,coy:0,buf:0,atkBuf:0,flash:0,dead:false,flasks:TUNE.flaskN,healLeft:0,combo:0,land:0,dropT:0,wall:0,wallC:0,wallLock:0,spikeT:0,climbCd:0,safe:{x:sx,y:GY}};
   this.souls=sv.souls||0;this.stain=sv.stain||null;this.soulPop=null;this.applyBuild(true);this.arrows=[];this.menu=null;
   this.items=(D.items||[]).filter(it=>!sv.picked.includes(it.id)).map(it=>({...it,bob:rnd(0,6)}));
+  sv.lore=sv.lore||[];sv.lords=sv.lords||[];sv.endings=sv.endings||[];this.lore=(D.lore||[]).map(l=>({...l,read:sv.lore.includes(l.id)}));this.loreView=null;this.player.flasks=TUNE.flaskN+(sv.flaskBonus||0);if(D.hub){this.bonfire.lit=true;sv.bonfire=true}
   this.enemies=[];
   D.enemies.forEach(([k,x,y])=>this.spawnEnemy(k,x,y));
   this.shots=[];this.spells=[];this.bolts=[];this.novas=[];this.flames=[];
-  this.boss=null;this.bossState=sv.bossDown?'dead':'sleep';this.cine=null;this.bars=0;this.victory=null;this.paused=false;this.flashF=0;
+  this.boss=null;this.bossState=sv.bossDown||!D.boss?'dead':'sleep';this.cine=null;this.bars=0;this.victory=null;this.paused=false;this.flashF=0;
   this.cam=this.cameras.main;this.cam.setBounds(0,D.top,WORLD,D.bottom-D.top);this.camY=clamp(GY-156,D.top,D.bottom-H);this.camTY=this.camY;this.cam.scrollY=this.camY;this.cam.startFollow(this.pb,true,.12,0,0,0);this.camOff=0;
-  this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,SPACE,SHIFT,ENTER');
-  this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){if(e.key==='ArrowUp'||e.key==='ArrowDown')V.sel^=1;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
+  this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,G,T,R,SPACE,SHIFT,ENTER');
+  this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
   this.touch=Q.has('touch')||!!(this.sys.game.device.input.touch);this.tPrev={};this.tTap={};
   if(this.touch)this.input.addPointer(4);
   this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
@@ -422,8 +424,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  canCast(k){const P=this.player;if(!this.build.cat){this.pop('NO CATALYST',P.x,P.y-24,0xd8402a);return false}
   if(this.sv.stats.int<SPELLS[k].int){this.pop('NEED INT '+SPELLS[k].int,P.x,P.y-24,0xd8402a);return false}
   if(!RPG.meets(this.build.cat,this.sv.stats)){this.pop('CATALYST TOO HEAVY FOR MIND',P.x,P.y-24,0xd8402a);return false}return true}
- shootArrow(m){const P=this.player;P.hitDone=true;const ar=this.build.ar*m.mul;this.arrows.push({x:P.x+P.f*8,y:P.y-10,vx:P.f*m.arrow,t:0,dmg:ar,pierce:!!m.pierce,hit:[]});this.sfx('shot',.3);this.fx.spark(P.x+P.f*8,P.y-10,4,0xffe2a8,40)}
- updateArrows(dt){for(let i=this.arrows.length-1;i>=0;i--){const a=this.arrows[i];a.t+=dt;a.x+=a.vx*dt;a.vy=(a.vy||0)+40*dt;a.y+=a.vy*dt;let gone=a.t>1.4||this.lv.kAt(a.x,a.y)===K_SOLID;
+ shootArrow(m){const P=this.player;P.hitDone=true;const ar=this.build.ar*m.mul*(P.bless>0?P.blessMul:1);this.arrows.push({x:P.x+P.f*8,y:P.y-10,vx:P.f*m.arrow,t:0,dmg:ar,pierce:!!m.pierce,hit:[]});this.sfx('shot',.3);this.fx.spark(P.x+P.f*8,P.y-10,4,0xffe2a8,40)}
+ updateArrows(dt){for(let i=this.arrows.length-1;i>=0;i--){const a=this.arrows[i];a.t+=dt;a.x+=a.vx*dt;a.vy=(a.vy||0)+(a.ls?0:40)*dt;a.y+=a.vy*dt;let gone=a.t>1.4||this.lv.kAt(a.x,a.y)===K_SOLID;
    for(const e of this.enemies){if(gone||e.dead||a.hit.includes(e))continue;const bb=e.b.body;if(Math.abs(bb.center.x-a.x)<bb.width/2+2&&Math.abs(bb.center.y-a.y)<bb.height/2+2){a.hit.push(e);this.damageEnemy(e,e.state==='stag'?a.dmg*TUNE.ripMul:a.dmg,Math.sign(a.vx));if(!a.pierce)gone=true}}
    const B=this.boss;if(!gone&&B&&this.bossState==='fight'&&!a.hit.includes(B)&&Math.abs(B.x-a.x)<12&&a.y>B.y-44&&a.y<B.y){a.hit.push(B);this.damageBoss(a.dmg*1.5);if(!a.pierce)gone=true}
    for(const c of this.cages)if(!gone&&!c.freed&&Math.abs(c.x-a.x)<8&&Math.abs(c.y-8-a.y)<10){gone=true;c.locked?this.pop('SEALED',c.x,c.y-22,0x9fb8e8):this.freeCage(c)}
@@ -447,7 +449,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const T=this.touchState(),sh=K.SHIFT.isDown,xP=J(K.X),upP=J(K.UP)|J(K.E);
   return{l:K.LEFT.isDown||T.l,r:K.RIGHT.isDown||T.r,up:K.UP.isDown||T.up,dn:K.DOWN.isDown||T.dn,jump:K.Z.isDown||K.SPACE.isDown||T.jump,jumpP:J(K.Z)|J(K.SPACE)|T.jumpP,
    atkP:(xP&&!sh)||T.atkP,parryP:J(K.A)||(xP&&sh)||T.parryP,rollP:J(K.C)||T.rollP,iceP:J(K.V)||T.iceP,boltP:J(K.S)||T.boltP,domeP:J(K.D)||T.domeP,
-   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP}}
+   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP,healP:J(K.G),lspearP:J(K.T),blessP:J(K.R),mirP:T.mirP}}
  demoInput(){const P=this.player,A=this.ai,o={};A.t+=this.dt;A.roll-=this.dt;A.bolt-=this.dt;
   let near=null,nd=1e9;for(const e of this.enemies)if(!e.dead){const d=e.b.x-P.x;if(d>-20&&d<nd){nd=d;near=e}}
   const B=this.boss&&this.bossState==='fight'?this.boss:null;
@@ -476,7 +478,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(this.victory){this.victory.t+=dt;this.victoryInput();this.fx.update(dt);this.render(dt);return}
   this.t+=dt;if(!this.cine)this.playT+=dt;
   if(this.hs>0){this.hs-=dt;if(this.hs<=0)this.physics.resume();this.render(0);return}
-  const P=this.player,b=this.pb;let inp=this.cine||P.dead?{}:this.readInput();if(this.menu){this.menu.t+=dt;if(this.menu.mode==='main'&&(inp.l||inp.r)&&this.menu.t>.2)this.menu=null;else{this.menuInput(inp);inp={}}}this.inp=inp;
+  const P=this.player,b=this.pb;let inp=this.cine||P.dead?{}:this.readInput();if(this.menu){this.menu.t+=dt;if(this.menu.mode==='main'&&(inp.l||inp.r)&&this.menu.t>.2)this.menu=null;else{this.menuInput(inp);inp={}}}
+  else if(this.loreView){this.loreView.t+=dt;if(this.loreView.t>.35&&(inp.restP||inp.atkP||inp.jumpP||inp.rollP||inp.l||inp.r))this.loreView=null;inp={}}
+  else if(inp.restP&&this.pb.body.blocked.down&&this.interact())inp={...inp,restP:0};this.inp=inp;
   P.x=b.x;P.y=b.body.bottom;
   this.updatePlayer(dt,inp);this.updateArrows(dt);this.updatePickups();this.updateLevel(dt);this.updateEnemies(dt);this.updateBoss(dt);this.updateSpells(dt);this.updateCine(dt);
   // bloodstain: recover souls (Tester r1 P1 #2)
@@ -548,6 +552,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    for(let si=0;si<(D.shafts||[]).length;si++){const sx=D.shafts[si];if(sx<cX-120||sx>cX+W+60)continue;const top=Math.max(cY,-200),c=cols[si%3],pulse=.8+.2*Math.sin(t*.7+si);
     for(let y=top;y<GY;y+=2){const k=(y-top)/(GY-top),x0=Math.round(sx+(y-top)*.35),w=Math.round(10+k*14);if(this.lv.kAt(x0+w/2,y)===K_SOLID)continue;ga.fillStyle(c,.045*pulse*(1-k*.4));ga.fillRect(x0,y,w,2);if((y>>1)%7===0)px(ga,x0+((y*13+Math.floor(t*8))%w),y,0xffffff,.25)}
     this.light(sx+(GY-top)*.35,GY-4,40,c,.35*pulse)}}
+  if(D.lavaPits&&this.boss&&this.boss.kind==='king'){const on=this.boss.phase>=2;for(const[a,b]of D.lavaPits){if(on){g.fillStyle(0x8a1a08);g.fillRect(a,GY,b-a,3);for(let x=a;x<b;x++){const h=1+((x*7+Math.floor(t*10))%3);g.fillStyle(h>2?0xffd04a:C.f2);g.fillRect(x,GY-h+1,1,h)}glow(ga,(a+b)/2,GY,(b-a)*.6,C.f2,.25);this.light((a+b)/2,GY-4,50,C.f2,.8)}else{g.fillStyle(0x3a1008);for(let x=a+3;x<b-3;x+=7){g.fillRect(x,GY,4,1);px(g,x+2,GY+1,C.f2)}}}}
   if(D.theme==='cinderdeep'){for(const r of D.spikes||[]){if(r[2]<cX-40||r[0]>cX+W+40)continue;const mx=(r[0]+r[2])/2;glow(ga,mx,r[1]+4,14+Math.sin(t*5+mx)*2,C.f2,.18);this.light(mx,r[1],50+Math.sin(t*7+mx)*3,C.f2,.7);
     const bx=r[0]+((Math.floor(t*3+mx))%(r[2]-r[0]));px(ga,bx,r[1]+2-((t*6)%3),C.f0,.8)}}}
  drawExplore(g,ga){const t=this.t;
@@ -567,7 +572,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  spend(n){const P=this.player;P.st-=n;if(P.st<=0){P.st=0;P.stDelay=TUNE.exhaustDelay;P.stFlash=.6}else P.stDelay=TUNE.regenDelay}
  updatePlayer(dt,inp){const P=this.player,b=this.pb,body=b.body,on=body.blocked.down;P.t+=dt;P.inv-=dt;P.flash-=dt;P.stDelay-=dt;P.stFlash-=dt;P.land-=dt;
   if(P.dead){b.setVelocityX(0);P.deadT+=dt;if(P.deadT>2.6)this.respawn();return}
-  P.poiseT=(P.poiseT||0)-dt;if(P.poiseT<=0)P.poiseHP=this.build.poise;
+  P.poiseT=(P.poiseT||0)-dt;if(P.poiseT<=0)P.poiseHP=this.build.poise;if(P.bless>0){P.bless-=dt;if(Math.random()<.5)this.fx.spark(P.x+P.f*rnd(4,12),P.y-rnd(6,16),1,0xffe8a0,30);if(P.bless<=0)this.pop('BLESSING FADES',P.x,P.y-24,0xb8b4d8)}
   if(P.stDelay<=0)P.st=Math.min(P.stMax,P.st+TUNE.regen*dt);P.fp=Math.min(P.fpMax,P.fp+2*dt);
   P.coy=on?.1:P.coy-dt;P.buf=inp.jumpP?.12:P.buf-dt;P.atkBuf=inp.atkP?.2:P.atkBuf-dt;
   const dir=(inp.r?1:0)-(inp.l?1:0);
@@ -587,6 +592,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    else if(P.atkBuf>0||inp.heavyP){const hv=!!inp.heavyP&&!(P.atkBuf>0);if(this.canAct())this.startAtk(hv,0,on);P.atkBuf=0}
    else if(inp.parryP){if(this.canAct()){P.state='parry';P.t=0;this.spend(TUNE.parryCost);b.setVelocityX(0);this.sfx('roll',.15)}}
    else if((inp.iceP||inp.boltP||inp.domeP)&&!this.canCast(inp.iceP?'ice':inp.boltP?'bolt':'dome')){}
+   else if(inp.healP||inp.lspearP||inp.blessP||inp.mirP){const k=inp.healP?'heal':inp.lspearP?'lspear':inp.blessP?'blessed':this.touchMir();if(k&&this.canMir(k)){P.state='cast';P.spell=k;P.t=0;P.fp-=MIRACLES[k].fp;b.setVelocityX(0);this.sfx('charge',.25);this.stats.miracles=(this.stats.miracles||0)+1}}
    else if(inp.flaskP){if(P.flasks>0){P.state='drink';P.t=0;P.flasks--;P.healLeft=this.build.heal;this.stats.flasks++;b.setVelocityX(body.velocity.x*.3);this.sfx('bonfire',.25)}else{P.flaskFlash=.6;this.pop('NO FLASKS',P.x,P.y-24,0xd8402a)}}
    else if(inp.iceP&&P.fp>=15){P.state='cast';P.spell='ice';P.t=0;P.fp-=15;b.setVelocityX(0);this.sfx('charge',.25)}
    else if(inp.boltP&&P.fp>=20){P.state='cast';P.spell='bolt';P.t=0;P.fp-=20;b.setVelocityX(0);this.sfx('charge',.25)}
@@ -604,8 +610,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(P.state==='parry'){if(P.t<TUNE.parryWin&&Math.random()<.5)this.fx.star(P.x+P.f*8,P.y-12,C.f0);if(P.t>TUNE.parryT)P.state='idle'}
   else if(P.state==='drink'){b.setVelocityX(body.velocity.x*.8);const h=Math.min(P.healLeft,TUNE.flaskHeal/TUNE.flaskT*dt);P.hp=Math.min(P.hpMax,P.hp+h);P.healLeft-=h;
    if(Math.random()<.5)this.fx.fire(P.x+rnd(-4,4),P.y-rnd(2,14),1,1,.5);if(P.t>TUNE.flaskT){P.state='idle';P.healLeft=0}}
-  else if(P.state==='cast'){if(Math.random()<.6){const hx=P.x+P.f*7,hy=P.y-14;P.spell==='bolt'?this.fx.spark(hx,hy,1,C.bolt,40):this.fx.star(hx+rnd(-3,3),hy+rnd(-3,3))}
-   if(P.t>.22&&!P.castDone){P.castDone=true;P.spell==='ice'?this.castIce(P.x+P.f*16,P.f,'p',P.y):P.spell==='dome'?this.castDome(P.x,'p',0,P.y):this.castBolt()}if(P.t>.42){P.state='idle';P.castDone=false}}
+  else if(P.state==='cast'){if(Math.random()<.6){const hx=P.x+P.f*7,hy=P.y-14;MIRACLES[P.spell]?this.fx.spark(hx,hy-2,1,0xffe8a0,40):P.spell==='bolt'?this.fx.spark(hx,hy,1,C.bolt,40):this.fx.star(hx+rnd(-3,3),hy+rnd(-3,3))}
+   if(P.t>.22&&!P.castDone){P.castDone=true;MIRACLES[P.spell]?this.castMiracle(P.spell):P.spell==='ice'?this.castIce(P.x+P.f*16,P.f,'p',P.y):P.spell==='dome'?this.castDome(P.x,'p',0,P.y):this.castBolt()}if(P.t>.42){P.state='idle';P.castDone=false}}
   else if(P.state==='hurt'){if(P.t>.3)P.state='idle'}
   else if(P.state==='rest'){if(P.t>1.4)P.state='idle'}
   P.wasOn=on;P.lastVy=body.velocity.y;
@@ -623,7 +629,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const x=P.x+P.f*9,y=P.y-11;this.fx.spark(x,y,18,0xffffff,150);this.fx.spark(x,y,10,C.f1,110);this.novas.push({x,y,t:0,m:.3,parry:1});this.flashF=2;
   this.sfx('parry',.6);this.hitstop(.1);this.cam.shake(120,.01);this.pop('PARRY',x,y-10);P.inv=.3;P.pflash=4;P.state='idle';P.t=0}// successful parry cancels recovery so the riposte can follow
  hitstop(s){this.hs=s;this.physics.pause()}
- meleeHit(m){m=m||this.move();const P=this.player,ar=this.build.ar*(m.mul||1)*(P.heavy?1:[1,1,1.3][P.combo]||1),hw=(m.w||22)/2,hh=(m.h||18)/2,crit=this.wp.crit||1;const hx=P.x+P.f*(m.reach??12),hy=P.y-8;let any=false,rip=false;
+ meleeHit(m){m=m||this.move();const P=this.player,ar=this.build.ar*(P.bless>0?P.blessMul:1)*(m.mul||1)*(P.heavy?1:[1,1,1.3][P.combo]||1),hw=(m.w||22)/2,hh=(m.h||18)/2,crit=this.wp.crit||1;const hx=P.x+P.f*(m.reach??12),hy=P.y-8;let any=false,rip=false;
   const hit=(x,y,w,h)=>Math.abs(x-hx)<w/2+hw&&Math.abs(y-hy)<h/2+hh;
   for(const e of this.enemies){if(e.dead)continue;const bb=e.b.body;if(!hit(bb.center.x,bb.center.y,bb.width,bb.height))continue;any=true;
    const dirE=m.aoe?(Math.sign(e.b.x-P.x)||P.f):P.f;
@@ -646,7 +652,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.stain=this.souls>0?{x:Math.round(clamp(P.x,20,WORLD-20)),y:this.lv.floorAt(P.x,P.y-10),souls:this.souls}:null;this.souls=0;
   this.sv.deaths++;this.sv.stain=this.stain;this.sv.souls=0;this.sv.time=this.playT;Save.write(this.sv)}
  respawn(){this.scene.restart({fresh:false})}
- rest(){const P=this.player;P.hp=P.hpMax;P.fp=P.fpMax;P.st=P.stMax;P.flasks=TUNE.flaskN;const first=!this.bonfire.lit;this.bonfire.lit=true;this.fx.ember(this.bonfire.x,GY-8,40,2.2);this.fx.spark(this.bonfire.x,GY-6,16,C.f1,90,40);
+ rest(){const P=this.player;P.hp=P.hpMax;P.fp=P.fpMax;P.st=P.stMax;P.flasks=TUNE.flaskN+(this.sv.flaskBonus||0);const first=!this.bonfire.lit;this.bonfire.lit=true;this.fx.ember(this.bonfire.x,GY-8,40,2.2);this.fx.spark(this.bonfire.x,GY-6,16,C.f1,90,40);
   this.sfx('bonfire',.5);this.say(first?'BONFIRE LIT - '+this.def.bonfireName:'RESTED. FLASKS REFILLED',2.4);
   this.enemies.forEach(e=>{if(e.dead&&!e.temp&&Math.abs(e.x0-P.x)>200){e.dead=false;e.hp=EHP[e.k]*this.ngMul;e.state='idle';e.guard=3;e.b.body.enable=true;e.b.setPosition(e.x0,e.base==='wraith'?e.gy-40:e.gy-20)}});
   Object.assign(this.sv,{bonfire:true,souls:this.souls,bossDown:this.bossState==='dead',time:this.playT});Save.write(this.sv);
@@ -657,7 +663,12 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(inp.jumpP||inp.atkP||inp.restP&&M.t>.3)this.menuKey('ok');else if(inp.rollP)this.menuKey('back')}
  eqOpts(row){const inv=this.sv.inv;if(row===0)return inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='main');if(row===1)return[null,...inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='off')];return['none',...inv.filter(i=>ARMORS[i]&&i!=='none')]}
  menuKey(k){const M=this.menu;if(!M)return;const sv=this.sv;this.sfx('menu',.2);
-  if(M.mode==='main'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;else if(k==='ok'){if(M.sel===0){M.mode='level';M.sel=0;M.pend={...sv.stats};M.spent=0}else if(M.sel===1){M.mode='equip';M.sel=0}else this.menu=null}else this.menu=null;return}
+  if(M.mode==='main'){const O=this.mainOpts(),n=O.length;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='ok'){const o=O[M.sel];if(o==='LEVEL UP'){M.mode='level';M.sel=0;M.pend={...sv.stats};M.spent=0}else if(o==='EQUIPMENT'){M.mode='equip';M.sel=0}else if(o==='ITEMS AND SPELLS'){M.mode='items';M.sel=0}else if(o==='TRAVEL TO THE SHRINE')this.travel('shrine',{next:this.sid,bonfire:true});else this.menu=null}else this.menu=null;return}
+  if(M.mode==='items'){const L=this.itemList(),n=L.length;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='ok'||k==='back'){M.mode='main';M.sel=2}return}
+  if(M.mode==='keeper'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;else if(k==='ok'){if(M.sel===0){M.mode='talk';M.page=0;M.t=0;sv.met=1;this.sfx('talk',.3)}else if(M.sel===1){M.mode='shop';M.sel=0;M.say=KEEPER.shop}else{this.menu=null;this.pop(KEEPER.bye,this.def.keeper,GY-34,0xd8c8b0)}}else if(k==='back')this.menu=null;return}
+  if(M.mode==='talk'){const L=KEEPER.lines[this.keeperTier()];if(k==='ok'||k==='back'){if(M.t*45<L[M.page].length&&k==='ok'){M.t=99;return}M.page++;M.t=0;this.sfx('talk',.3);if(M.page>=L.length||k==='back'){sv.heard=Math.max(sv.heard||0,this.keeperTier()+1);Save.write(sv);M.mode='keeper';M.sel=1}}return}
+  if(M.mode==='shop'){const L=this.shopList(),n=L.length+1;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='back'||(k==='ok'&&M.sel===L.length)){M.mode='keeper';M.sel=1}
+   else if(k==='ok'){const[id,price]=L[M.sel];if(this.souls<price){M.say='YOU LACK THE SOULS, ASHEN ONE.';this.sfx('clang',.2)}else{this.souls-=price;sv.souls=this.souls;if(id==='flask'){sv.flaskBonus=(sv.flaskBonus||0)+1;this.player.flasks++}else sv.inv.push(id);sv.bought=(sv.bought||0)+1;Save.write(sv);M.say='A FINE CHOICE. '+itemName(id)+' IS YOURS.';this.sfx('pickup',.45);this.fx.ember(this.player.x,this.player.y-8,16,1.4);M.sel=Math.min(M.sel,this.shopList().length)}}return}
   if(M.mode==='level'){const L=RPG.level(sv.cls,M.pend);
    if(k==='up')M.sel=(M.sel+8)%9;else if(k==='down')M.sel=(M.sel+1)%9;
    else if(k==='right'&&M.sel<8){const st=STATS[M.sel],c=RPG.cost(L);if(this.souls-M.spent>=c&&M.pend[st]<99){M.pend[st]++;M.spent+=c}else this.pop('NOT ENOUGH SOULS',this.player.x,this.player.y-30,0xd8402a)}
@@ -668,7 +679,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    else if(k==='left'||k==='right'){const o=this.eqOpts(M.sel),key=['main','off','armor'][M.sel],i=o.indexOf(sv.eq[key]);sv.eq[key]=o[(i+(k==='right'?1:o.length-1))%o.length];this.applyBuild(false);Save.write(sv)}
    else{M.mode='main';M.sel=1}}}
  updatePickups(){const P=this.player;for(let i=this.items.length-1;i>=0;i--){const it=this.items[i];if(Math.abs(P.x-it.x)<10&&Math.abs(P.y-it.y)<20&&!P.dead){this.items.splice(i,1);
-   if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=(WEAPONS[it.item]||ARMORS[it.item]).name;this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('pickup',.45);this.fx.spark(it.x,it.y-6,14,C.f1,90)}}}
+   if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=itemName(it.item);this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('pickup',.45);this.fx.spark(it.x,it.y-6,14,C.f1,90)}}}
  // ---------------- spells ----------------
  castIce(x,f,owner,gy=GY){const V=ICEP;for(let i=0;i<V.n;i++){const sx=Math.round(x+i*V.step*f);if(this.lv&&Math.abs(this.lv.floorAt(sx,gy-6)-gy)>4)break;this.spells.push({k:'spike',gy,x:sx,t:-i*.045,h:lerp(V.hMin,V.hMax,Math.abs(Math.sin(i*2.3+x))),lean:rnd(-.4,.4),owner,hit:false})}this.cam.shake(80,.004)}
  castDome(x,owner,harmless,gy=GY){this.novas.push({dome:1,owner,harmless,x,y:gy,R:TUNE.domeR,grow:.45,t:0,m:1.8});this.cam.shake(160,.008);this.fx.shard(x,gy,20,120)}
@@ -728,7 +739,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
     if(e.state==='hop'&&adx<16&&Math.abs(P.y-b.body.bottom)<14){e.state='fuse';e.t=0;b.setVelocityX(0)}
     if(e.state==='fuse'&&e.t>.5){e.dead=true;e.deadT=0;b.body.enable=false;this.explode(b.x,b.y,true)}}}}
  // ---------------- boss: The Frost Warden ----------------
- updateBoss(dt){const P=this.player;
+ updateBoss(dt){const P=this.player;if(!this.def.boss)return;
   if(this.bossState==='sleep'&&P.x>ARENA_L+20){this.bossState='cine';this.startCine()}
   if(this.def.boss.kind!=='warden')return this.updateLord(dt);
   const B=this.boss;if(!B)return;B.t+=dt;B.flashCd-=dt;B.eyeFlash-=dt;
@@ -756,6 +767,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  finishBoss(B){this.bossState='dead';this.fx.soul(B.x,B.y-16,60);this.gainSouls((B.kind==='warden'?2000:3000)*(1+this.ng));this.gateL.body.enable=false;this.shots.length=0;this.flames=[];
   const bk='ashenVigil.best.'+this.sid;// r3 P3: one naming scheme for every stage (legacy ramparts key migrated below)
   {const old=localStorage.getItem('ashenVigil.best');if(old&&!localStorage.getItem('ashenVigil.best.ramparts'))try{localStorage.setItem('ashenVigil.best.ramparts',old)}catch(e){}}
+  if(!this.sv.lords.includes(B.kind))this.sv.lords.push(B.kind);
   Object.assign(this.sv,{bonfire:this.bonfire.lit,souls:this.souls,bossDown:true,time:this.playT});{const b=+localStorage.getItem(bk)||0;this.bestNew=!b||this.playT<b;if(this.bestNew)try{localStorage.setItem(bk,String(Math.round(this.playT)))}catch(e){}this.best=this.bestNew?this.playT:b}Save.write(this.sv);this.boss=null;
   this.time.delayedCall(1600,()=>{this.victory={t:0,sel:0,clear:!!this.def.next};this.physics.pause()})}
  // ---------------- lords (milestone C): the Pale Cantor (cathedral) and Vulcrest the Cinder King (cinderdeep), 3 phases each ----------------
@@ -770,11 +782,16 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const ph=B.hp<B.hpMax*.33?3:B.hp<B.hpMax*.66?2:1;
    if(ph>B.phase&&B.state!=='roar'&&B.hp>0){B.phase=ph;B.state='roar';B.t=0;this.shots.length=0;this.say(this.def.boss.phases[ph-2],2);this.cam.shake(500,.02);this.flashA=.22;this.sfx('death',.4);
     if(king){for(let i=0;i<6;i++)this.time.delayedCall(i*90,()=>this.explode(ARENA_L+30+i*60,GY-6,false))}else this.novas.push({dome:1,owner:'b',harmless:1,x:B.x,y:GY,R:130,grow:.6,t:0,m:1.6})}
+   if(!king&&B.phase>=2&&B.state!=='perch'&&B.state!=='glide')B.loftCd=(B.loftCd??2.5)-dt;
    const spd=(king?24:30)*(1+.2*(B.phase-1)),quick=B.phase===3?.75:B.phase===2?.88:1;
    if(B.state==='stag'){if(Math.random()<.4)this.fx.star(B.x+rnd(-8,8),B.y-rnd(30,44),C.f1);if(B.t>TUNE.stagT){B.state='walk';B.cd=.6}}
    else if(B.state==='roar'){if(Math.random()<.8)king?this.fx.fire(B.x+rnd(-14,14),B.y-rnd(0,40),2,3,1.6):this.fx.star(B.x+rnd(-16,16),B.y-rnd(0,48),0xb8a8ff);if(B.t>1.3){B.state='walk';B.cd=.5}}
-   else if(B.state==='walk'){B.f=Math.sign(dx)||1;if(adx>30)B.x+=B.f*spd*dt;B.step=(B.step||0)+dt*6;
-    if(B.cd<0){B.next=this.pickLord(B,adx);B.state='wind';B.t=0;B.wt=({slam:.7,hymn:.75,charge:.6,requiem:.8,meteor:.8,inferno:.9})[B.next]*quick;B.eyeFlash=.3;this.sfx('charge',.4)}}
+   else if(B.state==='glide'){const q=ease(Math.min(1,B.t/.8));B.x=lerp(B.gx0,B.gx,q);B.y=lerp(B.gy0,B.gy,q);if(Math.random()<.6)this.fx.star(B.x+rnd(-10,10),B.y-rnd(0,40),0xb8a8ff);if(B.t>.8){B.state=B.gy<GY?'perch':'walk';B.t=0;B.cd=.8;B.fire=0}}
+   else if(B.state==='perch'){B.f=Math.sign(dx)||1;B.fire=(B.fire||0)-dt;if(B.fire<0&&B.t<2.2){B.fire=.7;const a=Math.atan2(P.y-8-(B.y-24),dx);for(const o of[-.25,0,.25])this.shots.push({x:B.x,y:B.y-24,vx:Math.cos(a+o)*80,vy:Math.sin(a+o)*80,t:0,c:'note',dmg:12});this.sfx('shot',.25)}
+    if(B.t>2.6){B.state='glide';B.t=0;B.gx0=B.x;B.gy0=B.y;B.gx=clamp(P.x+(P.x>3170?-40:40),ARENA_L+30,ARENA_R-30);B.gy=GY}}
+   else if(B.state==='walk'){B.f=Math.sign(dx)||1;if(B.y<GY)B.y=Math.min(GY,B.y+140*dt);if(adx>30)B.x+=B.f*spd*dt;B.step=(B.step||0)+dt*6;
+    if(!king&&B.phase>=2){if(B.loftCd<0&&B.cd<0&&B.y>=GY){B.state='glide';B.t=0;B.gx0=B.x;B.gy0=B.y;B.gx=3170;B.gy=80;B.loftCd=8;this.say('THE CANTOR ASCENDS TO THE LOFT',1.4)}}
+    if(B.state==='walk'&&B.cd<0){B.next=this.pickLord(B,adx);B.state='wind';B.t=0;B.wt=({slam:.7,hymn:.75,charge:.6,requiem:.8,meteor:.8,inferno:.9})[B.next]*quick;B.eyeFlash=.3;this.sfx('charge',.4)}}
    else if(B.state==='wind'){const c=king?C.f1:0xb8a8ff;if(Math.random()<.7)king?this.fx.fire(B.x+B.f*rnd(4,18),B.y-rnd(14,34),1,2,1):this.fx.star(B.x+B.f*rnd(4,16),B.y-rnd(20,40),c);
     if(B.t>B.wt)this.lordStrike(B,dx)}
    else if(B.state==='slam'){if(B.t<.1&&Math.abs(P.x-(B.x+B.f*16))<18&&P.y>GY-30)this.hurtPlayer(king?28:24,B.x,'boss');if(B.state==='slam'&&B.t>.6){B.state='walk';B.cd=rnd(.8,1.5)*quick}}
@@ -784,6 +801,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
     if(B.x<ARENA_L+20||B.x>ARENA_R-20||B.t>.9){B.x=clamp(B.x,ARENA_L+20,ARENA_R-20);B.state='walk';B.cd=rnd(.6,1.2)*quick;this.cam.shake(150,.015);this.fx.dust(B.x,GY,12)}}
    else if(B.state==='cast'){if(B.t>(B.dur||1)){B.state='walk';B.cd=rnd(.7,1.3)*quick}}
    B.x=clamp(B.x,ARENA_L+16,ARENA_R-16);
+   if(king&&B.phase>=2&&this.def.lavaPits){this.lavaCd=(this.lavaCd||0)-dt;for(const[a,b]of this.def.lavaPits){if(Math.random()<.25)this.fx.fire(rnd(a,b),GY-1,1,3,1);if(P.x>a&&P.x<b&&this.pb.body.blocked.down&&P.y>=GY-1&&this.lavaCd<0&&!P.dead){this.lavaCd=.7;P.inv=0;this.hurtPlayer(14,P.x<(a+b)/2?b+10:a-10);this.fx.fire(P.x,GY-2,8,4,1.2);this.sfx('lava',.4)}}}
    if(B.hp<=0){this.bossState='dying';B.t=0;this.flames=[];this.shots.length=0;this.sfx('death',.6);this.say(this.def.boss.slain,3);this.cam.shake(600,.02)}}
   if(this.bossState==='dying'){if(king){if(Math.random()<.9)this.fx.fire(B.x+rnd(-12,12),B.y-rnd(0,40),3,3,1.5);if(Math.random()<.08)this.explode(B.x+rnd(-14,14),B.y-rnd(4,36),false)}
    else{if(Math.random()<.9)this.fx.shard(B.x+rnd(-10,10),B.y-rnd(0,40),2,120);if(Math.random()<.3)this.fx.star(B.x+rnd(-12,12),B.y-rnd(0,50),0xb8a8ff)}
@@ -860,10 +878,16 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(c.t>4.2){this.cine=null;this.bars=0;this.bossState='fight';B.state='walk';B.rise=1;this.cam.startFollow(this.pb,true,.12,0,Math.round(this.camOff),0)}}
  // ---------------- victory card (Tester r1 P1 #6) ----------------
  victoryInput(){}// keys handled by the keydown listener in create() so quick taps are never missed
- victoryTap(p){const V=this.victory;if(V.t<.8)return;if(p.y>=121&&p.y<132)V.sel=0;else if(p.y>=132&&p.y<143)V.sel=1;else return;this.victoryGo()}
- victoryGo(){const V=this.victory;if(V.gone)return;V.gone=1;this.cam.fadeOut(500,7,5,15);
+ victoryOpts(){const V=this.victory;if(V.phase==='choose')return['REKINDLE THE FIRST FLAME','LET THE FLAME FADE'];return V.clear?['ONWARD: '+STAGE_DEFS[this.def.next].name,'REST AT THE ASH SHRINE','RETURN TO TITLE']:['APPROACH THE FIRST FLAME','RETURN TO TITLE']}
+ victoryTap(p){const V=this.victory;if(V.t<.8)return;const y0=V.phase==='choose'?112:121,i=Math.floor((p.y-y0)/11),n=V.phase==='choose'?2:this.victoryOpts().length;if(i<0||i>=n)return;V.sel=i;this.victoryGo()}
+ victoryGo(){const V=this.victory;if(V.gone)return;
+  if(!V.clear&&V.phase!=='choose'&&V.sel===0){V.phase='choose';V.sel=0;V.t=.8;this.sfx('chime',.4);return}
+  if(V.phase==='choose'){V.gone=1;const kind=V.sel?'fade':'rekindle';this.cam.fadeOut(800,kind==='fade'?2:40,kind==='fade'?2:20,kind==='fade'?6:5);this.time.delayedCall(820,()=>this.scene.start('ending',{kind}));return}
+  if(V.clear&&V.sel===1){V.gone=1;this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{Save.write({...this.sv,stage:'shrine',hubNext:this.def.next,retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})});return}
+  if(V.clear&&V.sel===2)V.sel=1;
+  V.gone=1;this.cam.fadeOut(500,7,5,15);
   this.time.delayedCall(520,()=>{if(V.sel===0&&V.clear){Save.write({...this.sv,stage:this.def.next,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}
-   else if(V.sel===0){const s=this.sv;Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:s.deaths,time:this.playT,ng:this.ng+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings});this.scene.restart({fresh:false})}else this.scene.start('title')})}
+   else if(V.sel===0){const s=this.sv;Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:s.deaths,time:this.playT,ng:this.ng+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings,flaskBonus:s.flaskBonus});this.scene.restart({fresh:false})}else this.scene.start('title')})}
  // ---------------- render ----------------
  render(dt){const g=this.gn,ga=this.ga,cam=this.cam,P=this.player;g.clear();ga.clear();this.lights.length=0;this.bgf(cam.scrollX,cam.scrollY);this.mist.forEach((m,i)=>{m.tilePositionX=cam.scrollX*(.2+i*.05)+this.t*(4+i*3);m.y=Math.round(GY-34-i*36-cam.scrollY*(i?.4:1))});const t=this.t;
   for(const[x,by]of this.braziers){g.fillStyle(0x0d0a1c);g.fillRect(x-1,by-12,3,12);g.fillRect(x-4,by-14,9,2);g.fillRect(x-3,by-12,7,1);g.fillRect(x-3,by-1,7,1);
@@ -873,7 +897,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    glow(ga,x,GY-6,(lit?30:14)+Math.sin(t*9)*1.5,C.f2,lit?.17:.1);this.light(x,GY-8,(lit?74:34)+Math.sin(t*9)*2,C.f2,lit?.75:.35);
    if(Math.abs(P.x-x)<TUNE.restR&&!this.cine&&!P.dead){const bob=Math.floor(t*3)%2,tx=x-11,ty=GY-32-bob;g.fillStyle(0xffe2a8);g.fillRect(tx+2,ty,1,1);g.fillRect(tx+1,ty+1,3,1);g.fillRect(tx,ty+2,5,1);drawText(g,'REST',tx+7,ty-1,0xffe2a8)}}
   if(this.stain){const S=this.stain,sy=S.y||GY,pl=Math.sin(t*5)*.5+.5;glow(ga,S.x,sy-3,6+pl*2,0x5fe0c0,.3);px(ga,S.x,sy-2,0xffffff);px(ga,S.x-1,sy-1,0x9ff0dc);px(ga,S.x+1,sy-1,0x9ff0dc);this.light(S.x,sy-4,26,0x5fe0c0,.5)}
-  this.drawStageFX(g,ga);this.drawExplore(g,ga);
+  this.drawStageFX(g,ga);this.drawExplore(g,ga);this.drawStory(g,ga);
   for(const s of this.spells){if(s.t<0)continue;const gt=clamp(s.t/ICEP.grow,0,1);let h=s.h*ease(gt);if(s.t>.6)h*=1-(s.t-.6)/.15;
    glow(ga,s.x,s.gy-h*.4,6+h*.45,C.ice4,.12);glow(ga,s.x,s.gy-3,8+h*.25,C.ice3,.14);drawSpike(ga,g,s.x,s.gy-1,h,ICEP.hw*(s.owner==='b'?1.3:1),gt,s.lean);ga.fillStyle(C.ice2,.7);ga.fillRect(s.x-7,s.gy-1,15,1);for(let k=0;k<3;k++)px(ga,s.x+((k*5+Math.floor(s.t*20))%14)-7,s.gy-2,C.ice1,.8);
    this.light(s.x,s.gy-h*.5,24+h,C.ice3,.55*(s.t>.6?Math.max(0,1-(s.t-.6)/.15):1))}
@@ -894,7 +918,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(const s of this.shots){if(s.delay>0){const k=1-s.delay/(s.d0||1),gy=this.lv.floorAt(s.x,s.y+4);for(let i=-4;i<=4;i+=2)px(ga,s.x+i,gy-1,s.c==='fire'?C.f2:C.ice1,.3+.6*k*(Math.floor(this.t*16)%2));continue}
    const c0=s.c==='fire'?C.f2:s.c==='note'?0xb8a8ff:C.ice3,c1=s.c==='fire'?C.f1:s.c==='note'?0xe8e0ff:C.ice1,big=s.r>6?1:0;glow(ga,s.x,s.y,6+big*3,c0,.22);ga.fillStyle(c1);ga.fillRect(Math.round(s.x)-1-big,Math.round(s.y)-1-big,3+big*2,3+big*2);px(ga,s.x,s.y,0xffffff);
    if(s.c==='note'){px(ga,s.x+1,s.y-2,c1);px(ga,s.x+1,s.y-3,c1);px(ga,s.x+2,s.y-3,c1)}this.light(s.x,s.y,22+big*8,c0,.5)}
-  for(const a of this.arrows){const x=Math.round(a.x),y=Math.round(a.y),d=Math.sign(a.vx);g.fillStyle(0x8a6a4a);g.fillRect(Math.min(x,x-d*6),y,6,1);px(g,x,y,0xd8d0ee);px(g,x-d*6,y-1,0xd8d0ee);px(g,x-d*6,y+1,0xd8d0ee);if(a.pierce){glow(ga,x,y,4,C.f1,.3);px(ga,x+d,y,0xffffff)}}
+  for(const a of this.arrows){const x=Math.round(a.x),y=Math.round(a.y),d=Math.sign(a.vx);if(a.ls){for(let k=0;k<14;k++)px(ga,x-d*k,y+((k*7+Math.floor(this.t*30))%3)-1,k<3?0xffffff:0xffe08a);g.fillStyle(0xfff4c0);g.fillRect(Math.min(x,x-d*12),y,12,1);glow(ga,x,y,6,0xffd870,.35);this.light(x,y,30,0xffd870,.7);continue}g.fillStyle(0x8a6a4a);g.fillRect(Math.min(x,x-d*6),y,6,1);px(g,x,y,0xd8d0ee);px(g,x-d*6,y-1,0xd8d0ee);px(g,x-d*6,y+1,0xd8d0ee);if(a.pierce){glow(ga,x,y,4,C.f1,.3);px(ga,x+d,y,0xffffff)}}
   for(const it of this.items){const y=Math.round(it.y-4+Math.sin(this.t*3+it.bob)*1.5);g.fillStyle(0x2a2245);g.fillRect(it.x-4,it.y-2,9,2);glow(ga,it.x,y,7+Math.sin(this.t*6+it.bob),0xffe2a8,.2);sparkle(ga,it.x,y,1+(Math.floor(this.t*4+it.bob)%2),0xffe2a8);this.light(it.x,y,26,C.f1,.45)}
   for(const e of this.enemies)this.drawEnemy(g,ga,e);
   if(this.boss)this.drawBoss(g,ga,this.boss);
@@ -998,31 +1022,89 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(this.stain){const ds=Math.round(this.stain.x-P.x),ss='SOULS '+(ds>0?'>':'<');drawText(g,ss,W-textW(ss)-6,this.soulPop&&this.soulPop.t>0?27:20,0x5fe0c0,1,0x07050f,.6+.4*Math.sin(t*5))}
    const B=this.boss;if(B&&this.bossState==='fight'){const w=this.touch?140:180,x0=(W-w)/2,y0=H-14;drawText(g,this.def.boss.name+(this.ng?' +'+this.ng:''),x0,y0-7,0xd8d0ee);g.fillStyle(0x7a5a24);g.fillRect(x0-2,y0-2,w+4,7);g.fillStyle(0x07050f);g.fillRect(x0-1,y0-1,w+2,5);g.fillStyle(0x2a1020);g.fillRect(x0,y0,w,3);g.fillStyle(0xb8302a);g.fillRect(x0,y0,Math.max(0,Math.round(w*B.hp/B.hpMax)),3);if(B.kind!=='warden'){g.fillStyle(0xd8b060);for(const k of[.66,.33])g.fillRect(x0+Math.round(w*k),y0-1,1,5)}}
    if(this.touch&&!this.paused)this.drawTouch(g)}
-  if(this.msg){this.msg.t-=this.paused?0:this.dt;const m=this.msg,a=clamp(m.t*2,0,1);const big=m.s==='EMBER EXTINGUISHED'||m.s===this.def.boss.slain;const sc=big?2:1;
+  if(this.msg){this.msg.t-=this.paused?0:this.dt;const m=this.msg,a=clamp(m.t*2,0,1);const BS=(this.def.boss||{}).slain;const big=m.s==='EMBER EXTINGUISHED'||m.s===BS;const sc=big?2:1;
    if(big){g.fillStyle(0x05040b,.6*a);g.fillRect(0,78,W,22)}
-   drawText(g,m.s,Math.round(W/2-textW(m.s,sc)/2),big?83:40,big?(m.s===this.def.boss.slain?0xffe2a8:0xd8402a):0xd8d0ee,sc,0x05040b,a);if(m.t<=0)this.msg=null}
+   drawText(g,m.s,Math.round(W/2-textW(m.s,sc)/2),big?83:40,big?(m.s===BS?0xffe2a8:0xd8402a):0xd8d0ee,sc,0x05040b,a);if(m.t<=0)this.msg=null}
   if(this.menu&&!this.victory)this.drawMenu(g,ga);
+  if(this.loreView&&!this.victory)this.drawLore(g,ga);
   if(this.paused)this.drawPause(g);
   if(this.victory)this.drawVictory(g,ga)}
  // r4 P3: level-up / equipment panels are offset so they never cover the HUD bars
  drawMenu(g,ga){const m=this.menu.mode,o=m==='level'?[118,0]:m==='equip'?[74,12]:null;if(o){g.save();g.translateCanvas(o[0],o[1])}try{this.drawMenu0(g,ga)}finally{if(o)g.restore()}}
  drawMenu0(g,ga){const M=this.menu,sv=this.sv,P=this.player;const box=(x,y,w,h)=>{g.fillStyle(0x07050f,.88);g.fillRect(x,y,w,h);g.fillStyle(0x7a5a24);g.fillRect(x,y,w,1);g.fillRect(x,y+h-1,w,1);g.fillRect(x,y,1,h);g.fillRect(x+w-1,y,1,h);g.fillStyle(0xd8b060);[[x,y],[x+w-1,y],[x,y+h-1],[x+w-1,y+h-1]].forEach(([a,b])=>g.fillRect(a,b,1,1))};
   const row=(s,x,y,on,c)=>drawText(g,(on?'> ':'  ')+s,x,y,on?0xffe2a8:(c||0xb8b4d8));const CL=CLASSES[sv.cls];
-  if(M.mode==='main'){box(8,40,128,58);drawText(g,this.def.bonfireName,14,45,0xffb04a);drawText(g,CL.name+'  LEVEL '+this.lvl,14,54,0x8a86c0);
-   ['LEVEL UP','EQUIPMENT','LEAVE'].forEach((s,i)=>row(s,14,65+i*9,M.sel===i));drawText(g,'SOULS '+this.souls,14,92-1,0x9fd8ff);return}
+  if(M.mode==='main'){const O=this.mainOpts(),h=40+O.length*9;box(8,40,140,h);drawText(g,this.def.bonfireName,14,45,0xffb04a);drawText(g,CL.name+'  LEVEL '+this.lvl,14,54,0x8a86c0);
+   O.forEach((s,i)=>row(s,14,65+i*9,M.sel===i));drawText(g,'SOULS '+this.souls,14,40+h-9,0x9fd8ff);return}
+  if(M.mode==='items'){const L=this.itemList();box(6,14,308,160);drawText(g,'ITEMS AND SPELLS',12,19,0xffb04a);const top=Math.max(0,Math.min(M.sel-4,L.length-8));
+   L.slice(top,top+8).forEach(([id,kind],j)=>{const i=top+j;row(itemName(id),12,30+j*9,M.sel===i);drawText(g,kind,104,30+j*9,0x6b67a0)});
+   const[id,kind]=L[M.sel]||[];if(id){g.fillStyle(0x7a5a24);g.fillRect(12,104,296,1);drawText(g,itemName(id),12,109,0xffe2a8);(DESC[id]||[]).forEach((s,i)=>drawText(g,s,12,120+i*9,0xd8c8b0,1));const R=MIRACLES[id]?'REQ FTH '+MIRACLES[id].fth+'  FP '+MIRACLES[id].fp+'  KEY '+MIRACLES[id].key:SPELLS[id]?'REQ INT '+SPELLS[id].int+'  FP '+SPELLS[id].fp:WEAPONS[id]?'REQ '+RPG.reqs(WEAPONS[id]):ARMORS[id]?'WEIGHT '+ARMORS[id].w+'  POISE '+ARMORS[id].poise:'';drawText(g,R,150,109,0x8a86c0)}return}
+  if(M.mode==='keeper'||M.mode==='talk'||M.mode==='shop'){this.drawKeeperUI(g,ga,M,box,row);return}
   if(M.mode==='level'){const st=M.pend,L=RPG.level(sv.cls,st),d=RPG.derive(st,sv.eq),d0=this.build;box(6,20,190,150);
    drawText(g,'LEVEL UP  '+this.lvl+(L>this.lvl?' > '+L:''),12,25,0xffb04a);drawText(g,'SOULS '+(this.souls-M.spent)+'   NEXT '+RPG.cost(L),12,34,0x9fd8ff);
    STATS.forEach((k,i)=>{const up=st[k]>sv.stats[k];row(STAT_NAMES[k],12,46+i*9,M.sel===i);drawText(g,String(st[k]),104,46+i*9,up?0x58e070:0xd8d0ee);if(M.sel===i)drawText(g,'< >',118,46+i*9,0x6b67a0)});
    row('CONFIRM',12,46+8*9+3,M.sel===8,0xffe2a8);
    const D=[['HP',d0.hp,d.hp],['FP',d0.fp,d.fp],['STAMINA',d0.st,d.st],['LOAD',d0.load,d.load],['ATTACK',(d0.ar*100)|0,(d.ar*100)|0],['SPELL',(d0.spell*100)|0,(d.spell*100)|0]];
    D.forEach(([n,a,b],i)=>{drawText(g,n,140,46+i*9,0x8a86c0);drawText(g,String(b),176,46+i*9,b>a?0x58e070:0xd8d0ee)});return}
-  if(M.mode==='equip'){const d=this.build;box(6,20,240,130);drawText(g,'EQUIPMENT',12,25,0xffb04a);
+  if(M.mode==='equip'){const d=this.build;box(6,20,240,154);drawText(g,'EQUIPMENT',12,25,0xffb04a);
    const W0=WEAPONS[sv.eq.main],W1=WEAPONS[sv.eq.off],A=ARMORS[sv.eq.armor||'none'];
    const L=[['R HAND',W0?W0.name:'-',W0?RPG.letters(W0)+'  REQ '+RPG.reqs(W0)+(RPG.meets(W0,sv.stats)?'':'  WEAK!'):''],['L HAND',W1?W1.name:'EMPTY',W1?'CATALYST  REQ '+RPG.reqs(W1):''],['ARMOR',A.name,'WEIGHT '+A.w+'  POISE '+A.poise+'  ABSORB '+Math.round(A.abs*100)+'%']];
    L.forEach(([a,b,c],i)=>{row(a,12,38+i*22,M.sel===i);drawText(g,'< '+b+' >',60,38+i*22,M.sel===i?0xffe2a8:0xd8d0ee);drawText(g,c,60,46+i*22,0x8a86c0)});
    const rc=d.roll.kind==='LIGHT'?0x58e070:d.roll.kind==='MEDIUM'?0xd8d0ee:d.roll.kind==='HEAVY'?0xffb04a:0xd8402a;
    drawText(g,'LOAD '+d.w+' / '+d.load+'  ('+Math.round(d.ratio*100)+'%)',12,108,0xd8d0ee);drawText(g,'ROLL '+d.roll.kind,12,117,rc);drawText(g,'ATTACK '+Math.round(d.ar*100)+'   SPELL '+Math.round(d.spell*100)+'   POISE '+d.poise,12,126,0xd8d0ee);
+   {const id=[sv.eq.main,sv.eq.off,sv.eq.armor||'none'][M.sel];(DESC[id]||[]).slice(0,3).forEach((s,i)=>drawText(g,s,12,148+i*8,0xa89878))}
    drawText(g,'MOVESET: '+({sword:'2-HIT SLASH, OVERHEAD HEAVY',greatsword:'WIDE CLEAVE, LEAPING SLAM',dagger:'3-STAB FLURRY, LUNGE',spear:'LONG THRUST, CHARGE',axe:'CHOP, SPIN HEAVY',bow:'ARROW, CHARGED PIERCE',staff:'POKE, BASH, CASTS SPELLS'})[W0?W0.type:'dagger'],12,138,0x8a86c0)}}
+ // ---------------- milestone E: hub, keeper, merchant, lore, miracles ----------------
+ mainOpts(){const o=['LEVEL UP','EQUIPMENT','ITEMS AND SPELLS'];if(!this.def.hub&&this.sv.lords.length)o.push('TRAVEL TO THE SHRINE');o.push('LEAVE');return o}
+ itemList(){const sv=this.sv,o=[];sv.inv.filter(i=>WEAPONS[i]).forEach(i=>o.push([i,WEAPONS[i].hand==='off'?'OFF HAND':'WEAPON']));sv.inv.filter(i=>ARMORS[i]).forEach(i=>o.push([i,'ARMOR']));
+  Object.keys(SPELLS).forEach(i=>o.push([i,'SORCERY']));Object.keys(MIRACLES).filter(i=>sv.inv.includes(i)).forEach(i=>o.push([i,'MIRACLE']));o.push(['flask','x'+(TUNE.flaskN+(sv.flaskBonus||0))]);return o}
+ shopList(){const sv=this.sv;return SHOP.filter(([id])=>id==='flask'?(sv.flaskBonus||0)<2:!sv.inv.includes(id))}
+ keeperTier(){const sv=this.sv;return sv.endings.length?3:Math.min(2,sv.lords.length)}
+ travel(to,ret){const sv=this.sv;this.menu=null;this.cam.fadeOut(500,7,5,15);this.physics.pause();this.travelling=1;
+  const extra=to==='shrine'?{hubNext:ret.next,retBonfire:!!ret.bonfire,bonfire:false}:{bonfire:!!sv.retBonfire,retBonfire:false};
+  this.time.delayedCall(520,()=>{Save.write({...sv,...extra,stage:to,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})})}
+ interact(){const P=this.player,D=this.def,near=(x,r=14)=>Math.abs(P.x-x)<r;
+  for(const l of this.lore)if(near(l.x,12)&&Math.abs(P.y-l.y)<20){this.loreView={id:l.id,t:0};if(!l.read){l.read=true;this.sv.lore.push(l.id);Save.write(this.sv);this.pop('LORE '+this.sv.lore.length+'/'+Object.keys(LORE).length,l.x,l.y-30,0xffb04a)}this.sfx('chime',.25);this.stats.loreRead=(this.stats.loreRead||0)+1;return true}
+  if(D.hub&&near(D.keeper,18)){this.menu={mode:'keeper',sel:0,t:0,prev:{}};P.f=Math.sign(D.keeper-P.x)||1;this.pb.setVelocityX(0);this.sfx('talk',.3);return true}
+  if(D.hub&&near(D.exit,16)){const to=this.sv.hubNext&&STAGE_DEFS[this.sv.hubNext]?this.sv.hubNext:'ramparts';this.say('TRAVELLING TO '+STAGE_DEFS[to].name,1.5);this.travel(to);return true}
+  return false}
+ touchMir(){const inv=this.sv.inv,P=this.player;if(inv.includes('heal')&&P.hp<P.hpMax*.5)return'heal';if(inv.includes('lspear'))return'lspear';if(inv.includes('heal'))return'heal';return inv.includes('blessed')?'blessed':'heal'}
+ canMir(k){const P=this.player,M=MIRACLES[k],st=this.sv.stats;
+  if(!this.build.tal){this.pop('NO TALISMAN',P.x,P.y-24,0xd8402a);return false}
+  if(!this.sv.inv.includes(k)){this.pop(M.name+' NOT LEARNED',P.x,P.y-24,0xd8402a);return false}
+  if(st.fth<M.fth){this.pop('NEED FTH '+M.fth,P.x,P.y-24,0xd8402a);return false}
+  if(!RPG.meets(this.build.tal,st)){this.pop('FAITH TOO WEAK FOR TALISMAN',P.x,P.y-24,0xd8402a);return false}
+  if(P.fp<M.fp){this.pop('NOT ENOUGH FP',P.x,P.y-24,0xd8402a);return false}return true}
+ castMiracle(k){const P=this.player,mm=this.build.mir;
+  if(k==='heal'){const amt=Math.round(40*mm);P.hp=Math.min(P.hpMax,P.hp+amt);this.pop('+'+amt,P.x,P.y-26,0x9ff0a0);this.sfx('heal',.45);for(let i=0;i<24;i++)this.fx.spark(P.x+rnd(-10,10),P.y-rnd(0,20),1,0xffe8a0,30);this.novas.push({x:P.x,y:P.y-8,t:0,m:.5,parry:1});this.lastHeal=amt}
+  if(k==='lspear'){this.arrows.push({x:P.x+P.f*8,y:P.y-11,vx:P.f*340,vy:0,t:0,dmg:2.2*mm,pierce:1,hit:[],ls:1});this.sfx('thunder',.45);this.cam.shake(90,.006);this.fx.spark(P.x+P.f*8,P.y-11,10,0xffe08a,90);this.flashF=1}
+  if(k==='blessed'){P.bless=MIRACLES.blessed.dur;P.blessMul=1+.3*mm;this.sfx('buff',.45);this.say('WEAPON BLESSED',1.6);for(let i=0;i<20;i++)this.fx.spark(P.x+P.f*rnd(2,14),P.y-rnd(4,18),1,0xffe8a0,40)}}
+ // world-space story props: lore stones, the keeper, the shrine exit arch
+ drawStory(g,ga){const t=this.t,D=this.def,P=this.player;
+  for(const l of this.lore){const x=Math.round(l.x),y=l.y,pl=Math.sin(t*3+x)*.5+.5;g.fillStyle(0x2a2436);g.fillRect(x-4,y-11,9,11);g.fillRect(x-3,y-12,7,1);g.fillStyle(0x3e3650);g.fillRect(x-4,y-11,1,11);
+   const c=l.read?0x7a5a40:0xffb04a;for(let k=0;k<3;k++){px(g,x-1+(k%2)*2,y-9+k*3,c);px(g,x+(k%2?-1:1),y-8+k*3,c)}if(!l.read)glow(ga,x,y-6,6+pl*2,C.f2,.18);
+   if(Math.abs(P.x-x)<12&&Math.abs(P.y-y)<20&&!this.loreView)drawText(g,'^ READ',x-11,y-22,0xffe2a8)}
+  if(D.hub){const kx=D.keeper,bob=Math.round(Math.sin(t*1.6)),y=GY;// the Ash Keeper: hooded, kneeling beside a lantern
+   g.fillStyle(0x1a1420);g.fillRect(kx-6,y-16+bob,12,16-bob);g.fillRect(kx-5,y-20+bob,10,4);g.fillRect(kx-4,y-23+bob,8,3);g.fillStyle(0x3a2e3e);g.fillRect(kx-6,y-16+bob,1,16-bob);g.fillRect(kx-5,y-20+bob,1,4);
+   g.fillStyle(0x5a4a58);g.fillRect(kx-3,y-21+bob,6,1);g.fillStyle(0x07050f);g.fillRect(kx-2,y-20+bob,4,3);px(g,kx-1,y-19+bob,0xffb04a);px(g,kx+1,y-19+bob,0xffb04a);
+   g.fillStyle(0xb8a898);g.fillRect(kx-7,y-10+bob,2,2);// hand
+   const lx=kx-11,ly=y-4;g.fillStyle(0x3a2e2a);g.fillRect(lx-2,ly-5,5,6);g.fillStyle(0xffd070);g.fillRect(lx-1,ly-4,3,4);glow(ga,lx,ly-2,10+Math.sin(t*7),C.f2,.22);this.light(lx,ly-2,40,C.f2,.7);
+   if(Math.abs(P.x-kx)<18&&!this.menu)drawText(g,'^ SPEAK',kx-13,y-34,0xffe2a8);
+   const ex=D.exit;// exit arch with a pale mist portal to the next road
+   g.fillStyle(0x2a2232);g.fillRect(ex-14,GY-40,5,40);g.fillRect(ex+10,GY-40,5,40);for(let a=0;a<=12;a++){const an=Math.PI*a/12;g.fillRect(Math.round(ex-Math.cos(an)*12)-2,Math.round(GY-40-Math.sin(an)*10),5,3)}
+   for(let yy=GY-46;yy<GY;yy+=2){const w=Math.round(9*Math.sqrt(Math.max(0,1-Math.pow((GY-yy-20)/26,2))));ga.fillStyle(0x8a9cff,.08+.04*Math.sin(t*4+yy*.3));ga.fillRect(ex-w,yy,2*w+1,2)}
+   const nx=this.sv.hubNext&&STAGE_DEFS[this.sv.hubNext]?this.sv.hubNext:'ramparts',nm=STAGE_DEFS[nx].name;if(Math.abs(P.x-ex)<40)drawText(g,'^ '+nm,Math.round(ex-textW('^ '+nm)/2),GY-58,0xb8c4ff);
+   // broken statue of the first lord behind the bonfire
+   g.fillStyle(0x14101a);g.fillRect(136,GY-70,22,70);g.fillRect(132,GY-78,30,8);g.fillRect(140,GY-92,14,14);g.fillStyle(0x221c2a);g.fillRect(136,GY-70,2,70)}}
+ drawLore(g,ga){const V=this.loreView,L=LORE[V.id]||[],a=Math.min(1,V.t/.25),h=26+L.length*9;g.fillStyle(0x05040b,.86*a);g.fillRect(24,40,272,h);g.fillStyle(0x7a5a24,a);g.fillRect(24,40,272,1);g.fillRect(24,40+h-1,272,1);
+  drawText(g,'AN ENGRAVED STONE',30,45,0xffb04a,1,null,a);L.forEach((s,i)=>drawText(g,s,30,57+i*9,0xd8c8b0,1,null,a));drawText(g,'UP / X  CLOSE',226,40+h-9,0x6b67a0,1,null,a)}
+ drawKeeperUI(g,ga,M,box,row){const sv=this.sv;
+  if(M.mode==='keeper'){box(8,40,128,58);drawText(g,KEEPER.name,14,45,0xd8c8b0);['TALK','BUY','LEAVE'].forEach((s,i)=>row(s,14,58+i*9,M.sel===i));drawText(g,'SOULS '+this.souls,14,89,0x9fd8ff);return}
+  if(M.mode==='talk'){const L=KEEPER.lines[this.keeperTier()],s=L[Math.min(M.page,L.length-1)],n=Math.floor(M.t*45);box(10,126,300,46);drawText(g,KEEPER.name,16,131,0xffb04a);drawText(g,s.slice(0,n),16,144,0xd8d0ee);
+   if(n>=s.length&&Math.sin(this.t*8)>0)drawText(g,'>',300,162,0xffe2a8);drawText(g,(M.page+1)+'/'+L.length,16,162,0x6b67a0);return}
+  if(M.mode==='shop'){const L=this.shopList();box(6,14,308,160);drawText(g,KEEPER.name+' - WARES',12,19,0xffb04a);drawText(g,'SOULS '+this.souls,230,19,0x9fd8ff);
+   L.forEach(([id,price],i)=>{row(itemName(id),12,32+i*9,M.sel===i,this.souls>=price?0xb8b4d8:0x6b4a4a);drawText(g,String(price),112,32+i*9,this.souls>=price?0x9fd8ff:0x6b4a4a)});row('LEAVE',12,32+L.length*9,M.sel===L.length);
+   const it=L[M.sel];if(it){g.fillStyle(0x7a5a24);g.fillRect(140,30,1,94);(DESC[it[0]]||[]).forEach((s,i)=>drawText(g,s,12,127+i*8,0xd8c8b0));const m=MIRACLES[it[0]],wp=WEAPONS[it[0]],am=ARMORS[it[0]];drawText(g,m?'MIRACLE':wp?(wp.hand==='off'?'OFF HAND':'WEAPON'):am?'ARMOR':'',146,32,0xffe2a8);const info=m?['REQ FTH '+m.fth,'FP '+m.fp,'KEY '+m.key]:wp?['REQ '+RPG.reqs(wp),RPG.letters(wp)||(wp.mir?'POWERS MIRACLES':'CASTS SORCERY'),'WEIGHT '+wp.w]:am?['WEIGHT '+am.w,'POISE '+am.poise,'ABSORB '+Math.round(am.abs*100)+'%']:['ONE MORE FLASK','AT EVERY REST'];info.forEach((s,i)=>drawText(g,s,146,44+i*9,0x8a86c0))}
+   drawText(g,M.say||'',12,160,0xd8c8b0)}}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
  drawPause(g){g.fillStyle(0x05040b,.82);g.fillRect(0,0,W,H);drawText(g,'PAUSED',Math.round(W/2-textW('PAUSED',2)/2),22,0xffe2a8,2);
@@ -1034,8 +1116,55 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const sub=this.def.boss.card||'THE FROST WARDEN IS ASH. THE GATE STANDS OPEN.';drawText(g,sub,Math.round(W/2-textW(sub)/2),60,0x8a86c0,1,null,a);
   const fmt=v=>{v=Math.floor(v);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`},ts=`TIME ${fmt(this.playT)}   BEST ${fmt(this.best||this.playT)}${this.bestNew?' NEW!':''}`;
   [[ts,72],['DEATHS '+this.sv.deaths,81],['SOULS '+this.souls,90],['EMBERS FREED '+this.cages.filter(c=>c.freed).length+'/'+this.cages.length+(this.ng?' (NG+'+this.ng+')':''),99],['HIDDEN ROOMS '+this.covers.filter(c=>c.found).length+'/'+this.covers.length,108]].forEach(([s,y])=>drawText(g,s,Math.round(W/2-textW(s)/2),y,0xd8d0ee,1,null,a));
-  if(V.t>.8){const o=[V.clear?'ONWARD: '+STAGE_DEFS[this.def.next].name:'JOURNEY ON (NG+'+(this.ng+1)+')','RETURN TO TITLE'];o.forEach((s,i)=>{const sel=V.sel===i,str=(sel?'> ':'  ')+s;drawText(g,str,Math.round(W/2-textW(str)/2),124+i*11,sel?0xffe2a8:0x6b67a0)})}}}
+  if(V.phase==='choose'){g.fillStyle(0x05040b,1);g.fillRect(0,0,W,H);const k=Math.min(1,(V.t-.8)/.6);glow(ga,W/2,70,30+Math.sin(this.t*3)*3,V.sel?0x5f6cff:C.f2,.18*k);{const fh=V.sel?4+Math.sin(this.t*4)*1:12+Math.sin(this.t*11)*2;for(let yy=0;yy<fh;yy++){const w=Math.round((1-yy/fh)*4);g.fillStyle(yy<fh*.3?0xffe2a8:V.sel?0x7a86ff:C.f2,k);g.fillRect(W/2-w,78-yy,2*w+1,1)}g.fillStyle(0x2a2245,k);g.fillRect(W/2-10,78,21,3)}
+   drawText(g,'THE FIRST FLAME',Math.round(W/2-textW('THE FIRST FLAME',2)/2),22,0xffe2a8,2,0x1a0d22,k);const L=['THE LAST LORD IS ASH. BEFORE YOU, THE FIRST FLAME','GUTTERS IN ITS KILN. IT WILL TAKE YOU, IF YOU OFFER.'];L.forEach((s,i)=>drawText(g,s,Math.round(W/2-textW(s)/2),40+i*9,0x8a86c0,1,null,k));
+   this.victoryOpts().forEach((s,i)=>{const sel=V.sel===i,str=(sel?'> ':'  ')+s;drawText(g,str,Math.round(W/2-textW(str)/2),114+i*11,sel?(i?0x9fb8ff:0xffb04a):0x6b67a0,1,null,k)});
+   const d=V.sel?'LET THE AGE OF FIRE END. WHAT COMES AFTER IS NOT YOURS TO KNOW.':'GIVE YOURSELF TO THE FLAME. THE AGE OF FIRE BURNS ON, FOR A TIME.';drawText(g,d,Math.round(W/2-textW(d)/2),146,0xd8d0ee,1,null,k);return}
+  if(V.t>.8){const o=this.victoryOpts();o.forEach((s,i)=>{const sel=V.sel===i,str=(sel?'> ':'  ')+s;drawText(g,str,Math.round(W/2-textW(str)/2),124+i*11,sel?0xffe2a8:0x6b67a0)})}}}
+// ---------------- milestone E: endings (rekindle / fade), each a short code-drawn cinematic + end card ----------------
+const ENDINGS={rekindle:{title:'TO LINK THE FIRST FLAME',lines:['THE ASHEN ONE KNELT BEFORE THE FIRST FLAME,','AND GAVE IT EVERYTHING THAT WAS LEFT.','THE AGE OF FIRE BURNS ON. FOR A TIME.'],col:0xffb04a},
+ fade:{title:'THE AGE OF DARK',lines:['THE ASHEN ONE TURNED FROM THE FIRST FLAME','AND LET IT GUTTER INTO NOTHING.','IN THE DARK, SMALL LIGHTS BEGAN TO STIR.'],col:0x9fb8ff}};
+class Ending extends Phaser.Scene{constructor(){super('ending')}
+ init(d){this.kind=d&&ENDINGS[d.kind]?d.kind:'rekindle'}
+ create(){Object.assign(C,BASEPAL);const sv=Save.load()||{};this.sv=sv;sv.endings=sv.endings||[];if(!sv.endings.includes(this.kind))sv.endings.push(this.kind);sv.lastEnding=this.kind;Save.write(sv);
+  this.fx=new FX(this);this.gn=this.add.graphics().setDepth(4);this.ga=this.add.graphics().setDepth(5).setBlendMode(Phaser.BlendModes.ADD);this.gt=this.add.graphics().setDepth(6);
+  this.t=0;this.card=null;this.sel=0;heroStyle(WEAPONS[(sv.eq||{}).main],false,ARMORS[(sv.eq||{}).armor]);this.stars=[...Array(70)].map((_,i)=>[(i*73)%W,(i*41)%110,(i%5)/5]);
+  this.cameras.main.fadeIn(900,this.kind==='fade'?2:40,this.kind==='fade'?2:20,this.kind==='fade'?6:5);try{this.sound.play(this.kind==='fade'?'chime':'fanfare',{volume:.4})}catch(e){}
+  this.input.keyboard.on('keydown',e=>this.key(e.key));this.input.on('pointerdown',p=>{if(!this.card)return this.key('Enter');const i=Math.floor((p.y-136)/11);if(i===0||i===1){this.sel=i;this.key('Enter')}})}
+ key(k){if(this.gone)return;const ok=k==='Enter'||k===' '||k==='z'||k==='Z';
+  if(!this.card){if(ok&&this.t>.6)this.showCard();return}
+  if(this.card.t<.3)return;if(k==='ArrowUp'||k==='ArrowDown')this.sel^=1;
+  if(ok){this.gone=1;this.cameras.main.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{if(this.sel===0){const s=this.sv;
+    Save.write({stage:'ramparts',bonfire:false,souls:s.souls||0,bossDown:false,deaths:s.deaths||0,time:s.time||0,ng:(s.ng||0)+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings,flaskBonus:s.flaskBonus,lords:[]});this.scene.start('stage',{fresh:false})}
+   else this.scene.start('title')})}}
+ showCard(){this.card={t:0};try{this.sound.play('chime',{volume:.35})}catch(e){}}
+ update(_,d){const dt=Math.min(d,50)/1000;this.t+=dt;const t=this.t,g=this.gn,ga=this.ga,gt=this.gt,R=this.kind==='rekindle',E=ENDINGS[this.kind];g.clear();ga.clear();gt.clear();
+  if(!this.card&&t>11)this.showCard();if(this.card)this.card.t+=dt;
+  // sky: rekindle warms to amber, fade cools to starlit black
+  const k=clamp((t-4)/4,0,1);const sky=R?[0x0b081d,0x3a1406,0x8a3a10]:[0x0b081d,0x05040c,0x020206];for(let y=0;y<H;y+=4){const c=y<60?sky[0]:y<120?sky[1]:sky[2];g.fillStyle(c,R?.4+.6*k:1);g.fillRect(0,y,W,4)}
+  if(!R)for(const[x,y,b]of this.stars){const a=clamp(k*1.2-b*.3,0,1)*(.6+.4*Math.sin(t*2+x));if(a>0)px(ga,x,y,b>.6?0x9fb8ff:0xd8d0ee,a)}
+  g.fillStyle(0x07050f);g.fillRect(0,GY,W,H-GY);g.fillStyle(0x1a1430);g.fillRect(0,GY,W,1);
+  // the kiln of the first flame
+  const fx0=200;g.fillStyle(0x14101e);g.fillRect(fx0-26,GY-6,52,6);g.fillRect(fx0-18,GY-10,36,4);for(let i=0;i<5;i++)g.fillRect(fx0-40+i*20,GY-60+Math.abs(i-2)*10,4,60-Math.abs(i-2)*10);
+  const walk=clamp(t/3.2,0,1),hx=Math.round(lerp(30,fx0-14,walk)),kneel=t>3.4;
+  let fh=R?10+Math.sin(t*9)*2+(t>4.2?ease(clamp((t-4.2)/2.5,0,1))*70:0):Math.max(0,(10+Math.sin(t*6)*1.5)*(1-clamp((t-4)/3.5,0,1)));
+  for(let yy=0;yy<fh;yy++){const w=Math.round((1-yy/fh)*(R?6+fh*.18:5));g.fillStyle(yy<fh*.25?0xffe2a8:yy<fh*.6?C.f1:C.f2);g.fillRect(fx0-w,GY-10-yy,2*w+1,1)}
+  if(fh>0){glow(ga,fx0,GY-14-fh*.3,14+fh*.8,C.f2,R?.22+.2*k:.18);if(Math.random()<(R?.9:.3))this.fx.ember(fx0+rnd(-6,6),GY-12-rnd(0,fh*.6),R&&t>4.2?3:1,R?1.6:.6)}
+  if(!R&&t>7.4){const ex=fx0-8+Math.sin(t*1.3)*2,ey=GY-22-Math.min(14,(t-7.4)*4);glow(ga,ex,ey,5,C.f2,.35);px(ga,ex,ey,0xffe2a8)}// the last ember, cupped
+  // the ashen one: walks in, kneels; rekindle: becomes embers; fade: stands, the ember rising from their hands
+  const dissolve=R?clamp((t-6.2)/2.5,0,1):0;if(dissolve<1)drawHero(g,hx,GY,1,kneel?'rest':'run',Math.floor(t*10)%6,t,{alpha:1-dissolve});
+  if(R&&t>6.2&&t<9.5)for(let i=0;i<3;i++)this.fx.ember(hx+rnd(-5,5),GY-rnd(2,18),1,1.4);
+  if(R&&t>5.5){ga.fillStyle(0xffb04a,clamp((t-5.5)/3,0,.55)*(this.card?.6:1));ga.fillRect(0,0,W,H)}
+  this.fx.update(dt);this.fx.draw(ga,g);
+  // narration
+  E.lines.forEach((s,i)=>{const a=clamp((t-1.2-i*2.6)/.6,0,1)*(this.card?0:1);if(a>0)drawText(gt,s,Math.round(W/2-textW(s)/2),18+i*10,0xd8d0ee,1,0x05040b,a)});
+  if(!this.card&&t>1)drawText(gt,'ENTER  SKIP',W-textW('ENTER  SKIP')-6,H-10,0x6b67a0,1,null,.7);
+  if(this.card){const a=clamp(this.card.t/.6,0,1),s=this.sv;gt.fillStyle(0x05040b,.8*a);gt.fillRect(0,0,W,H);gt.fillStyle(0x7a5a24,a);gt.fillRect(50,40,220,1);gt.fillRect(50,156,220,1);
+   drawText(gt,'ENDING',Math.round(W/2-textW('ENDING')/2),48,0x8a86c0,1,null,a);drawText(gt,E.title,Math.round(W/2-textW(E.title,2)/2),60,E.col,2,0x1a0d22,a);
+   const fmt=v=>{v=Math.floor(v||0);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`};const cls=CLASSES[s.cls]?CLASSES[s.cls].name:'ASHEN ONE';
+   [[cls+'  LEVEL '+(CLASSES[s.cls]&&s.stats?RPG.level(s.cls,s.stats):'-')+(s.ng?'  NG+'+s.ng:''),84],['TIME '+fmt(s.time)+'   DEATHS '+(s.deaths||0),94],['LORE FOUND '+(s.lore||[]).length+'/'+Object.keys(LORE).length+'   ENDINGS SEEN '+s.endings.length+'/2',104],[R?'THE FIRE BURNS. THE WHEEL TURNS.':'THE DARK IS NOT EMPTY.',118]].forEach(([q,y])=>drawText(gt,q,Math.round(W/2-textW(q)/2),y,0xd8d0ee,1,null,a));
+   if(this.card.t>.3)['JOURNEY ON (NG+'+((s.ng||0)+1)+')','RETURN TO TITLE'].forEach((q,i)=>{const on=this.sel===i,str=(on?'> ':'  ')+q;drawText(gt,str,Math.round(W/2-textW(str)/2),138+i*11,on?0xffe2a8:0x6b67a0,1,null,a)})}}}
 // ===================================================================
 window.__G=new Phaser.Game({type:Phaser.AUTO,width:W,height:H,pixelArt:true,roundPixels:true,backgroundColor:'#0b081d',parent:document.body,
  scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},physics:{default:'arcade',arcade:{gravity:{y:800}}},
- fps:{target:60},audio:{noAudio:Q.has('mute')},scene:[Boot,Title,Lab,Stage]});
+ fps:{target:60},audio:{noAudio:Q.has('mute')},scene:[Boot,Title,Lab,Stage,Ending]});

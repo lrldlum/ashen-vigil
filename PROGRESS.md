@@ -97,3 +97,13 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - UI: level-up / equipment panels offset off the HUD bars; touch pad raised so the down button fits at 844x390.
 - Faith heal for Herald/Cleric: ships with milestone E (talisman + HEAL miracle), not in this hotfix.
 - milestoneD distinct_movesets: greatsword-heavy bound relaxed to 1.25x dagger heavy (knight doesn't meet STR 16 and the nerf is intended).
+
+## Milestone E — story
+- story.js (new, loaded after rpg.js): DESC (cryptic 2-3 line descriptions for all 9 weapons/catalysts, 6 armors, 3 sorceries, 3 miracles and the flask), LORE (10 engraved stones), KEEPER (4 dialogue tiers), SHOP, MIRACLES.
+- The Ash Shrine hub (STAGE_DEFS.shrine, 640 px, no enemies/boss): bonfire with LEVEL UP / EQUIPMENT / ITEMS AND SPELLS, the Ash Keeper (TALK / BUY / LEAVE; dialogue tier = lords slain, tier 3 after any ending), merchant (talisman, heal, lightning spear, blessed weapon, bow, spear, herald mail, robe, +1 flask x2), exit arch to the next road.
+  Reached from every lord's STAGE CLEAR card ("REST AT THE ASH SHRINE") and from any bonfire once a lord is down ("TRAVEL TO THE SHRINE"; the exit returns you to that bonfire).
+- Lore: 3 stones per stage + 1 in the shrine; UP reads, saved in sv.lore (kept across NG+). Items menu and equipment panel show descriptions; pickups use item names.
+- Faith miracles: EMBER TALISMAN (off hand, FTH 10, scaling B) -> HEAL (G), LIGHTNING SPEAR (T, piercing, no drop), BLESSED WEAPON (R, 14 s, x(1+0.3*mir) on melee and arrows). Power = RPG.mirBuff (FTH). Herald starts with talisman + Heal, Cleric with talisman + Heal + Lightning Spear. Touch: MIR button (heal when low, else spear).
+- Endings: final lord card -> APPROACH THE FIRST FLAME -> REKINDLE / LET IT FADE -> Ending scene: ~11 s code-drawn cinematic (rekindle: kneel, the flame swells, the hero burns to embers, amber sky; fade: the flame gutters to one cupped ember, stars come out) + end card (time, deaths, lore, endings seen) -> JOURNEY ON (NG+) / TITLE. ?ending=rekindle|fade for direct viewing. sv.endings recorded.
+- r3/r4 leftover arenas: the Pale Cantor glides to a 2-tier choir loft (plats y116 x2, y80) in phases 2-3 and fires note volleys from the perch; Vulcrest's arena has 3 lava pits that crack in phase 1 and erupt (14 dmg, knockback) from phase 2. Gate position is still shared.
+- milestoneC.mjs final step now goes card -> choice -> ending -> JOURNEY ON (same NG+ assertion).

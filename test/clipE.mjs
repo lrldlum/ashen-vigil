@@ -1,0 +1,30 @@
+// usage: node test/clipE.mjs <framedir> — shrine hub, keeper talk + merchant, lore stone, miracles, loft + lava arenas, first flame choice, both endings
+import { chromium } from 'playwright';import fs from 'fs';
+const B='http://127.0.0.1:8171/',D=process.argv[2];fs.mkdirSync(D,{recursive:true});
+const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});
+const pg=await (await br.newContext({viewport:{width:960,height:540}})).newPage();const cdp=await pg.context().newCDPSession(pg);
+let n=0;const list=[];cdp.on('Page.screencastFrame',async f=>{const fn=`${D}/f${String(n++).padStart(5,'0')}.jpg`;fs.writeFileSync(fn,Buffer.from(f.data,'base64'));list.push([fn,f.metadata.timestamp]);cdp.send('Page.screencastFrameAck',{sessionId:f.sessionId}).catch(()=>{})});
+const rec=()=>cdp.send('Page.startScreencast',{format:'jpeg',quality:90,everyNthFrame:1}),stop=()=>cdp.send('Page.stopScreencast');const W=ms=>pg.waitForTimeout(ms),ev=(f,a)=>pg.evaluate(f,a);
+const ready=async()=>{await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive());await W(600);
+ await ev(()=>{window.S=()=>__G.scene.getScene('stage');window.press=k=>{let n=0;window.__inp=()=>(n++===0?{[k]:1}:{})};window.idle=()=>{window.__inp=()=>({})};
+  window.tp=(x,y=156)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.inv=99;s.camY=s.camTY=y-156};window.walk=(x)=>{window.__inp=s=>{const d=x-s.player.x;return Math.abs(d)<3?{}:d>0?{r:1}:{l:1}}};
+  window.dummy=dx=>{const s=S(),e=s.spawnEnemy('hollow',s.player.x+dx,156);e.hp=99;e.state='idle';e.cd=99;e.temp=1;e.b.y=148;e.b.body.moves=false;return e}})};
+await pg.goto(B+'assets/README.md');await ev(()=>{localStorage.clear();localStorage.setItem('ashenVigil.save.v1',JSON.stringify({stage:'shrine',hubNext:'cathedral',cls:'cleric',lords:['warden'],souls:6000,bonfire:false}))});
+await pg.goto(B+'?play&continue&mute');await ready();await rec();
+await ev(()=>{tp(60);walk(286)});await W(2600);await ev(()=>press('restP'));await W(500);
+await ev(()=>{S().menuKey('ok')});for(let i=0;i<3;i++){await W(1500);await ev(()=>S().menuKey('ok'))}await W(400);
+await ev(()=>{const s=S();s.menu={mode:'keeper',sel:1,t:0,prev:{}};s.menuKey('ok')});await W(700);for(let i=0;i<3;i++){await ev(()=>S().menuKey('down'));await W(450)}await ev(()=>S().menuKey('ok'));await W(900);await ev(()=>{S().menu=null});
+await ev(()=>{walk(122)});await W(1800);await ev(()=>press('restP'));await W(2200);await ev(()=>press('jumpP'));await W(300);
+await ev(()=>{walk(560)});await W(3000);await ev(()=>{walk(596)});await W(700);await ev(()=>press('restP'));await W(1300);await ready();
+await ev(()=>{const s=S();s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(700);s.player.fp=999;s.player.fpMax=999;dummy(110);dummy(150);press('lspearP')});await W(1100);
+await ev(()=>{const s=S();s.player.hp=30;press('healP')});await W(1100);await ev(()=>{S().sv.inv.push('blessed');press('blessP')});await W(900);await ev(()=>{dummy(16);let n=0;window.__inp=()=>{n++;return n===2||n===20?{atkP:1}:{}}});await W(1200);
+await stop();
+await pg.goto(B+'?play&mute&slot=2&stage=cathedral');await ready();await ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(3020,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000});
+await ev(()=>{const B=S().boss;B.hp=B.hpMax*.6;B.loftCd=0;S().player.inv=999;S().player.hp=9999});await rec();await pg.waitForFunction(()=>S().boss.state==='perch',null,{timeout:12000}).catch(()=>{});await W(3400);await stop();
+await pg.goto(B+'?play&mute&slot=2&stage=cinderdeep');await ready();await ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(3020,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000});
+await ev(()=>{const B=S().boss;B.hp=B.hpMax*.6;S().player.inv=999;S().player.hp=9999});await rec();await W(4500);await ev(()=>{S().boss.hp=0});await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});await W(600);
+await pg.keyboard.press('Enter');await W(1500);await pg.keyboard.press('ArrowDown');await W(900);await pg.keyboard.press('ArrowUp');await W(900);await pg.keyboard.press('Enter');
+await pg.waitForFunction(()=>__G.scene.isActive('ending'),null,{timeout:8000});await W(12800);await stop();
+await pg.goto(B+'?mute&slot=2&ending=fade');await W(300);await rec();await W(12800);await stop();
+let txt='';for(let i=0;i<list.length;i++){const d=i<list.length-1?Math.min(.2,Math.max(.001,list[i+1][1]-list[i][1])):.04;txt+=`file '${list[i][0]}'\nduration ${d.toFixed(4)}\n`}
+fs.writeFileSync(D+'/list.txt',txt);console.log('frames',list.length,'span',(list.at(-1)[1]-list[0][1]).toFixed(1));await br.close();
