@@ -390,7 +390,7 @@ class Title extends Phaser.Scene{constructor(){super('title')}
    [['R',WEAPONS[CL.main].name],['L',CL.off?WEAPONS[CL.off].name:'-'],['A',ARMORS[CL.armor].name],['HP '+d.hp+'  ST '+d.st+'  FP '+d.fp,''],['ROLL '+d.roll.kind,'']].forEach(([a,b],i)=>drawText(g,a+(b?'  '+b:''),198,50+i*10,i<3?0xd8d0ee:0x9fd8ff));
    drawText(g,CL.desc,Math.round(W/2-textW(CL.desc)/2),148,0xd8d0ee);heroStyle(WEAPONS[CL.main],false,ARMORS[CL.armor]);drawHero(g,262,122,1,'idle',Math.floor(this.t*2)%2,this.t);heroStyle(null,false,null);
    }
-  {const l1='KEYS: ARROWS  Z JUMP  X ATK  C ROLL  ESC PAUSE',l2='XBOX PAD: A JUMP/USE  B ROLL  X ATK  START PAUSE';if(this.mode==='slots'){drawText(g,l1,Math.round(W/2-textW(l1)/2),164,0x5d5990,1,null);drawText(g,l2,Math.round(W/2-textW(l2)/2),171,0x7a76b0,1,null)}}}}
+  {const l1='KEYS: ARROWS/WASD  SPACE JUMP  X/J ATK  C/K MAGIC  SHIFT/L DODGE',l2='XBOX PAD: A JUMP/USE  B ROLL  X ATK  START PAUSE';if(this.mode==='slots'){drawText(g,l1,Math.round(W/2-textW(l1)/2),164,0x5d5990,1,null);drawText(g,l2,Math.round(W/2-textW(l2)/2),171,0x7a76b0,1,null)}}}}
 // ===================================================================
 class Lab extends Phaser.Scene{constructor(){super('lab')}
  create(){makeBG(this)(0);this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.fx=new FX(this);this.ga=this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);this.gn=this.add.graphics();this.t=0}
@@ -487,15 +487,15 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.shots=[];this.spells=[];this.bolts=[];this.novas=[];this.flames=[];
   this.boss=null;this.bossState=sv.bossDown||!D.boss?'dead':'sleep';this.cine=null;this.bars=0;this.victory=null;this.paused=false;this.flashF=0;
   this.cam=this.cameras.main;this.cam.setBounds(0,D.top,WORLD,D.bottom-D.top);this.camY=clamp(GY-156,D.top,D.bottom-H);this.camTY=this.camY;this.cam.scrollY=this.camY;this.cam.startFollow(this.pb,true,.12,0,0,0);this.camOff=0;
-  this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,G,T,R,SPACE,SHIFT,ENTER');
+  this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,G,T,R,SPACE,SHIFT,ENTER,J,K,L,U,I,H,TAB');this.kHold={};
   // r6: Phaser drops JustDown when a key goes down and up inside one frame; latch presses so a quick tap (e.g. Up at the keeper) still counts
   this.kl={};this.input.keyboard.on('keydown',e=>{if(!this.menu&&!e.repeat)this.kl[e.keyCode]=1});
   this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}// r5: a key tapped faster than one frame still moves the menu cursor (edge detection alone could miss it)
-  if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r']}[e.key];if(m&&!e.repeat){if(this.menu.t<.15)return;this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
-   const M=this.menu;if(!e.repeat&&['Enter','z','Z','x','X'].includes(e.key)&&M.t>.3){M.kOk=this.time.now;this.menuKey('ok');return}}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute;if(this.paused&&(e.key==='t'||e.key==='T'))TXT.set(!TXT.big,this.sv)});
+  if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r'],w:['up','up'],s:['down','dn'],a:['left','l'],d:['right','r'],W:['up','up'],S:['down','dn'],A:['left','l'],D:['right','r']}[e.key];if(m&&!e.repeat){if(this.menu.t<.15)return;this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
+   const M=this.menu;if(!e.repeat&&['Enter','z','Z','x','X','j','J',' '].includes(e.key)&&M.t>.3){M.kOk=this.time.now;this.menuKey('ok');return}}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute;if(this.paused&&(e.key==='t'||e.key==='T'))TXT.set(!TXT.big,this.sv)});
   this.touch=Q.has('touch')||!!(this.sys.game.device.input.touch);this.tPrev={};this.tTap={};
   if(this.touch)this.input.addPointer(4);
-  this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.paused&&Math.abs(p.y-(44+9*12+3))<6){TXT.set(!TXT.big,this.sv);return}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
+  this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.paused&&Math.abs(p.y-(40+7*12+3))<6){TXT.set(!TXT.big,this.sv);return}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
   this.inp={};this.hs=0;this.msg=null;this.t=0;this.flashA=0;this.ai={t:0,roll:2.5,bolt:3};this.stats={dodged:0,parries:0,ripostes:0,flasks:0};
   this.cam.fadeIn(500,7,5,15);
   if(DEMO&&Q.has('boss')){this.pb.x=ARENA_L-60}
@@ -532,10 +532,20 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  readInput(){const K=this.keys,kl=this.kl||{},J=k=>Phaser.Input.Keyboard.JustDown(k)||!!kl[k.keyCode];this.kl={};
   if(window.__inp)return window.__inp(this);
   if(DEMO)return this.demoInput();
-  const T=this.touchState(),sh=K.SHIFT.isDown,xP=J(K.X),upP=J(K.UP)|J(K.E);
-  const o={l:K.LEFT.isDown||T.l,r:K.RIGHT.isDown||T.r,up:K.UP.isDown||T.up,dn:K.DOWN.isDown||T.dn,jump:K.Z.isDown||K.SPACE.isDown||T.jump,jumpP:J(K.Z)|J(K.SPACE)|T.jumpP,
-   atkP:(xP&&!sh)||T.atkP,parryP:J(K.A)||(xP&&sh)||T.parryP,rollP:J(K.C)||T.rollP,iceP:J(K.V)||T.iceP,boltP:J(K.S)||T.boltP,domeP:J(K.D)||T.domeP,
-   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP,healP:J(K.G),lspearP:J(K.T),blessP:J(K.R),mirP:T.mirP};const G=typeof PAD!=='undefined'&&PAD.take(0);if(G){// context A: near an interactable (on the ground) A interacts instead of jumping; held A stays a non-jump until released
+  // keyboard map (controller-like; see README): move arrows / WASD, jump Space / Z, weapon X / J (tap light, hold heavy),
+  // magic C / K (selected spell), dodge Shift / L, parry V / U, flask F / R, interact E (or Up arrow), cycle spells Q,
+  // inventory Tab / I, pause Esc / P. W is up (climb) only and never interacts; S is down.
+  const T=this.touchState(),upP=J(K.UP)|J(K.E),wDown=K.X.isDown||K.J.isDown,kh=this.kHold||(this.kHold={});let atkP=false,heavyP=J(K.H);
+  if(wDown){if(kh.w==null)kh.w=0;else kh.w+=this.dt||.016;if(kh.w>=.32&&!kh.wFired){kh.wFired=1;heavyP=true}}else{if(kh.w!=null&&!kh.wFired)atkP=true;kh.w=null;kh.wFired=0}
+  if(J(K.X)||J(K.J)){if(!wDown)atkP=true}// a press+release inside one frame still counts as a tap
+  const cyc=J(K.Q),inv=J(K.TAB)|J(K.I),mag=J(K.C)|J(K.K);if(inv&&!this.menu&&!this.paused&&this.menuKey){this.menu={mode:'main',sel:1,t:1,prev:{}};this.menuKey('ok')}
+  if(cyc&&!this.spCycle){const L=['bolt','ice','dome',...['heal','lspear','blessed'].filter(k=>this.sv.inv.includes(k))];this.kSpell=((this.kSpell||0)+1)%L.length;this.pop(L[this.kSpell]==='bolt'?'STORM':itemName(L[this.kSpell]),this.player.x,this.player.y-26,0x9fd8ff)}
+  const kSel=['bolt','ice','dome',...['heal','lspear','blessed'].filter(k=>this.sv.inv.includes(k))][this.kSpell||0]||'bolt';
+  const o={l:K.LEFT.isDown||K.A.isDown||T.l,r:K.RIGHT.isDown||K.D.isDown||T.r,up:K.UP.isDown||K.W.isDown||T.up,dn:K.DOWN.isDown||K.S.isDown||T.dn,jump:K.Z.isDown||K.SPACE.isDown||T.jump,jumpP:J(K.Z)|J(K.SPACE)|T.jumpP,
+   atkP:atkP||T.atkP,parryP:J(K.V)||J(K.U)||T.parryP,rollP:J(K.SHIFT)||J(K.L)||T.rollP,iceP:T.iceP,boltP:T.boltP,domeP:T.domeP,
+   flaskP:J(K.F)|J(K.R)|T.flaskP,restP:upP||T.upP,heavyP:heavyP||T.hvyP,mirP:T.mirP};
+  if(mag){if(this.spCycle)o.spellP=true;else o[{bolt:'boltP',ice:'iceP',dome:'domeP',heal:'healP',lspear:'lspearP',blessed:'blessP'}[kSel]]=true}
+  if(cyc&&this.spCycle)o.cycR=true;const G=typeof PAD!=='undefined'&&PAD.take(0);if(G){// context A: near an interactable (on the ground) A interacts instead of jumping; held A stays a non-jump until released
    if(G.jumpP&&!this.menu&&!this.loreView&&this.interactHint()){G.jumpP=false;G.upP=true;this.aCtx=1}if(this.aCtx){if(G.jump)G.jump=false;else this.aCtx=0}
    for(const k in G)if(G[k])o[k]=true;if(G.upP)o.restP=true}return o}
  demoInput(){const P=this.player,A=this.ai,o={};A.t+=this.dt;A.roll-=this.dt;A.bolt-=this.dt;
@@ -1681,8 +1691,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
  drawPause(g){g.fillStyle(0x05040b,.82);g.fillRect(0,0,W,H);drawText(g,'PAUSED',Math.round(W/2-textW('PAUSED',2)/2),22,0xffe2a8,2);
-  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST / TALK / OPEN','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME','PAD: A JUMP (NEAR SOMETHING: USE)  B ROLL',' X ATTACK  Y HEAVY  LB PARRY  START RESUME'];
-  L.forEach((s,i)=>drawText(g,s,56,44+i*12,i===8||i===9?0x9fd8ff:0xd8d0ee))}
+  const L=['ARROWS / WASD  MOVE      SPACE / Z  JUMP','X / J  WEAPON (TAP LIGHT, HOLD HEAVY)','C / K  MAGIC (SELECTED SPELL)   Q  NEXT SPELL','SHIFT / L  DODGE      V / U  PARRY','F / R  FLASK          E / UP  INTERACT','TAB / I  INVENTORY    ESC / P  PAUSE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME','PAD: A JUMP/USE  B DODGE  X ATTACK  Y HEAVY','LB PARRY  RB MAGIC  VIEW FLASK  START PAUSE'];
+  L.forEach((s,i)=>drawText(g,s,20,40+i*12,i===6||i===7?0x9fd8ff:0xd8d0ee))}
  drawVictory(g,ga){const V=this.victory,a=Math.min(1,V.t/.6);g.fillStyle(0x05040b,.78*a);g.fillRect(0,0,W,H);
   g.fillStyle(0x7a5a24,a);g.fillRect(60,30,200,1);g.fillRect(60,150,200,1);
   const hd=V.clear?'STAGE CLEAR':'VICTORY ACHIEVED';drawText(g,hd,Math.round(W/2-textW(hd,2)/2),40,0xffe2a8,2,0x1a0d22,a);glow(ga,W/2,46,50,C.f2,.08*a);
