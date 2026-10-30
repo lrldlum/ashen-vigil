@@ -17,16 +17,16 @@
   }
  },
  "stam": {
-  "attacks": 5,
-  "refused": 5,
+  "attacks": 7,
+  "refused": 3,
   "st": 0,
   "flashSeen": true
  },
  "stamina_runs_dry_in_10_attacks": {
   "pass": true,
   "v": {
-   "attacks": 5,
-   "refused": 5,
+   "attacks": 7,
+   "refused": 3,
    "st": 0,
    "flashSeen": true
   }
@@ -73,6 +73,7 @@
  "souls": {
   "stain": {
    "x": 900,
+   "y": 156,
    "souls": 777
   },
   "soulsAfterDeath": 0,
@@ -83,8 +84,12 @@
    "souls": 777,
    "bossDown": false,
    "deaths": 1,
-   "time": 13.330009999999938,
+   "time": 13.413116666666612,
    "ng": 0,
+   "freed": [],
+   "found": [],
+   "chDone": [],
+   "broken": [],
    "stain": null
   }
  },
@@ -93,6 +98,7 @@
   "v": {
    "stain": {
     "x": 900,
+    "y": 156,
     "souls": 777
    },
    "soulsAfterDeath": 0,
@@ -103,8 +109,12 @@
     "souls": 777,
     "bossDown": false,
     "deaths": 1,
-    "time": 13.330009999999938,
+    "time": 13.413116666666612,
     "ng": 0,
+    "freed": [],
+    "found": [],
+    "chDone": [],
+    "broken": [],
     "stain": null
    }
   }
@@ -162,15 +172,15 @@
   }
  },
  "tell": {
-  "next": "charge",
-  "windup": 0.6,
+  "next": "slam",
+  "windup": 0.7,
   "eyeFlash": true
  },
  "boss_windup_>=0.5s": {
   "pass": true,
   "v": {
-   "next": "charge",
-   "windup": 0.6,
+   "next": "slam",
+   "windup": 0.7,
    "eyeFlash": true
   }
  },
@@ -195,7 +205,7 @@
   "touchEnabled": true,
   "moved": 65,
   "atkState": "atk",
-  "jumpVy": -173
+  "jumpVy": -160
  },
  "touch_move_attack_jump": {
   "pass": true,
@@ -203,7 +213,7 @@
    "touchEnabled": true,
    "moved": 65,
    "atkState": "atk",
-   "jumpVy": -173
+   "jumpVy": -160
   }
  },
  "portrait": "flex",

@@ -1,0 +1,364 @@
+{
+ "level": {
+  "tilesW": 420,
+  "tilesH": 71,
+  "solidBodies": 34,
+  "oneways": 14,
+  "cages": 8,
+  "covers": 3,
+  "challenges": 2,
+  "breakables": 1
+ },
+ "level_built": {
+  "pass": true,
+  "v": {
+   "tilesW": 420,
+   "tilesH": 71,
+   "solidBodies": 34,
+   "oneways": 14,
+   "cages": 8,
+   "covers": 3,
+   "challenges": 2,
+   "breakables": 1
+  }
+ },
+ "wj1": true,
+ "wj1t": 1.027,
+ "start": {
+  "x": 326,
+  "y": 36,
+  "wallJumps": 2,
+  "found": true,
+  "coverAlpha": 0,
+  "e7": true
+ },
+ "walljump_to_hidden_room": {
+  "pass": true,
+  "v": {
+   "reached": true,
+   "secs": 1.027,
+   "x": 326,
+   "y": 36,
+   "wallJumps": 2,
+   "found": true,
+   "coverAlpha": 0,
+   "e7": true
+  }
+ },
+ "cage_freed_by_attack": {
+  "pass": true,
+  "v": {
+   "x": 326,
+   "y": 36,
+   "wallJumps": 2,
+   "found": true,
+   "coverAlpha": 0,
+   "e7": true
+  }
+ },
+ "climb": true,
+ "climbAt": {
+  "x": 389,
+  "y": 20,
+  "climbs": 1,
+  "camY": -133
+ },
+ "climb_chain_to_rooftop": {
+  "pass": true,
+  "v": {
+   "x": 389,
+   "y": 20,
+   "climbs": 1,
+   "camY": -133
+  }
+ },
+ "drop": true,
+ "dropAt": {
+  "y": 300,
+  "camY": 144
+ },
+ "drop_through_oneway": {
+  "pass": true,
+  "v": {
+   "y": 300,
+   "camY": 144
+  }
+ },
+ "vertical_camera_down": {
+  "pass": true,
+  "v": {
+   "y": 300,
+   "camY": 144
+  }
+ },
+ "crypt": true,
+ "cryptCage": true,
+ "crypt_hidden_room_and_cage": {
+  "pass": true,
+  "v": {
+   "found": true,
+   "freed": true
+  }
+ },
+ "wj2": true,
+ "wj2At": {
+  "x": 1459,
+  "y": 156
+ },
+ "walljump_crypt_shaft": {
+  "pass": true,
+  "v": {
+   "x": 1459,
+   "y": 156
+  }
+ },
+ "wj3": true,
+ "towerAt": {
+  "x": 1852,
+  "y": -145,
+  "camY": -204
+ },
+ "walljump_tower": {
+  "pass": true,
+  "v": {
+   "x": 1852,
+   "y": -145,
+   "camY": -204
+  }
+ },
+ "vertical_camera_up": {
+  "pass": true,
+  "v": {
+   "x": 1852,
+   "y": -145,
+   "camY": -204
+  }
+ },
+ "timerStart": {
+  "active": 1,
+  "gateClosed": false
+ },
+ "timerFail": {
+  "active": 0,
+  "gateClosed": true,
+  "bodyOn": true
+ },
+ "timerWin": true,
+ "timerWinSecs": 5.428,
+ "timerEnd": {
+  "done": 1,
+  "left": 3.57,
+  "spikeHits": 0,
+  "hp": 100
+ },
+ "timer_challenge_start": {
+  "pass": true,
+  "v": {
+   "active": 1,
+   "gateClosed": false
+  }
+ },
+ "timer_challenge_fail_seals_gate": {
+  "pass": true,
+  "v": {
+   "active": 0,
+   "gateClosed": true,
+   "bodyOn": true
+  }
+ },
+ "timer_challenge_cleared_by_running": {
+  "pass": true,
+  "v": {
+   "secs": 5.428,
+   "done": 1,
+   "left": 3.57,
+   "spikeHits": 0,
+   "hp": 100
+  }
+ },
+ "spike": {
+  "hp": 85,
+  "x": 1962,
+  "y": -100
+ },
+ "spikes_hurt_and_reset": {
+  "pass": true,
+  "v": {
+   "hp": 85,
+   "x": 1962,
+   "y": -100
+  }
+ },
+ "brk": {
+  "hp": 0
+ },
+ "brkRoom": true,
+ "e6": true,
+ "breakable_wall_room_cage": {
+  "pass": true,
+  "v": {
+   "hp": 0,
+   "room": true,
+   "e6": true
+  }
+ },
+ "w1": {
+  "active": 1,
+  "gates": [
+   true,
+   true
+  ],
+  "live": 2,
+  "cageLocked": true
+ },
+ "w2": {
+  "wave": 1,
+  "live": 3
+ },
+ "w3": {
+  "done": 1,
+  "active": 0,
+  "gates": [
+   false,
+   false
+  ],
+  "cageLocked": false,
+  "saved": [
+   "c_waves"
+  ]
+ },
+ "e5": true,
+ "waves_challenge": {
+  "pass": true,
+  "v": {
+   "w1": {
+    "active": 1,
+    "gates": [
+     true,
+     true
+    ],
+    "live": 2,
+    "cageLocked": true
+   },
+   "w2": {
+    "wave": 1,
+    "live": 3
+   },
+   "w3": {
+    "done": 1,
+    "active": 0,
+    "gates": [
+     false,
+     false
+    ],
+    "cageLocked": false,
+    "saved": [
+     "c_waves"
+    ]
+   },
+   "e5": true
+  }
+ },
+ "climb2": true,
+ "climb_out_of_ossuary": {
+  "pass": true,
+  "v": {
+   "x": 2891,
+   "y": 156
+  }
+ },
+ "persist": {
+  "freed": [
+   "e2",
+   "e4",
+   "e5",
+   "e6",
+   "e7"
+  ],
+  "found": 3,
+  "breakables": 0,
+  "trialDone": true
+ },
+ "collectibles_persist": {
+  "pass": true,
+  "v": {
+   "freed": [
+    "e2",
+    "e4",
+    "e5",
+    "e6",
+    "e7"
+   ],
+   "found": 3,
+   "breakables": 0,
+   "trialDone": true
+  }
+ },
+ "best": {
+  "best": 3,
+  "stageEnemiesAlive": 0
+ },
+ "best_time_saved": {
+  "pass": true,
+  "v": {
+   "best": 3,
+   "stageEnemiesAlive": 0
+  }
+ },
+ "stage_enemies_frozen_at_gate": {
+  "pass": true,
+  "v": {
+   "best": 3,
+   "stageEnemiesAlive": 0
+  }
+ },
+ "victory": {
+  "embers": 8,
+  "rooms": 3
+ },
+ "victory_lists_embers": {
+  "pass": true,
+  "v": {
+   "embers": 8,
+   "rooms": 3
+  }
+ },
+ "fav": 200,
+ "parry": {
+  "pflashSet": true,
+  "stag": true,
+  "mist": 2
+ },
+ "favicon_200_no_404": {
+  "pass": true,
+  "v": {
+   "status": 200,
+   "consoleErrors": []
+  }
+ },
+ "parry_pop_and_flash": {
+  "pass": true,
+  "v": {
+   "pflashSet": true,
+   "stag": true,
+   "mist": 2
+  }
+ },
+ "demo": true,
+ "demoSecs": 40.94,
+ "demo_ai_reaches_boss": {
+  "pass": true,
+  "v": {
+   "secs": 40.94
+  }
+ },
+ "no_page_errors": {
+  "pass": true,
+  "v": []
+ },
+ "no_external_requests": {
+  "pass": true,
+  "v": []
+ }
+}
+PASS 26 / 26

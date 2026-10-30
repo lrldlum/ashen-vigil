@@ -45,3 +45,12 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - **D:** DS3-style classes and leveling, weapons and armor with scaling and weight, staffs and wands for INT spells, and 3 save slots.
 - **E:** Story: a hub shrine with a keeper, cryptic item text, and a rekindle or let-it-fade ending.
 - **F:** Host-and-join co-op over PeerJS with a room code. The PeerJS library must be vendored locally to keep the build static.
+
+## Milestone B — exploration (done)
+- **LevelKit** (`class Level` in game.js + `STAGE_DEFS` in stages.js): an 8 px tile grid with kinds SOLID / ONEWAY / CHAIN / SPIKE plus a back-wall flag. Rects are greedily merged into static bodies and the level is painted procedurally to one texture. Each stage def lists world/top/bottom, carve, solid, oneway, chain, spikes, back, covers (hidden rooms), breakables, cages (embers), challenges (`timer` | `waves`), braziers and enemies. Stages 2 and 3 only need a new def plus a palette.
+- Ramparts: up routes (rooftops, tower), down routes (crypt, ossuary), 3 hidden rooms, 1 cracked wall, 8 caged embers (HUD `n/8` + victory card), Ember Run timer trial (9 s), Ossuary waves trial. Vertical camera. Save keeps freed/found/chDone/broken.
+- Controls: DOWN+JUMP drops through a ledge; UP/DOWN grabs and climbs a chain; JUMP on a chain hops off; slide down a wall and JUMP to wall-jump. Touch has a down button.
+- r2 items: foreground parallax layer (1.3x) + drifting mist; hero rim light (gold when parrying) instead of the 2.5x zoom; wraith moved 1380→1300; stage enemies despawn when the boss gate closes; favicon; parry flash + "PARRY" pop; best time in localStorage `ashenVigil.best`.
+- Fix found while testing: the ossuary chain ended one tile below the floor, so the player couldn't climb out. Extended it to y156.
+- Tests: `node test/milestoneB.mjs` → 26/26, `node test/milestoneA.mjs` → 17/17. Clip: `node test/clipB.mjs /tmp/fB` then ffmpeg concat (see A).
+- Gaps: rim light used instead of zoom; only stage 1 has exploration; enemy AI doesn't use climbables.
