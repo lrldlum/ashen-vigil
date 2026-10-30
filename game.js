@@ -390,7 +390,7 @@ class Title extends Phaser.Scene{constructor(){super('title')}
    [['R',WEAPONS[CL.main].name],['L',CL.off?WEAPONS[CL.off].name:'-'],['A',ARMORS[CL.armor].name],['HP '+d.hp+'  ST '+d.st+'  FP '+d.fp,''],['ROLL '+d.roll.kind,'']].forEach(([a,b],i)=>drawText(g,a+(b?'  '+b:''),198,50+i*10,i<3?0xd8d0ee:0x9fd8ff));
    drawText(g,CL.desc,Math.round(W/2-textW(CL.desc)/2),148,0xd8d0ee);heroStyle(WEAPONS[CL.main],false,ARMORS[CL.armor]);drawHero(g,262,122,1,'idle',Math.floor(this.t*2)%2,this.t);heroStyle(null,false,null);
    }
-  {const l1='KEYS: ARROWS  Z JUMP  X ATK  C ROLL  ESC PAUSE',l2='XBOX PAD: A JUMP  B ROLL  X ATK  START PAUSE';if(this.mode==='slots'){drawText(g,l1,Math.round(W/2-textW(l1)/2),164,0x5d5990,1,null);drawText(g,l2,Math.round(W/2-textW(l2)/2),171,0x7a76b0,1,null)}}}}
+  {const l1='KEYS: ARROWS  Z JUMP  X ATK  C ROLL  ESC PAUSE',l2='XBOX PAD: A JUMP/USE  B ROLL  X ATK  START PAUSE';if(this.mode==='slots'){drawText(g,l1,Math.round(W/2-textW(l1)/2),164,0x5d5990,1,null);drawText(g,l2,Math.round(W/2-textW(l2)/2),171,0x7a76b0,1,null)}}}}
 // ===================================================================
 class Lab extends Phaser.Scene{constructor(){super('lab')}
  create(){makeBG(this)(0);this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.fx=new FX(this);this.ga=this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);this.gn=this.add.graphics();this.t=0}
@@ -535,7 +535,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const T=this.touchState(),sh=K.SHIFT.isDown,xP=J(K.X),upP=J(K.UP)|J(K.E);
   const o={l:K.LEFT.isDown||T.l,r:K.RIGHT.isDown||T.r,up:K.UP.isDown||T.up,dn:K.DOWN.isDown||T.dn,jump:K.Z.isDown||K.SPACE.isDown||T.jump,jumpP:J(K.Z)|J(K.SPACE)|T.jumpP,
    atkP:(xP&&!sh)||T.atkP,parryP:J(K.A)||(xP&&sh)||T.parryP,rollP:J(K.C)||T.rollP,iceP:J(K.V)||T.iceP,boltP:J(K.S)||T.boltP,domeP:J(K.D)||T.domeP,
-   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP,healP:J(K.G),lspearP:J(K.T),blessP:J(K.R),mirP:T.mirP};const G=typeof PAD!=='undefined'&&PAD.take(0);if(G)for(const k in G)if(G[k])o[k]=true;return o}
+   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP,healP:J(K.G),lspearP:J(K.T),blessP:J(K.R),mirP:T.mirP};const G=typeof PAD!=='undefined'&&PAD.take(0);if(G){// context A: near an interactable (on the ground) A interacts instead of jumping; held A stays a non-jump until released
+   if(G.jumpP&&!this.menu&&!this.loreView&&this.interactHint()){G.jumpP=false;G.upP=true;this.aCtx=1}if(this.aCtx){if(G.jump)G.jump=false;else this.aCtx=0}
+   for(const k in G)if(G[k])o[k]=true;if(G.upP)o.restP=true}return o}
  demoInput(){const P=this.player,A=this.ai,o={};A.t+=this.dt;A.roll-=this.dt;A.bolt-=this.dt;
   let near=null,nd=1e9;for(const e of this.enemies)if(!e.dead){const d=e.b.x-P.x;if(d>-20&&d<nd){nd=d;near=e}}
   const B=this.boss&&this.bossState==='fight'?this.boss:null;
@@ -658,7 +660,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(D.lavaPits&&this.boss&&this.boss.kind==='king'){const on=this.boss.phase>=2;for(const[a,b]of D.lavaPits){if(on){g.fillStyle(0x8a1a08);g.fillRect(a,GY,b-a,3);for(let x=a;x<b;x++){const h=1+((x*7+Math.floor(t*10))%3);g.fillStyle(h>2?0xffd04a:C.f2);g.fillRect(x,GY-h+1,1,h)}glow(ga,(a+b)/2,GY,(b-a)*.6,C.f2,.25);this.light((a+b)/2,GY-4,50,C.f2,.8)}else{g.fillStyle(0x3a1008);for(let x=a+3;x<b-3;x+=7){g.fillRect(x,GY,4,1);px(g,x+2,GY+1,C.f2)}}}}
   if(D.theme==='cinderdeep'||D.theme==='catacomb'){for(const r of D.spikes||[]){if(r[2]<cX-40||r[0]>cX+W+40)continue;const mx=(r[0]+r[2])/2;glow(ga,mx,r[1]+4,14+Math.sin(t*5+mx)*2,C.f2,.18);this.light(mx,r[1],50+Math.sin(t*7+mx)*3,C.f2,.7);
     const bx=r[0]+((Math.floor(t*3+mx))%(r[2]-r[0]));px(ga,bx,r[1]+2-((t*6)%3),C.f0,.8)}}}
- drawExplore(g,ga){const t=this.t;this.drawLoot(g,ga);
+ drawExplore(g,ga){const t=this.t;this.drawLoot(g,ga);{const h=this.interactHint();this.ihint=h;if(h&&h!=='Rest'&&h!=='Pull'){const P=this.player;this.keyGlyph(g,Math.round(P.x)-14,Math.round(P.y)-40,h)}}
   for(const k of this.breakables){if(k.hp<=0)continue;const[x0,y0,x1,y1]=k.r;g.fillStyle(k.flash>0?0xb0a8d8:C.g1);g.fillRect(x0,y0,x1-x0,y1-y0);g.fillStyle(C.gTop);g.fillRect(x0,y0,x1-x0,1);
    g.fillStyle(C.gM);for(let y=y0+6;y<y1;y+=6)g.fillRect(x0,y,x1-x0,1);for(let y=y0,r=0;y<y1;y+=6,r++)g.fillRect(x0+(r%2?4:10),y,1,6);
    g.fillStyle(0x07050f);const cr=3-k.hp;line(g,x0+3,y0+4,x0+8,y0+14,0x07050f);line(g,x0+8,y0+14,x0+5,y0+22,0x07050f);if(cr>0){line(g,x0+8,y0+14,x0+13,y0+18,0x07050f);line(g,x0+5,y0+22,x0+10,y1-2,0x07050f)}if(cr>1){line(g,x0+2,y0+16,x0+6,y0+26,0x07050f);line(g,x0+11,y0+5,x0+14,y0+11,0x07050f)}
@@ -671,7 +673,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    g.fillStyle(0x4a4250);g.fillRect(x-3,GY-38,18,3);const dh=Math.round(34*(1-c.t));if(dh>0){g.fillStyle(0x2a2430);g.fillRect(x,GY-35+(34-dh),12,dh);g.fillStyle(0x7a6a50);for(let y=GY-32+(34-dh);y<GY;y+=8)g.fillRect(x,y,12,1);g.fillStyle(0xb89a60);g.fillRect(x+8,GY-18,2,3)}
    else{g.fillStyle(0x0a080c);g.fillRect(x,GY-35,12,35)}
    const lx=c.lever,ang=c.open?.7:-.7;g.fillStyle(0x3a3240);g.fillRect(lx-3,GY-4,7,4);line(g,lx,GY-4,Math.round(lx+Math.sin(ang)*10),Math.round(GY-4-Math.cos(ang)*10),0x8a7a60);g.fillStyle(c.open?0x9fe86a:0xd8402a);g.fillRect(Math.round(lx+Math.sin(ang)*10)-1,Math.round(GY-4-Math.cos(ang)*10)-1,3,3);
-   const P=this.player;if(!c.open&&Math.abs(P.y-GY)<24){if(Math.abs(P.x-c.lever)<14&&P.x>c.x)drawText(g,'^ PULL',lx-14,GY-22,0xffe2a8);else if(P.x<c.x&&P.x>c.x-60)drawText(g,'BARRED - DROP BELOW',x-110,GY-46,0xd8c8b0)}}
+   const P=this.player;if(!c.open&&Math.abs(P.y-GY)<24){if(Math.abs(P.x-c.lever)<14&&P.x>c.x)this.keyGlyph(g,lx-14,GY-22,'Pull');else if(P.x<c.x&&P.x>c.x-60)drawText(g,'BARRED - DROP BELOW',x-110,GY-46,0xd8c8b0)}}
   for(const ch of this.chs)for(const gt of ch.gateObjs){if(!gt.closed)continue;const[x0,y0,x1,y1]=gt.r;g.fillStyle(0x2a2245);g.fillRect(x0,y0,x1-x0,y1-y0);g.fillStyle(0x8b86a8);for(let x=x0+1;x<x1;x+=3)g.fillRect(x,y0,1,y1-y0);for(let y=y0+4;y<y1;y+=10)g.fillRect(x0,y,x1-x0,1);
    const c=ch.type==='timer'?C.ice2:C.f2;for(let y=y0+6;y<y1;y+=14)px(ga,x0+4,y+((t*20)|0)%4,c,.8);this.light((x0+x1)/2,(y0+y1)/2,20,c,.3)}
   for(const c of this.cages){if(c.freed)continue;const x=Math.round(c.x),y=Math.round(c.y),bob=Math.round(Math.sin(t*3+c.bob)),ey=y-7+bob;
@@ -1388,7 +1390,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    for(let k=0;k<4;k++){const hy=by-24-k*7-((t*14+k*7)%7);const hx=x+Math.sin(t*5+k*1.7+x)*1.5;ga.fillStyle(0xff9040,.05);ga.fillRect(Math.round(hx)-1,Math.round(hy),3,4)}}
   {const x=this.bonfire.x,lit=this.bonfire.lit;g.fillStyle(0x2a2245);g.fillRect(x-7,GY-2,15,2);g.fillStyle(0x3a3060);g.fillRect(x-5,GY-3,11,1);line(g,x,GY-2,x+2,GY-17,0x8b86a8);line(g,x-2,GY-13,x+4,GY-12,0x8b86a8);px(g,x+2,GY-17,0xd8d0ee);
    glow(ga,x,GY-6,(lit?30:14)+Math.sin(t*9)*1.5,C.f2,lit?.17:.1);this.light(x,GY-8,(lit?74:34)+Math.sin(t*9)*2,C.f2,lit?.75:.35);
-   if(Math.abs(P.x-x)<TUNE.restR&&!this.cine&&!P.dead){const bob=Math.floor(t*3)%2,tx=x-11,ty=GY-32-bob;g.fillStyle(0xffe2a8);g.fillRect(tx+2,ty,1,1);g.fillRect(tx+1,ty+1,3,1);g.fillRect(tx,ty+2,5,1);drawText(g,'REST',tx+7,ty-1,0xffe2a8)}}
+   if(Math.abs(P.x-x)<TUNE.restR&&!this.cine&&!P.dead){const bob=Math.floor(t*3)%2,tx=x-14,ty=GY-32-bob;this.keyGlyph(g,tx,ty-1,'Rest')}}
   if(this.stain){const S=this.stain,sy=S.y||GY,pl=Math.sin(t*5)*.5+.5;glow(ga,S.x,sy-3,6+pl*2,0x5fe0c0,.3);px(ga,S.x,sy-2,0xffffff);px(ga,S.x-1,sy-1,0x9ff0dc);px(ga,S.x+1,sy-1,0x9ff0dc);this.light(S.x,sy-4,26,0x5fe0c0,.5)}
   this.drawStageFX(g,ga);this.drawExplore(g,ga);this.drawStory(g,ga);
   for(const s of this.spells){if(s.t<0)continue;const gt=clamp(s.t/ICEP.grow,0,1);let h=s.h*ease(gt);if(s.t>.6)h*=1-(s.t-.6)/.15;
@@ -1564,6 +1566,16 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.time.delayedCall(520,()=>{Save.write({...sv,...extra,stage:to,bossDown:STAGE_DEFS[to].side?sv.lords.includes(STAGE_DEFS[to].boss.kind):false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})})}
  openShortcut(c,fromNet){if(c.open)return;if(NET.guest()&&!fromNet){NET.send({t:'sc',id:c.id});return}c.open=true;c.body.body.enable=false;if(!this.sv.shortcuts.includes(c.id))this.sv.shortcuts.push(c.id);Save.write(this.sv);
   this.say('SHORTCUT OPENED',1.6);this.sfx('clang',.6);this.cam.shake(200,.01);this.fx.spark(c.x+6,GY-14,12,0xd8b060,90);this.stats.shortcuts=(this.stats.shortcuts||0)+1}
+ // context interact (pad A): the label of what Up/E/A would do here, or null. Mirrors interact() + bonfire rest; proximity only.
+ interactHint(){const P=this.player,D=this.def;if(!P||P.dead||this.cine||this.menu||!this.pb.body.blocked.down)return null;const near=(x,r=14)=>x!=null&&Math.abs(P.x-x)<r;
+  for(const c of this.shortcuts||[]){if(c.open||Math.abs(P.y-GY)>24)continue;if(near(c.lever,14)&&P.x>c.x)return'Pull';if(P.x<c.x&&near(c.x-6,16))return'Inspect'}
+  for(const c of this.chests||[])if(c.st==='shut'&&near(c.x,14)&&Math.abs(P.y-c.y)<16)return'Open';
+  if(D.stair&&near(D.stair.x,18))return'Climb';for(const k of['sanctum','arch','lift','gate','well'])if(D[k]&&near(D[k].x,14))return'Enter';if(D.descent&&near(D.descent.x,16))return'Descend';
+  for(const l of this.lore||[])if(near(l.x,12)&&Math.abs(P.y-l.y)<20)return'Read';
+  if(D.hub&&near(D.keeper,18))return'Talk';if(D.hub&&near(D.exit,16))return'Travel';
+  if(this.bonfire&&Math.abs(P.x-this.bonfire.x)<TUNE.restR)return'Rest';return null}
+ // button glyph: Xbox A (green disc) when a pad is connected, else the keyboard key [E]
+ keyGlyph(g,x,y,label,col=0xffe2a8){const pad=typeof PAD!=='undefined'&&PAD.connected();if(pad){g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0x3fb950);g.fillRect(x+1,y-1,7,9);g.fillRect(x,y,9,7);drawText(g,'A',x+2,y,0x0b2a12,1,0x3fb950);return drawText(g,label,x+12,y,col)}drawText(g,'[E] '+label,x,y,col)}
  interact(){const P=this.player,D=this.def,near=(x,r=14)=>Math.abs(P.x-x)<r;
   for(const c of this.shortcuts||[]){if(c.open||Math.abs(P.y-GY)>24)continue;if(near(c.lever,14)&&P.x>c.x){this.openShortcut(c);return true}if(P.x<c.x&&near(c.x-6,16)){this.say('BARRED FROM THE FAR SIDE - FIND A WAY AROUND',1.4);this.sfx('clang',.2);return true}}
   for(const c of this.chests)if(c.st==='shut'&&near(c.x,14)&&Math.abs(P.y-c.y)<16){this.openChest(c);return true}
@@ -1666,7 +1678,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
  drawPause(g){g.fillStyle(0x05040b,.82);g.fillRect(0,0,W,H);drawText(g,'PAUSED',Math.round(W/2-textW('PAUSED',2)/2),22,0xffe2a8,2);
-  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST AT BONFIRE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME','XBOX PAD: STICK/DPAD MOVE  A JUMP  B ROLL',' X ATTACK  Y HEAVY  LB PARRY  START RESUME'];
+  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST / TALK / OPEN','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME','PAD: A JUMP (NEAR SOMETHING: USE)  B ROLL',' X ATTACK  Y HEAVY  LB PARRY  START RESUME'];
   L.forEach((s,i)=>drawText(g,s,56,44+i*12,i===8||i===9?0x9fd8ff:0xd8d0ee))}
  drawVictory(g,ga){const V=this.victory,a=Math.min(1,V.t/.6);g.fillStyle(0x05040b,.78*a);g.fillRect(0,0,W,H);
   g.fillStyle(0x7a5a24,a);g.fillRect(60,30,200,1);g.fillRect(60,150,200,1);

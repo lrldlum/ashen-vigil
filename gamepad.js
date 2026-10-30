@@ -5,7 +5,7 @@
 //    replayed as the same keys the keyboard uses (arrows, Enter, Escape, T), so every screen the keyboard reaches is pad-navigable
 //  - a small DOM toast ("Controller connected") and a "Press any button" hint until a pad is seen
 // Button map (W3C standard mapping, Xbox labels):
-//  A(0) jump / confirm   B(1) dodge roll / back   X(2) attack   Y(3) heavy attack
+//  A(0) jump / confirm; context-sensitive: next to an interactable (Stage.interactHint) A interacts instead (see readInput)   B(1) dodge roll / back   X(2) attack   Y(3) heavy attack
 //  LB(4) parry/block     RB(5) bolt spell         LT(6) ice spell   RT(7) dome spell
 //  View(8) flask         Start(9) pause           L3(10) heal spell  R3(11) bless
 //  D-pad(12-15) / left stick: move, up = interact/rest, down = drop; in menus: navigate
