@@ -21,3 +21,4 @@ All files in this folder are ORIGINAL, synthesized procedurally by `tools/gen_sf
 - "The Essential Retro Video Game Sound Effects Collection [512 sounds]" by Juhani Junkala, CC0 — https://opengameart.org/content/512-sound-effects-8-bit-style
 
 r3/E additions (original, synthesized inline with a small Python wave script; CC0): sfx_menu (menu tick), sfx_pickup (item get), sfx_chime (ember freed / hidden room), sfx_crumble (breakable wall), sfx_clang (challenge gates), sfx_slam (lord slams), sfx_lava (magmaw spit), sfx_heal (Heal miracle), sfx_thunder (Lightning Spear), sfx_buff (Blessed Weapon), sfx_talk (dialogue blip), sfx_fanfare (level up / trial clear).
+- sfx_bell.wav — original, synthesized in Python for milestone G (inharmonic bell partials with long decay). Public domain / project-original.

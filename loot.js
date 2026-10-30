@@ -1,0 +1,53 @@
+// ASHEN VIGIL — milestone G: loot (consumables, weighted drop tables, chests + mimics, lord signature weapons). Pure data, no Phaser.
+'use strict';
+// consumables take effect the moment you pick them up (each has its own pickup burst drawn in code: kind -> colour + shape)
+const CONSUMABLES={
+ ember:{name:'WARM EMBER',fx:'heal',col:0xffb04a,hp:35},
+ bluesap:{name:'BLUE SAP',fx:'fp',col:0x6ab8ff,fp:30},
+ soulshard:{name:'SOUL SHARD',fx:'souls',col:0xe8e0ff,souls:150},
+ rimesalt:{name:'RIME SALT',fx:'guard',col:0xd8f2ff,guard:12},// 12 s of +25% absorption
+ cinderleaf:{name:'CINDER LEAF',fx:'stam',col:0x9fe86a,stam:10}};// 10 s of free stamina regen boost
+// weighted tables. Each roll: one entry by weight. 'none' = only souls. 'gear' = a random weapon/armor the picker doesn't own yet
+const DROP_TABLES={
+ common:[['none',62],['ember',12],['bluesap',8],['soulshard',8],['cinderleaf',5],['gear',5]],
+ elite:[['none',30],['ember',18],['bluesap',12],['soulshard',14],['rimesalt',10],['cinderleaf',6],['gear',10]],
+ chest:[['ember',22],['bluesap',16],['soulshard',22],['rimesalt',14],['cinderleaf',10],['gear',16]],
+ mimic:[['gear',100]]};
+const ETABLE={knight:'elite',sentinel:'elite',cinderknight:'elite'};// everything else uses 'common'
+const GEAR_POOL=['longsword','dagger','spear','axe','bow','greatsword','staff','leather','herald','robe','iron'];
+function rollTable(name,r=Math.random()){const T=DROP_TABLES[name];const tot=T.reduce((a,[,w])=>a+w,0);let x=r*tot;for(const[k,w]of T){if((x-=w)<0)return k}return T[T.length-1][0]}
+// chests per stage: some sit in the open, some hide in secret rooms (hidden:1), some bite (mimic:1)
+const CHESTS={
+ ramparts:[{id:'ch_r1',x:640,y:156},{id:'ch_r2',x:330,y:36,hidden:1},{id:'ch_r3',x:1020,y:300,hidden:1},{id:'ch_r4',x:2200,y:156,mimic:1}],
+ cathedral:[{id:'ch_c1',x:860,y:156},{id:'ch_c2',x:1770,y:36,hidden:1},{id:'ch_c3',x:2340,y:300,hidden:1},{id:'ch_c4',x:2700,y:156,mimic:1}],
+ cinderdeep:[{id:'ch_d1',x:620,y:156},{id:'ch_d2',x:970,y:36,hidden:1},{id:'ch_d3',x:260,y:300,hidden:1},{id:'ch_d4',x:2350,y:156,mimic:1}],
+ belltower:[{id:'ch_b1',x:820,y:156},{id:'ch_b2',x:1400,y:-104,hidden:1},{id:'ch_b3',x:260,y:36,hidden:1},{id:'ch_b4',x:1180,y:-60,mimic:1},{id:'ch_b5',x:2500,y:156,mimic:1}]};
+// lord signature weapons: guaranteed drop, unique special on the HEAVY attack (costs FP), story description in DESC
+const SIGNATURE={warden:'frostbrand',cantor:'requiemspear',king:'crownbreaker',toller:'clapper'};
+const SIG_WEAPONS={
+ frostbrand:{name:'FROSTBRAND',type:'sword',hand:'main',base:1.25,req:{str:11,dex:12},sc:{str:'C',dex:'B'},w:4,swL:10,special:'frost',spFp:8,
+  light:{t:.34,h0:.08,h1:.16,reach:12,w:22,h:18,mul:1,cost:18,lunge:30,n:2,arc:{r:16,th:3,sweep:200,trail:1}},
+  heavy:{t:.66,h0:.30,h1:.38,reach:14,w:24,h:22,mul:2,cost:30,lunge:50,poise:2,arc:{r:18,th:4,sweep:170,trail:1}}},
+ requiemspear:{name:'REQUIEM PIKE',type:'spear',hand:'main',base:1.2,req:{str:10,dex:13},sc:{str:'D',dex:'B'},w:4,swL:15,special:'hymn',spFp:10,
+  light:{t:.34,h0:.1,h1:.18,reach:20,w:26,h:8,mul:1,cost:15,lunge:60,n:2,stab:1},
+  heavy:{t:.62,h0:.08,h1:.32,reach:20,w:40,h:10,mul:1.8,cost:28,lunge:200,stab:1,poise:2}},
+ crownbreaker:{name:'CROWNBREAKER',type:'greatsword',hand:'main',base:2.0,req:{str:18,dex:8},sc:{str:'A',dex:'E'},w:10,swL:13,special:'cinder',spFp:12,
+  light:{t:.72,h0:.26,h1:.37,reach:16,w:30,h:26,mul:1,cost:33,lunge:40,n:2,poise:2,arc:{r:22,th:5,sweep:220,trail:1}},
+  heavy:{t:.92,h0:.48,h1:.56,reach:10,w:52,h:24,mul:2.2,cost:42,lunge:70,hop:-170,aoe:1,poise:3,shock:1,arc:{r:24,th:5,sweep:160,trail:1}}},
+ clapper:{name:"TOLLER'S CLAPPER",type:'axe',hand:'main',base:1.5,req:{str:14,dex:7},sc:{str:'B',dex:'E'},w:7,swL:11,special:'toll',spFp:10,
+  light:{t:.6,h0:.22,h1:.32,reach:14,w:28,h:24,mul:1,cost:28,lunge:30,n:2,poise:2,arc:{r:19,th:5,sweep:200,trail:1}},
+  heavy:{t:.84,h0:.42,h1:.52,reach:6,w:50,h:24,mul:2,cost:38,lunge:40,hop:-150,aoe:1,poise:3,shock:1,arc:{r:22,th:5,sweep:170,trail:1}}}};
+const LOOT_DESC={
+ ember:['A WARM EMBER, STILL BEATING. PRESSED TO THE','CHEST IT MENDS WHAT THE COLD HAS TAKEN.'],
+ bluesap:['SAP OF THE BLUE TREE THAT GREW IN THE COURT','GARDEN. SORCERERS DRANK IT TO HEAR THE FROST.'],
+ soulshard:['A SLIVER OF SOMEONE. THEY WILL NOT MISS IT,','OR THEY WILL, BUT NOT FOR LONG.'],
+ rimesalt:['SALT SCRAPED FROM THE BELL TOWER STAIRS.','RUBBED ON ARMOR, THE COLD HOLDS IT FAST.'],
+ cinderleaf:['A LEAF THAT GREW IN THE CINDERDEEP AND DID','NOT BURN. CHEWED, THE LUNGS FORGET TO TIRE.'],
+ frostbrand:['THE FROST WARDEN\'S BLADE. HE TAUGHT WITH IT','BEFORE HE GUARDED WITH IT. HEAVY ATTACK','SENDS A ROW OF FROST ALONG THE GROUND.'],
+ requiemspear:['THE PALE CANTOR\'S PIKE, ITS SHAFT CARVED','WITH A HYMN NO ONE FINISHED. HEAVY ATTACK','RINGS OUT A CIRCLE OF PALE NOTES.'],
+ crownbreaker:['FORGED FROM THE CINDER KING\'S OWN CROWN BY','THE LAST OF THE FORGE-FOLK. HEAVY ATTACK','SPLITS THE GROUND IN A LINE OF CINDERS.'],
+ clapper:['THE TONGUE OF THE GREAT BELL, PRISED FROM THE','RIMEBOUND TOLLER. HEAVY ATTACK TOLLS A','SHOCKWAVE THAT STUNS ALL WHO HEAR IT.'],
+ chest:['A RINGER\'S STRONGBOX. MOST HOLD WHAT THE DEAD','LEFT BEHIND. SOME HAVE GROWN TEETH.']};
+if(typeof module!=='undefined')module.exports={CONSUMABLES,DROP_TABLES,ETABLE,GEAR_POOL,rollTable,CHESTS,SIGNATURE,SIG_WEAPONS,LOOT_DESC};
+// in the browser: signature weapons join the armoury, loot lore joins the description book
+if(typeof WEAPONS!=='undefined')Object.assign(WEAPONS,SIG_WEAPONS);if(typeof DESC!=='undefined')Object.assign(DESC,LOOT_DESC);

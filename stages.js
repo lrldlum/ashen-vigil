@@ -130,3 +130,31 @@ STAGE_DEFS.shrine=composeStage({pre:'s0',name:'THE ASH SHRINE',world:640,top:-20
 STAGE_DEFS.ramparts.lore=[{id:'r1',x:420,y:156},{id:'r2',x:1300,y:300},{id:'r3',x:2930,y:156}];
 STAGE_DEFS.cathedral.lore=[{id:'c1',x:300,y:156},{id:'c2',x:600,y:300},{id:'c3',x:1640,y:156}];
 STAGE_DEFS.cinderdeep.lore=[{id:'d1',x:150,y:156},{id:'d2',x:2592,y:252},{id:'d3',x:2930,y:156}];
+
+// ---------------------------------------------------------------------------
+// Milestone G: THE FROZEN BELL TOWER — an optional stage behind the Frozen Stair in the Ash Shrine (opens once the Pale Cantor is silenced).
+// Routes branch Rayman-style: a HIGH road over the bell frame (chain up at 1000, ring the hanging bells, drop at 1600) or the LOW road through the
+// frozen crypt and bell trial; both meet at the bonfire and again before the arena. Five FROZEN BELLS are the stage's collectible: strike them all
+// and the seal on the Bell-Ringer's ember breaks. Lord: THE RIMEBOUND TOLLER.
+TPL.bellframe=(x,id)=>({chain:[[x,-52,x+8,156],[x+600,-52,x+608,156]],
+  oneway:[[x+8,-60,x+200,-52],[x+232,-60,x+420,-52],[x+452,-60,x+600,-52]],
+  solid:[[x+300,-136,x+316,-100],[x+316,-104,x+420,-100],[x+300,-140,x+420,-136]],plats:[[x+436,-80,24]],back:[[x+316,-136,x+420,-104]],
+  covers:[{id:id+'_h',r:[x+316,-136,x+420,-104]}],
+  enemies:[['wraith',x+150,-110],['hollow',x+330,-60],['imp',x+520,-60]]});
+TPL.icefall=(x,id)=>({spikes:[[x+40,148,x+64,156],[x+120,148,x+144,156]],plats:[[x+16,124,32],[x+88,108,40],[x+168,120,32]],enemies:[['knight',x+100]]});
+STAGE_DEFS.belltower=composeStage({pre:'bt',name:'THE FROZEN BELL TOWER',world:3360,top:-204,bottom:364,theme:'belltower',side:1,
+  bonfire:1600,bonfireName:'BELL-ROPE VIGIL',next:'shrine',bellLock:'bt_bells',
+  pal:{sky0:'#070b14',sky1:'#0b1220',sky2:'#111c30',sky3:'#182a44',sky4:'#22385a',far:'#0f182a',farW:'#2a4466',farW2:'#7aa6d0',near:'#09101c',nearW:'#2c4a70',
+   gTop:'#e8f4ff',g1:'#7a90b0',g2:'#64789a',gM:'#2e3c58',gD:'#3e5072',b0:'#0e1a2e',bM:'#060a14',bH:'#1a2a44',mist:'rgba(210,230,255,.16)',haze1:'rgba(30,46,74,.55)',haze2:'rgba(44,64,98,.6)',mist2:'rgba(180,210,250,.10)',pil:0x0e1a2e,pilH:0x34507a},
+  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],// arena: the Toller climbs to the bell frame at 3130 and drops icicles
+  items:[{id:'g_rime',x:1370,y:-104,item:'rime'},{id:'g_bow',x:560,y:300,item:'bow'}],
+  puddles:[[120,18],[1500,22],[2240,16],[3080,24]],
+  bells:[{id:'bell1',x:240,y:36},{id:'bell2',x:1100,y:-60},{id:'bell3',x:1480,y:-60},{id:'bell4',x:500,y:300},{id:'bell5',x:2300,y:-100}],
+  boss:{kind:'toller',name:'THE RIMEBOUND TOLLER',sub:'LORD OF THE FROZEN BELLS',slain:'THE BELL IS STILL',hp:58,card:'THE LAST BELL IS STILL. THE KEEPER WILL HEAR IT.',
+   phases:['THE BELLS TOLL AS ONE','THE PEAL OF ENDINGS'],reward:'clapper'},
+  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2740],['wraith',2860]]},
+ [['pillarRoom',160],['crypt',300],['bellframe',1000],['belfry',1100],['ossuary',1720,'BELL TRIAL'],['tower',2150,'FROST RUN',9],['icefall',2830],['ledge',2896]],
+ {hollow:'acolyte',knight:'sentinel',wraith:'chorister'});
+STAGE_DEFS.belltower.cages.push({id:'bt_bellcage',x:1250,y:-60,lock:'bt_bells'});
+STAGE_DEFS.belltower.lore=[{id:'b1',x:90,y:156},{id:'b2',x:1360,y:-60},{id:'b3',x:2940,y:156}];
+STAGE_DEFS.shrine.stair={x:40};// the Frozen Stair (left end of the shrine)

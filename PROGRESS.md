@@ -135,3 +135,14 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - P3 room full: the refusal no longer runs the drop path; status stays "ROOM IS FULL" (role cleared) instead of "HOST LOST".
 - P3 colours by role: P1 (host) keeps its armour colours with an ember "P1 HOST" tag; P2 (guest) is teal with a teal "P2 GUEST" tag on BOTH screens. Both players get a backed label.
 - Tests: test/r6fix.mjs (5 checks) + 2 new checks in test/milestoneF.mjs (role colours on both screens, ROOM IS FULL status). Shots: screenshots/r6/. Clip: clips/r6.mp4 (host | guest).
+
+## Milestone G — The Frozen Bell Tower, loot & signature weapons
+- **New stage `belltower`** (THE FROZEN BELL TOWER): optional side stage reached by the **Frozen Stair** in the Ash Shrine (sealed until the Cantor falls; `?stairopen` bypasses). Icy palette, all FX in code (snow, distant bells, swinging arena bell, icicles). Bonfire BELL-ROPE VIGIL at x1600. Victory returns to the shrine and keeps hub progression.
+- **Branching routes (Rayman-style):** low crypt road vs chain climb at x1000 to the high bell-frame beams; FROST RUN / BELL TRIAL / icefall spikes; secret loft behind a cover with the RIMEBOUND SHROUD armor.
+- **Collectibles:** 5 frozen bells rung by attacks (HUD BELLS n/5) unseal the bt_bellcage; 3 lore stones b1–b3.
+- **Boss — THE RIMEBOUND TOLLER** (Lord of the Frozen Bells, hp 58): intro cinematic "A BELL TOLLS IN THE FROZEN DARK", 3 phases (THE BELLS TOLL AS ONE / THE PEAL OF ENDINGS) with toll (ice shockwaves), requiem icicles, slam, charge, peal (triple toll). Story ties: keeper lines (sealed/open/slain), item descriptions, ending line BELL_ENDING.
+- **Loot (loot.js):** chests on every stage (open with UP; hidden ones; mimics that hop, bite and drop gear), weighted DROP_TABLES (common/elite/chest/mimic), monsters drop souls/consumables/gear; consumables ember, blue sap, soul shard, rime salt (guard buff), cinderleaf (stamina buff), each with description and code-drawn pickup burst.
+- **Signature weapons:** every lord drops a guaranteed weapon — Warden→FROSTBRAND, Cantor→REQUIEM PIKE, King→CROWNBREAKER, Toller→TOLLER'S CLAPPER — equippable, with stats, story text and a heavy-attack special (frost/hymn/cinder/toll, FP cost).
+- **Co-op:** bells, chests, mimics, drops and flames are host-authoritative via snapshot/prog; guest picks via dpick; gear shared to both players; both receive the signature weapon.
+- **Persistence:** sv.bells, sv.chests, sv.inv per save slot.
+- **Tests:** test/G.mjs 28/28; all older suites green (milestoneE lore count updated for the 3 new stones). Clip clips/G.mp4, shots screenshots/G/{before,after}.

@@ -35,7 +35,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   this.lostAt=performance.now()},
  me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,ar:S.sv&&S.sv.eq&&S.sv.eq.armor,
   cls:S.sv.cls,main:S.sv.eq.main,arm:S.sv.eq.armor,lv:S.lvl,sid:S.sid}},
- prog(S){const sv=S.sv;return{freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked}},
+ prog(S){const sv=S.sv;return{bells:sv.bells||[],chests:sv.chests||[],freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked}},
  helloTo(){const S=this.scene;if(!S||!S.sv||!this.linked())return;this.send({t:'hello',sid:S.sid,prog:this.prog(S),ng:S.ng})},
  // ---------- called from Stage ----------
  onStage(S){this.scene=S;if(this.host())this.helloTo();if(this.guest()){this.send({t:'ready',p:this.me()});S.enemies.forEach(e=>{e.b.body.moves=false})}},
@@ -48,7 +48,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  snap(S,full){const m={t:'s',sid:S.sid,bs:S.bossState,
   e:S.enemies.map(e=>[e.k,Math.round(e.b.x),Math.round(e.b.y),e.f,e.state,+e.hp.toFixed(2),e.dead?1:0,+e.t.toFixed(2),e.combo?1:0,e.mst||0,e.flash>0?1:0]),
   sh:S.shots.map(s=>[Math.round(s.x),Math.round(s.y),Math.round(s.vx),Math.round(s.vy),s.c||0,s.dmg||12,s.g||0,s.delay||0]),
-  g:S.chs.map(c=>c.gateObjs.map(g=>g.closed?1:0)),ch:S.chs.map(c=>[c.active?1:0,+(c.t||0).toFixed(1),c.wave||0])};
+  cx:(S.chests||[]).map(c=>[c.st,Math.round(c.hx),+(c.jy||0).toFixed(1),c.f]),fl:S.flames.map(f=>[Math.round(f.x),f.dir,f.ice?1:0]),g:S.chs.map(c=>c.gateObjs.map(g=>g.closed?1:0)),ch:S.chs.map(c=>[c.active?1:0,+(c.t||0).toFixed(1),c.wave||0])};
   const B=S.boss;if(B){const o={};for(const k of['kind','x','y','f','hp','hpMax','state','t','phase','rise','eyes','next','wt','step','hov','flash','cd'])o[k]=typeof B[k]==='number'?+B[k].toFixed(2):B[k];m.b=o}
   if(full)m.prog=this.prog(S);return m},
  recv(d){const S=this.scene,live=S&&S.sys&&S.sys.isActive()&&S.player;
@@ -61,6 +61,10 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    else if(d.t==='cage'){const c=S.cages.find(c=>c.id===d.id);if(c&&!c.freed&&!c.locked)S.freeCage(c,1)}
    else if(d.t==='brk'){const k=S.breakables.find(k=>k.id===d.id);if(k&&k.hp>0)S.hitBreakable(k,1)}
    else if(d.t==='pick'){const it=S.items.find(i=>i.id===d.id);if(it){S.takeItem(it,1);this.send({t:'picked',id:it.id,item:it.item})}}
+   else if(d.t==='bell'){const b=S.bells.find(b=>b.id===d.id);if(b)S.ringBell(b,1)}
+   else if(d.t==='chest'){const c=S.chests.find(c=>c.id===d.id);if(c)S.openChest(c,1)}
+   else if(d.t==='mhit'){const c=S.chests.find(c=>c.id===d.id);if(c&&c.st==='awake')S.hitMimic(c,d.n,1)}
+   else if(d.t==='dpick'){const i=S.drops.findIndex(x=>x.id===d.id);if(i>=0){const dr=S.drops.splice(i,1)[0];this.send({t:'dgot',d:dr});if(dr.kind==='gear'&&!S.sv.inv.includes(dr.item)){S.sv.inv.push(dr.item);Save.write(S.sv);S.pop('COMPANION FOUND '+(WEAPONS[dr.item]||ARMORS[dr.item]).name,S.player.x,S.player.y-30,0x9ff0dc)}}}
    else if(d.t==='parry'){const e=S.enemies[d.i];if(e&&!e.dead){e.state='stag';e.t=0}}
    return}
   // ---------- guest ----------
@@ -71,7 +75,10 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   else if(d.t==='souls')S.gainSouls(d.n,1);
   else if(d.t==='hurt'){}// guest takes damage locally from the host's state
   else if(d.t==='picked'){const i=S.items.findIndex(x=>x.id===d.id);const it=i>=0?S.items[i]:{id:d.id,item:d.item,x:S.player.x,y:S.player.y};S.takeItem(it,1)}
-  else if(d.t==='bossdead'){S.bossState='dead';S.boss=null;S.gateL.body.enable=false;S.shots.length=0;S.flames=[];S.say(d.slain||'LORD FELLED',3);S.sv.bossDown=true}
+  else if(d.t==='drop'){if(!S.drops.find(x=>x.id===d.d.id))S.drops.push({...d.d})}
+  else if(d.t==='dgone'){S.drops=S.drops.filter(x=>x.id!==d.id);if(d.gear&&!S.sv.inv.includes(d.gear)){S.sv.inv.push(d.gear);Save.write(S.sv);S.pop('COMPANION FOUND '+(WEAPONS[d.gear]||ARMORS[d.gear]).name,S.player.x,S.player.y-30,0x9ff0dc)}}
+  else if(d.t==='dgot'){S.drops=S.drops.filter(x=>x.id!==d.d.id);S.takeDrop(d.d)}
+  else if(d.t==='bossdead'){if(d.kind)S.awardSignature(d.kind,S.boss?S.boss.x:S.player.x);S.bossState='dead';S.boss=null;S.gateL.body.enable=false;S.shots.length=0;S.flames=[];S.say(d.slain||'LORD FELLED',3);S.sv.bossDown=true}
   else if(d.t==='ending'){Save.write({...S.sv,souls:S.souls});S.scene.start('ending',{kind:d.kind})}},
  follow(sid,prog){const S=this.scene;if(!S)return;if(this._following===sid)return;this._following=sid;const sv=S.sv||{};
   Save.write({...sv,stage:sid,souls:S.souls,bonfire:!!(prog&&prog.bonfire),bossDown:!!(prog&&prog.bossDown),stain:null});setTimeout(()=>{this._following=null},1500);
@@ -84,8 +91,13 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   for(const c of S.cages)if(c.lock&&p.chDone.includes(c.lock))c.locked=false;
   S.items=S.items.filter(it=>!p.picked.includes(it.id));
   if(p.bonfire)S.bonfire.lit=true;if(p.bossDown&&S.bossState!=='dead'){S.bossState='dead';S.boss=null}
+  // milestone G: bells + chests
+  for(const b of S.bells||[])if((p.bells||[]).includes(b.id)&&!b.rung)S.ringBell(b,1);
+  for(const c of S.chests||[])if((p.chests||[]).includes(c.id)&&c.st==='shut')S.openChest(c,1);
   sv.freed=[...p.freed];sv.found=[...p.found];sv.chDone=[...p.chDone];sv.broken=[...p.broken];sv.bonfire=p.bonfire||sv.bonfire},
  applySnap(S,d){if(d.prog)this.applyProg(S,d.prog);
+  if(d.cx)d.cx.forEach(([st,hx,jy,f],i)=>{const c=S.chests[i];if(!c)return;if(st==='dead'&&c.st!=='dead'){S.fx.soul(c.hx,c.y-6,14)}if(st!=='shut'&&c.st==='shut'){c.open=true;if(!S.sv.chests.includes(c.id))S.sv.chests.push(c.id)}c.st=st;c.hx=hx;c.jy=jy;c.f=f});
+  if(d.fl)S.flames=d.fl.map(([x,dir,ice])=>({x,dir,ice,t:0}));
   d.e.forEach((s,i)=>{let e=S.enemies[i];const[k,x,y,f,st,hp,dead,t,combo,mst,fl]=s;
    if(!e||e.k!==k){if(e){e.dead=true;try{e.b.body.enable=false}catch(_){}}e=S.spawnEnemy(k,x,y+10);e.temp=1;S.enemies[i]=e;e.b.body.moves=false}
    e.b.body.moves=false;e.nx=x;e.ny=y;if(Math.abs(e.b.x-x)>40||Math.abs(e.b.y-y)>40)e.b.setPosition(x,y);e.f=f;e.state=st;e.hp=hp;e.t=t;e.combo=combo;e.mst=mst||undefined;if(fl)e.flash=.1;
@@ -107,7 +119,10 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    if(e.base==='imp'&&e.state==='fuse'&&e.t>.45&&adx<22&&!e.netHit){e.netHit=1;S.hurtPlayer(18,e.b.x)}}
   const B=S.boss;if(B&&S.bossState==='fight'&&!P.dead){B.flash=Math.max(0,(B.flash||0)-1);const near=Math.abs(P.x-(B.x+B.f*16))<18&&P.y>GY-30;
    if(B.state==='slam'&&B.t<.12&&near&&!B.netHit){B.netHit=1;S.hurtPlayer(B.kind==='king'?28:24,B.x,'boss')}
-   if(B.state==='charge'&&Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<30)S.hurtPlayer(20,B.x);if(B.state!=='slam')B.netHit=0}},
+   if(B.state==='charge'&&Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<30)S.hurtPlayer(20,B.x);if(B.state!=='slam')B.netHit=0}
+  // milestone G: rime waves / flames and mimic bites from the host's state
+  for(const f of S.flames){f.x+=f.dir*140*dt;if(f.ice){if(Math.random()<.6)S.fx.shard(f.x,GY-1,1,60)}else S.fx.fire(f.x,GY-1,2,4,1.6);if(!P.dead&&Math.abs(P.x-f.x)<9&&P.y>GY-14&&!f.hit){f.hit=1;S.hurtPlayer(18,f.x-f.dir*10)}}
+  for(const c of S.chests||[]){if(c.st!=='awake')continue;if((c.jy||0)<-4&&Math.abs(P.x-c.hx)<12&&Math.abs(P.y-c.y)<20&&!c.gbit&&!P.dead){c.gbit=1;S.hurtPlayer(18,c.hx)}if(!c.jy)c.gbit=0}},
  // ---------- drawing ----------
  // r6: colour by ROLE, not local/remote: P1 (host) keeps its armour colours with an ember tag, P2 (guest) is teal on both screens
  tag(g,x,y,isHost){const s=isHost?'P1 HOST':'P2 GUEST',w=textW(s),col=isHost?0xffb04a:0x5fe0c0;g.fillStyle(0x07050f,.85);g.fillRect(x-Math.round(w/2)-2,y-1,w+4,7);g.fillStyle(col,1);g.fillRect(x-Math.round(w/2)-2,y+6,w+4,1);drawText(g,s,x-Math.round(w/2),y,col)},
