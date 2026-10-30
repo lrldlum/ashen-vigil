@@ -79,7 +79,7 @@ const TPL={
 // nave: hanging choir columns with bell ropes you climb to a loft; belfry: stacked bell-frame planks up a narrow tower
 // lavaRise: a cinder pool you cross on sinking-stone steps; forge: stepped anvil blocks over ember pits
 TPL.nave=(x,id)=>({carve:[[x,180,x+400,300],[x+8,156,x+40,180],[x+368,156,x+400,180]],oneway:[[x+8,156,x+40,164],[x+368,156,x+400,164]],
-  solid:[[x+80,180,x+96,252],[x+176,180,x+192,252],[x+272,180,x+288,252]],chain:[[x+128,196,x+136,292],[x+224,196,x+232,292],[x+376,156,x+384,300]],
+  solid:[[x+80,180,x+96,252],[x+176,180,x+192,252],[x+272,180,x+288,252]],chain:[[x+128,196,x+136,300],[x+224,196,x+232,300],[x+376,156,x+384,300]],
   plats:[[x+96,212,32],[x+192,212,32],[x+288,212,40]],braziers:[[x+48,300],[x+336,300]],enemies:[['hollow',x+150,300],['wraith',x+250,240]]});
 TPL.belfry=(x,id)=>({carve:[[x,180,x+232,300],[x+8,156,x+40,180]],oneway:[[x+8,156,x+40,164],[x+56,276,x+104,284],[x+120,252,x+168,260],[x+56,228,x+104,236],[x+120,204,x+168,212]],
   chain:[[x+200,188,x+208,300]],solid:[[x+184,180,x+192,272]],braziers:[[x+30,300]],enemies:[['knight',x+130,300]]});

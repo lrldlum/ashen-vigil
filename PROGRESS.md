@@ -107,3 +107,13 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Endings: final lord card -> APPROACH THE FIRST FLAME -> REKINDLE / LET IT FADE -> Ending scene: ~11 s code-drawn cinematic (rekindle: kneel, the flame swells, the hero burns to embers, amber sky; fade: the flame gutters to one cupped ember, stars come out) + end card (time, deaths, lore, endings seen) -> JOURNEY ON (NG+) / TITLE. ?ending=rekindle|fade for direct viewing. sv.endings recorded.
 - r3/r4 leftover arenas: the Pale Cantor glides to a 2-tier choir loft (plats y116 x2, y80) in phases 2-3 and fires note volleys from the perch; Vulcrest's arena has 3 lava pits that crack in phase 1 and erupt (14 dmg, knockback) from phase 2. Gate position is still shared.
 - milestoneC.mjs final step now goes card -> choice -> ending -> JOURNEY ON (same NG+ assertion).
+
+## r5 review fixes
+- P2 touch class select: class rows are tap targets (tap = select), BEGIN / BACK buttons confirm or return (no more "any tap = Knight").
+- P3 touch erase: hold a save slot 0.6 s -> ERASE / KEEP buttons; any other tap keeps the save. Slot taps now act on release so a hold never starts the game.
+- P3 class-select overlay is fully opaque and the control hints are hidden behind it.
+- P3 Cathedral chains (x568, x664) now reach the floor (y300).
+- P3 buying a flask raises the max only; the new charge arrives at the next rest.
+- P3 ending cinematic skips on the first press (presses in the first 0.15 s are buffered).
+- Menus: arrow / Z / Enter / X taps shorter than one frame now still register (keydown handler drives menuKey; frame edge input is de-duplicated). This was why a scripted shopper "stuck" on option 3.
+- Test: test/r5fix.mjs (9 checks: touch class select, opaque overlay, touch erase with confirm, shop purchase with real keyboard, flask no-refill, Blessed Weapon buff + damage, chains reach floor, one-press skip, no errors). Shots in screenshots/r5fix/.

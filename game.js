@@ -284,9 +284,14 @@ class Title extends Phaser.Scene{constructor(){super('title')}
   // milestone D: 3 save slots + class select
   this.saves=[0,1,2].map(i=>Save.load(i));this.mode='slots';this.sel=Save.slot;this.csel=0;this.erase=-1;
   const k=this.input.keyboard;k.on('keydown',e=>this.key(e.key));
-  this.input.on('pointerdown',p=>{if(this.mode==='slots'){const i=Math.floor((p.y-96)/11);if(i>=0&&i<3){if(this.sel===i)this.key('Enter');else this.sel=i}}
-   else{const i=Math.floor((p.y-50)/10);if(p.x<110&&i>=0&&i<10){if(this.csel===i)this.key('Enter');else this.csel=i}else if(p.y>160)this.key('Escape')}})}
- key(k){if(this.gone)return;const up=k==='ArrowUp',dn=k==='ArrowDown',ok=k==='Enter'||k===' '||k==='z'||k==='Z';
+  // r5: touch. Slots act on release; holding a slot 0.6 s opens the erase prompt with ERASE / KEEP buttons. Class rows tap-select, BEGIN confirms.
+  this.lastTap=0;this.input.on('pointerdown',p=>{const now=this.time.now;if(now-this.lastTap<120)return;this.lastTap=now;
+   if(this.mode==='slots'){if(this.erase>=0){if(Math.abs(p.y-147)<8&&Math.abs(p.x-128)<26){Save.clear(this.erase);this.saves[this.erase]=null}this.erase=-1;this.held=null;this.eatUp=1;return}
+    const i=Math.floor((p.y-96)/11);this.held=i>=0&&i<3?{i,t0:now}:null}
+   else{const i=Math.floor((p.y-50)/10);if(p.x<112&&i>=0&&i<10){this.csel=i;return}
+    if(p.y>=159&&p.y<=178){if(p.x>=196&&p.x<=266)this.key('Enter');else if(p.x>=54&&p.x<=124)this.key('Escape')}}});
+  this.input.on('pointerup',()=>{const h=this.held;this.held=null;if(this.eatUp){this.eatUp=0;return}if(this.mode!=='slots'||!h||h.long)return;if(this.sel===h.i)this.key('Enter');else{this.sel=h.i;this.erase=-1}})}
+ key(k){if(this.gone)return;const up=k==='ArrowUp',dn=k==='ArrowDown',ok=k==='Enter'||k===' '||k==='z'||k==='Z';this.eatUp=0;
   if(this.mode==='slots'){if(up)this.sel=(this.sel+2)%3;if(dn)this.sel=(this.sel+1)%3;if(up||dn)this.erase=-1;
    // r4 P1: erase only with Delete/Backspace, confirmed by a second Delete/Backspace; any other key cancels the prompt (X/attack never erases)
    const del=k==='Delete'||k==='Backspace';if(this.erase>=0&&!del){this.erase=-1;return}
@@ -298,7 +303,7 @@ class Title extends Phaser.Scene{constructor(){super('title')}
  // r3 P3: the title backdrop shows the highlighted save's current stage
  setBackdrop(){const s=this.mode==='slots'&&this.saves[this.sel],sid=s&&STAGE_DEFS[s.stage]?s.stage:'ramparts';if(sid===this.bgSid)return;this.bgSid=sid;const tx=sid==='ramparts'?'':'_'+sid,D=STAGE_DEFS[sid];
   genTextures(this,tx,D.pal);this.bg.L.forEach(([s],i)=>s.setTexture(['sky','far','near'][i]+tx));if(this.textures.exists('ground'+tx))this.gnd.setTexture('ground'+tx)}
- update(_,d){const dt=d/1000;this.t+=dt;this.setBackdrop();this.bg(this.t*8);const ga=this.ga,gn=this.gn,g=this.gt;ga.clear();gn.clear();g.clear();
+ update(_,d){const dt=d/1000;this.t+=dt;this.setBackdrop();const hd=this.held;if(hd&&!hd.long&&this.time.now-hd.t0>600){hd.long=1;if(this.saves[hd.i]){this.sel=hd.i;this.erase=hd.i;this.eatUp=1}}this.bg(this.t*8);const ga=this.ga,gn=this.gn,g=this.gt;ga.clear();gn.clear();g.clear();
   // bonfire + kneeling knight silhouette
   const bx=200,by=GY;if(Math.random()<.9)this.fx.fire(bx,by-3,2,3);if(Math.random()<.2)this.fx.ember(bx,by-8,1);this.fx.update(dt);
   glow(ga,bx,by-6,26+Math.sin(this.t*9)*1.5,C.f2,.16);line(gn,bx,by-1,bx+2,by-16,0x8b86a8);line(gn,bx-2,by-13,bx+4,by-12,0x8b86a8);gn.fillStyle(0x2a2245).fillRect(bx-6,by-2,13,2);
@@ -312,16 +317,18 @@ class Title extends Phaser.Scene{constructor(){super('title')}
   drawText(g,'A TALE OF THE LAST KINDLING',Math.round(W/2-textW('A TALE OF THE LAST KINDLING')/2),ty+26,0x8a86c0);
   if(this.mode==='slots'){const fmt=v=>{v=Math.floor(v||0);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`};
    this.saves.forEach((s,i)=>{const on=this.sel===i;let str;if(!s)str='SLOT '+(i+1)+'   - NEW JOURNEY -';else{const c=CLASSES[s.cls]?s.cls:'knight';str='SLOT '+(i+1)+'  '+CLASSES[c].name+' LV '+RPG.level(c,s.stats||RPG.classStats(c))+'  '+((STAGE_DEFS[s.stage]||STAGE_DEFS.ramparts).name.replace('THE ','').split(' ')[0])+'  '+fmt(s.time)+(s.ng?'  NG+'+s.ng:'')}
-    if(this.erase===i)str='ERASE SLOT '+(i+1)+'? DEL AGAIN = YES  ANY KEY = NO';const x=Math.round(W/2-textW(str)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+i*11,textW(str)+16,9);drawText(g,(on?'> ':'  ')+str,x,98+i*11,this.erase===i?0xd8402a:on?0xffe2a8:0x6b67a0)})}
-  else{g.fillStyle(0x07050f,.86);g.fillRect(0,0,W,H);drawText(g,'CHOOSE YOUR ORIGIN',Math.round(W/2-textW('CHOOSE YOUR ORIGIN',2)/2),12,0xffb04a,2);
+    if(this.erase===i)str='ERASE SLOT '+(i+1)+'? DEL AGAIN = YES  ANY KEY = NO';const x=Math.round(W/2-textW(str)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+i*11,textW(str)+16,9);drawText(g,(on?'> ':'  ')+str,x,98+i*11,this.erase===i?0xd8402a:on?0xffe2a8:0x6b67a0)});
+   if(this.erase>=0){[['ERASE',128,0xd8402a],['KEEP',192,0xd8d0ee]].forEach(([s,cx,col])=>{g.fillStyle(0x1a1028,1);g.fillRect(cx-24,140,48,14);g.lineStyle(1,col,.8);g.strokeRect(cx-24,140,48,14);drawText(g,s,cx-Math.round(textW(s)/2),145,col)})}
+   else drawText(g,'HOLD A SLOT TO ERASE',Math.round(W/2-textW('HOLD A SLOT TO ERASE')/2),136,0x4a4678)}
+  else{g.fillStyle(0x07050f,1);g.fillRect(0,0,W,H);[['BACK  ESC',89,0x8a86c0],['BEGIN  ENTER',231,0xffe2a8]].forEach(([s,cx,col])=>{g.fillStyle(0x1a1028,1);g.fillRect(cx-34,162,68,14);g.lineStyle(1,col,.7);g.strokeRect(cx-34,162,68,14);drawText(g,s,cx-Math.round(textW(s)/2),167,col)});drawText(g,'CHOOSE YOUR ORIGIN',Math.round(W/2-textW('CHOOSE YOUR ORIGIN',2)/2),12,0xffb04a,2);
    CLASS_ORDER.forEach((c,i)=>{const on=this.csel===i;drawText(g,(on?'> ':'  ')+CLASSES[c].name,14,50+i*10,on?0xffe2a8:0x8a86c0);drawText(g,'LV '+CLASSES[c].lvl,84,50+i*10,on?0xffe2a8:0x5d5990)});
    const c=CLASS_ORDER[this.csel],CL=CLASSES[c],st=RPG.classStats(c),d=RPG.derive(st,{main:CL.main,off:CL.off,armor:CL.armor});
    STATS.forEach((k,i)=>{drawText(g,STAT_NAMES[k],118,50+i*9,0x8a86c0);drawText(g,String(st[k]),180,50+i*9,0xd8d0ee)});
    [['R',WEAPONS[CL.main].name],['L',CL.off?WEAPONS[CL.off].name:'-'],['A',ARMORS[CL.armor].name],['HP '+d.hp+'  ST '+d.st+'  FP '+d.fp,''],['ROLL '+d.roll.kind,'']].forEach(([a,b],i)=>drawText(g,a+(b?'  '+b:''),198,50+i*10,i<3?0xd8d0ee:0x9fd8ff));
    drawText(g,CL.desc,Math.round(W/2-textW(CL.desc)/2),148,0xd8d0ee);heroStyle(WEAPONS[CL.main],false,ARMORS[CL.armor]);drawHero(g,262,122,1,'idle',Math.floor(this.t*2)%2,this.t);heroStyle(null,false,null);
-   drawText(g,'ENTER BEGIN   ESC BACK',Math.round(W/2-textW('ENTER BEGIN   ESC BACK')/2),160,0x6b67a0)}
-  drawText(g,'ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK',Math.round(W/2-textW('ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK')/2),164,0x5d5990,1,null);
-  drawText(g,'V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND',Math.round(W/2-textW('V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND')/2),171,0x5d5990,1,null)}}
+   }
+  if(this.mode==='slots')drawText(g,'ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK',Math.round(W/2-textW('ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK')/2),164,0x5d5990,1,null);
+  if(this.mode==='slots')drawText(g,'V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND',Math.round(W/2-textW('V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND')/2),171,0x5d5990,1,null)}}
 // ===================================================================
 class Lab extends Phaser.Scene{constructor(){super('lab')}
  create(){makeBG(this)(0);this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.fx=new FX(this);this.ga=this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);this.gn=this.add.graphics();this.t=0}
@@ -406,7 +413,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.boss=null;this.bossState=sv.bossDown||!D.boss?'dead':'sleep';this.cine=null;this.bars=0;this.victory=null;this.paused=false;this.flashF=0;
   this.cam=this.cameras.main;this.cam.setBounds(0,D.top,WORLD,D.bottom-D.top);this.camY=clamp(GY-156,D.top,D.bottom-H);this.camTY=this.camY;this.cam.scrollY=this.camY;this.cam.startFollow(this.pb,true,.12,0,0,0);this.camOff=0;
   this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,G,T,R,SPACE,SHIFT,ENTER');
-  this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
+  this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}// r5: a key tapped faster than one frame still moves the menu cursor (edge detection alone could miss it)
+  if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r']}[e.key];if(m&&!e.repeat){this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
+   const M=this.menu;if(!e.repeat&&['Enter','z','Z','x','X'].includes(e.key)&&M.t>.3){M.kOk=this.time.now;this.menuKey('ok');return}}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
   this.touch=Q.has('touch')||!!(this.sys.game.device.input.touch);this.tPrev={};this.tTap={};
   if(this.touch)this.input.addPointer(4);
   this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
@@ -660,7 +669,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  // ---------------- bonfire menu: LEVEL UP / EQUIPMENT (milestone D) ----------------
  menuInput(inp){const M=this.menu,pv=M.prev,e=k=>inp[k]&&!pv[k];M.prev={up:inp.up,dn:inp.dn,l:inp.l,r:inp.r};
   if(e('up'))this.menuKey('up');else if(e('dn'))this.menuKey('down');else if(e('l'))this.menuKey('left');else if(e('r'))this.menuKey('right');
-  else if(inp.jumpP||inp.atkP||inp.restP&&M.t>.3)this.menuKey('ok');else if(inp.rollP)this.menuKey('back')}
+  else if((inp.jumpP||inp.atkP||inp.restP&&M.t>.3)&&!(M.kOk&&this.time.now-M.kOk<250))this.menuKey('ok');else if(inp.rollP)this.menuKey('back')}
  eqOpts(row){const inv=this.sv.inv;if(row===0)return inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='main');if(row===1)return[null,...inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='off')];return['none',...inv.filter(i=>ARMORS[i]&&i!=='none')]}
  menuKey(k){const M=this.menu;if(!M)return;const sv=this.sv;this.sfx('menu',.2);
   if(M.mode==='main'){const O=this.mainOpts(),n=O.length;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='ok'){const o=O[M.sel];if(o==='LEVEL UP'){M.mode='level';M.sel=0;M.pend={...sv.stats};M.spent=0}else if(o==='EQUIPMENT'){M.mode='equip';M.sel=0}else if(o==='ITEMS AND SPELLS'){M.mode='items';M.sel=0}else if(o==='TRAVEL TO THE SHRINE')this.travel('shrine',{next:this.sid,bonfire:true});else this.menu=null}else this.menu=null;return}
@@ -668,7 +677,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(M.mode==='keeper'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;else if(k==='ok'){if(M.sel===0){M.mode='talk';M.page=0;M.t=0;sv.met=1;this.sfx('talk',.3)}else if(M.sel===1){M.mode='shop';M.sel=0;M.say=KEEPER.shop}else{this.menu=null;this.pop(KEEPER.bye,this.def.keeper,GY-34,0xd8c8b0)}}else if(k==='back')this.menu=null;return}
   if(M.mode==='talk'){const L=KEEPER.lines[this.keeperTier()];if(k==='ok'||k==='back'){if(M.t*45<L[M.page].length&&k==='ok'){M.t=99;return}M.page++;M.t=0;this.sfx('talk',.3);if(M.page>=L.length||k==='back'){sv.heard=Math.max(sv.heard||0,this.keeperTier()+1);Save.write(sv);M.mode='keeper';M.sel=1}}return}
   if(M.mode==='shop'){const L=this.shopList(),n=L.length+1;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='back'||(k==='ok'&&M.sel===L.length)){M.mode='keeper';M.sel=1}
-   else if(k==='ok'){const[id,price]=L[M.sel];if(this.souls<price){M.say='YOU LACK THE SOULS, ASHEN ONE.';this.sfx('clang',.2)}else{this.souls-=price;sv.souls=this.souls;if(id==='flask'){sv.flaskBonus=(sv.flaskBonus||0)+1;this.player.flasks++}else sv.inv.push(id);sv.bought=(sv.bought||0)+1;Save.write(sv);M.say='A FINE CHOICE. '+itemName(id)+' IS YOURS.';this.sfx('pickup',.45);this.fx.ember(this.player.x,this.player.y-8,16,1.4);M.sel=Math.min(M.sel,this.shopList().length)}}return}
+   else if(k==='ok'){const[id,price]=L[M.sel];if(this.souls<price){M.say='YOU LACK THE SOULS, ASHEN ONE.';this.sfx('clang',.2)}else{this.souls-=price;sv.souls=this.souls;if(id==='flask'){sv.flaskBonus=(sv.flaskBonus||0)+1}else sv.inv.push(id);sv.bought=(sv.bought||0)+1;Save.write(sv);M.say='A FINE CHOICE. '+itemName(id)+' IS YOURS.';this.sfx('pickup',.45);this.fx.ember(this.player.x,this.player.y-8,16,1.4);M.sel=Math.min(M.sel,this.shopList().length)}}return}
   if(M.mode==='level'){const L=RPG.level(sv.cls,M.pend);
    if(k==='up')M.sel=(M.sel+8)%9;else if(k==='down')M.sel=(M.sel+1)%9;
    else if(k==='right'&&M.sel<8){const st=STATS[M.sel],c=RPG.cost(L);if(this.souls-M.spent>=c&&M.pend[st]<99){M.pend[st]++;M.spent+=c}else this.pop('NOT ENOUGH SOULS',this.player.x,this.player.y-30,0xd8402a)}
@@ -1132,13 +1141,13 @@ class Ending extends Phaser.Scene{constructor(){super('ending')}
   this.cameras.main.fadeIn(900,this.kind==='fade'?2:40,this.kind==='fade'?2:20,this.kind==='fade'?6:5);try{this.sound.play(this.kind==='fade'?'chime':'fanfare',{volume:.4})}catch(e){}
   this.input.keyboard.on('keydown',e=>this.key(e.key));this.input.on('pointerdown',p=>{if(!this.card)return this.key('Enter');const i=Math.floor((p.y-136)/11);if(i===0||i===1){this.sel=i;this.key('Enter')}})}
  key(k){if(this.gone)return;const ok=k==='Enter'||k===' '||k==='z'||k==='Z';
-  if(!this.card){if(ok&&this.t>.6)this.showCard();return}
+  if(!this.card){if(ok){if(this.t>.15)this.showCard();else this.skipQ=1}return}
   if(this.card.t<.3)return;if(k==='ArrowUp'||k==='ArrowDown')this.sel^=1;
   if(ok){this.gone=1;this.cameras.main.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{if(this.sel===0){const s=this.sv;
     Save.write({stage:'ramparts',bonfire:false,souls:s.souls||0,bossDown:false,deaths:s.deaths||0,time:s.time||0,ng:(s.ng||0)+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings,flaskBonus:s.flaskBonus,lords:[]});this.scene.start('stage',{fresh:false})}
    else this.scene.start('title')})}}
  showCard(){this.card={t:0};try{this.sound.play('chime',{volume:.35})}catch(e){}}
- update(_,d){const dt=Math.min(d,50)/1000;this.t+=dt;const t=this.t,g=this.gn,ga=this.ga,gt=this.gt,R=this.kind==='rekindle',E=ENDINGS[this.kind];g.clear();ga.clear();gt.clear();
+ update(_,d){if(this.skipQ&&!this.card&&this.t>.15){this.skipQ=0;this.showCard()}const dt=Math.min(d,50)/1000;this.t+=dt;const t=this.t,g=this.gn,ga=this.ga,gt=this.gt,R=this.kind==='rekindle',E=ENDINGS[this.kind];g.clear();ga.clear();gt.clear();
   if(!this.card&&t>11)this.showCard();if(this.card)this.card.t+=dt;
   // sky: rekindle warms to amber, fade cools to starlit black
   const k=clamp((t-4)/4,0,1);const sky=R?[0x0b081d,0x3a1406,0x8a3a10]:[0x0b081d,0x05040c,0x020206];for(let y=0;y<H;y+=4){const c=y<60?sky[0]:y<120?sky[1]:sky[2];g.fillStyle(c,R?.4+.6*k:1);g.fillRect(0,y,W,4)}
