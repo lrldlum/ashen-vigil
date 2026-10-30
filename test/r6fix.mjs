@@ -19,10 +19,10 @@ await stage('?play&mute');await ev(()=>{const s=S();tp(s.bonfire.x)});await wait
 ok('bonfire_menu_opens_on_first_row',bm&&bm[1]===0,bm);
 // 3. join timeout: a real room on the public broker, but this box can't open WebRTC, so the join must give up at ~15 s with CONNECTION FAILED
 const H=await (await br.newContext()).newPage();await H.goto(B+'?host&mute');await H.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000});const code=await H.evaluate(()=>NET.code);
-await pg.goto(B+'?mute&join='+code);const t0=Date.now();await wait(3000);const mid=await ev(()=>({st:NET.status,err:__G.scene.getScene('title').joinErr}));await pg.screenshot({path:S+'join_connecting.png'});
-await pg.waitForFunction(()=>__G.scene.getScene('title').joinErr,null,{timeout:25000}).catch(()=>{});const dt=(Date.now()-t0)/1000;
+await pg.goto(B+'?mute&join='+code);const t0=Date.now();await pg.waitForFunction(()=>NET.jt0>0,null,{timeout:30000}).catch(()=>{});await wait(2000);const mid=await ev(()=>({st:NET.status,err:__G.scene.getScene('title').joinErr}));await pg.screenshot({path:S+'join_connecting.png'});
+await pg.waitForFunction(()=>__G.scene.getScene('title').joinErr,null,{timeout:90000}).catch(()=>{});const wall=(Date.now()-t0)/1000;const dt=await ev(()=>NET.jtFired&&NET.jt0?+((NET.jtFired-NET.jt0)/1000).toFixed(2):-1);
 const end=await ev(()=>({err:__G.scene.getScene('title').joinErr,joining:__G.scene.getScene('title').joining,role:NET.role,peer:!!NET.peer,mode:__G.scene.getScene('title').mode}));await pg.screenshot({path:S+'join_connection_failed.png'});
-ok('join_times_out_with_message',/CONNECTION FAILED/.test(end.err||'')&&dt>13&&dt<19&&!end.joining&&end.role===null&&!end.peer&&end.mode==='code'&&/CONNECTING/.test(mid.st)&&!mid.err,{dt,mid,end});
+ok('join_times_out_with_message',/CONNECTION FAILED/.test(end.err||'')&&dt>14&&dt<17&&!end.joining&&end.role===null&&!end.peer&&end.mode==='code'&&/CONNECTING/.test(mid.st)&&!mid.err,{dt,wall,mid,end});
 // retry possible from the keypad after a failure (ENTER restarts the attempt)
 await pg.keyboard.press('Enter');await wait(400);const re=await ev(()=>({st:NET.status,joining:__G.scene.getScene('title').joining}));ok('can_retry_after_failure',/CONNECTING/.test(re.st)&&re.joining===1,re);
 ok('no_errors',errs.length===0,errs);await br.close();console.log(JSON.stringify({pass,fail}));process.exit(fail?1:0);

@@ -256,3 +256,24 @@ STAGE_DEFS.spire=composeStage({pre:'sp',name:'THE ASTRAL SPIRE',world:3360,top:-
 STAGE_DEFS.spire.cages.push({id:'sp_orrery',x:1250,y:-60,lock:'sp_lenses'});
 STAGE_DEFS.spire.lore=[{id:'a1',x:90,y:156},{id:'a2',x:1360,y:-60},{id:'a3',x:2940,y:156}];
 STAGE_DEFS.shrine.lift={x:80};// the Star Lift (an orrery cage near the shrine's west end)
+// ---------------- milestone L: THE BLIGHTED CLOISTER — an overgrown garden cloister; poison spore clouds pulse in the beds, thorn brakes line the walks,
+// vines choke the arches; four blighted blooms must be cut back (collectible) to unseal the reliquary cage; lord: the Thorned Prioress
+STAGE_DEFS.cloister=composeStage({pre:'cl',name:'THE BLIGHTED CLOISTER',world:3360,top:-204,bottom:364,theme:'cloister',side:1,
+  bonfire:1600,bonfireName:'TRELLIS VIGIL',next:'shrine',bellLock:'cl_blooms',bellKind:'bloom',
+  pal:{sky0:'#08100a',sky1:'#0c160e',sky2:'#122014',sky3:'#1a2a1a',sky4:'#263822',far:'#0c140c',farW:'#2e3e26',farW2:'#a8c890',near:'#060c06',nearW:'#2a3a24',
+   gTop:'#9ab080',g1:'#4e5a40',g2:'#3e4a34',gM:'#1c2418',gD:'#2a3424',b0:'#121a10',bM:'#060a06',bH:'#22301e',mist:'rgba(150,200,110,.10)',haze1:'rgba(20,40,16,.55)',haze2:'rgba(30,54,26,.6)',mist2:'rgba(190,230,150,.08)',pil:0x121a10,pilH:0x2a3a24},
+  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
+  spores:[{r:[560,90,760,160],period:5},{r:[2380,90,2560,160],period:6,off:2},{r:[1100,-150,1280,-60],period:7,off:4}],
+  thorns:[[1800,1832,156],[2580,2612,156],[1640,1664,-60]],
+  vines:[300,1003,2160,2830],
+  items:[{id:'l_herald',x:1370,y:-104,item:'herald'},{id:'l_ring',x:620,y:300,item:'iron'}],
+  puddles:[[1700,22],[2240,16]],
+  bells:[{id:'bl1',x:1120,y:-60},{id:'bl2',x:1530,y:-60},{id:'bl3',x:2300,y:-100},{id:'bl4',x:2000,y:156}],
+  boss:{kind:'prioress',name:'THE THORNED PRIORESS',sub:'LADY OF THE BLIGHTED CLOISTER',slain:'THE GARDEN WITHERS',hp:64,card:'THE PRIORESS SLEEPS AMONG HER ROSES. THE BLIGHT SLEEPS WITH HER.',
+   phases:['THE BRAMBLES WAKE','THE GARDEN BREATHES ROT'],reward:'thornbrand'},
+  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
+ [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'BRAMBLE TRIAL'],['tower',2150,'ROT RUN',9],['slagfall',2830],['ledge',2896]],
+ {});
+STAGE_DEFS.cloister.cages.push({id:'cl_reliquary',x:1250,y:-60,lock:'cl_blooms'});
+STAGE_DEFS.cloister.lore=[{id:'g1',x:90,y:156},{id:'g2',x:1360,y:-60},{id:'g3',x:2940,y:156}];
+STAGE_DEFS.shrine.arch={x:250};// the Overgrown Arch (a vine-choked trellis door between the bonfire and the keeper)

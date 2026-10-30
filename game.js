@@ -529,6 +529,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(Math.abs(this.bonfire.x-P.x)<240){const n=this.bonfire.lit?2:1;for(let i=0;i<n;i++)this.fx.fire(this.bonfire.x,GY-3,1,this.bonfire.lit?4:2,this.bonfire.lit?1.3:.7);if(Math.random()<.15)this.fx.ember(this.bonfire.x,GY-8,1)}
   const th=this.def.theme,cX=this.cam.scrollX,cY=this.cam.scrollY;
   if(th==='cathedral'){if(Math.random()<.7)this.fx.snow(cX+rnd(-20,340),cY-2)}
+  else if(th==='cloister'){if(Math.random()<.3)this.fx.add({k:'shard',x:cX+rnd(0,W),y:cY+rnd(0,H),vx:rnd(-8,8),vy:rnd(4,14),l:0,m:.5})}
   else if(th==='spire'){if(Math.random()<.25)this.fx.add({k:'shard',x:cX+rnd(0,W),y:cY+H,vx:rnd(-6,6),vy:-rnd(20,50),l:0,m:.4})}
   else if(th==='keep'){const w=(this.def.wind||[]).find(z=>this.gustOn(z));if(Math.random()<.3)this.fx.add({k:'shard',x:cX+rnd(0,W),y:cY+rnd(0,H),vx:(w?w.dir:1)*rnd(60,120),vy:rnd(-5,10),l:0,m:.5})}
   else if(th==='drowned'){if(Math.random()<.35)this.fx.add({k:'shard',x:cX+rnd(0,W),y:cY+rnd(-4,40),vx:0,vy:rnd(60,90),l:0,m:.6})}
@@ -595,6 +596,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(D.theme==='drowned')this.drawDrownedFX(g,ga,cX,cY);
   if(D.theme==='keep')this.drawKeepFX(g,ga,cX,cY);
   if(D.theme==='spire')this.drawSpireFX(g,ga,cX,cY);
+  if(D.theme==='cloister')this.drawCloisterFX(g,ga,cX,cY);
+  if(this.pBrambles&&this.pBrambles.length)this.drawPBrambles(g,ga);
   if(this.pNovas&&this.pNovas.length)this.drawPNovas(g,ga);
   if(this.pBolts&&this.pBolts.length)this.drawPBolts(g,ga);
   if(this.tideCrests&&this.tideCrests.length)this.drawTideCrests(g,ga);
@@ -666,12 +669,18 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(P.t>.22&&!P.castDone){P.castDone=true;MIRACLES[P.spell]?this.castMiracle(P.spell):P.spell==='ice'?this.castIce(P.x+P.f*16,P.f,'p',P.y):P.spell==='dome'?this.castDome(P.x,'p',0,P.y):this.castBolt()}if(P.t>.42){P.state='idle';P.castDone=false}}
   else if(P.state==='hurt'){if(P.t>.3)P.state='idle'}
   else if(P.state==='rest'){if(P.t>1.4)P.state='idle'}
-  this.swimStep(dt,inp,dir,on);this.windStep(dt,on);this.gravStep(dt,on);
+  this.swimStep(dt,inp,dir,on);this.windStep(dt,on);this.gravStep(dt,on);this.blightStep(dt);
   P.wasOn=on;P.lastVy=body.velocity.y;
   if(P.hp<=0&&!P.dead)this.die()}
  // ---------------- milestone I: water + swimming ----------------
  // ---------------- milestone J: wind on the battlements (zones gust on/off; the Castellan's gale) ----------------
  // ---------------- milestone K: gravity tides (pulsing low-gravity zones; the Astronomer's arena in phase 3) and flickering star platforms ----------------
+ // ---------------- milestone L: poison spores (pulsing clouds; the Prioress's rot in phase 3) and thorn brakes ----------------
+ sporeAt(x,y){for(const z of this.def.spores||[]){const r=z.r;if(x>r[0]&&x<r[2]&&y>r[1]&&y<r[3]&&this.gustOn(z))return 1}
+  const B=this.boss;if(B&&B.kind==='prioress'&&this.bossState==='fight'&&B.phase>=3&&x>ARENA_L){const s=Math.sin(this.t*1.2);if(Math.abs(s)>.3&&(s>0?x<(ARENA_L+ARENA_R)/2:x>=(ARENA_L+ARENA_R)/2))return 1}return 0}
+ blightStep(dt){const P=this.player;if(P.dead||this.cine||this.victory)return;
+  if(this.sporeAt(P.x,P.y-8)){P.blight=Math.min(1,(P.blight||0)+dt*.8);if(P.hp>1)P.hp=Math.max(1,P.hp-dt*(4+P.blight*6));this.stats.poisoned=(this.stats.poisoned||0)+dt;if(Math.random()<.2)this.fx.spark(P.x+rnd(-5,5),P.y-12,1,0xb8e070,30)}else P.blight=Math.max(0,(P.blight||0)-dt*.5);
+  for(const th of this.def.thorns||[]){if(P.x>th[0]-3&&P.x<th[1]+3&&Math.abs(P.y-th[2])<6&&P.inv<=0){if(this.hurtPlayer(12,P.x-P.f*8)){this.stats.thorned=(this.stats.thorned||0)+1;this.pb.setVelocityY(-180)}}}}
  starOn(s){return((this.t+s[0]*.01)%s[3])<s[3]*.62}
  gravAt(x,y){for(const z of this.def.lowg||[]){const r=z.r;if(x>r[0]&&x<r[2]&&y>r[1]&&y<r[3]&&this.gustOn(z))return 1}
   const B=this.boss;if(B&&B.kind==='astronomer'&&this.bossState==='fight'&&B.phase>=3&&x>ARENA_L)return 1;return 0}
@@ -781,13 +790,13 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  takeItem(it){const i=this.items.indexOf(it);if(i>=0)this.items.splice(i,1);
    if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=itemName(it.item);this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('pickup',.45);this.fx.spark(it.x,it.y-6,14,C.f1,90)}
  // ---------------- milestone G: bells, chests, mimics, loot drops, signature weapons ----------------
- ringBell(b,fromNet){b.sw=1;if(this.def.bellKind==='lens'){this.sfx('chime',.4);this.fx.spark(b.x,b.y-14,12,0xd8d0ff,90)}else if(this.def.bellKind==='ballista'){this.sfx('clang',.4);this.fx.shard(b.x,b.y-8,6,90)}else if(this.def.bellKind==='sigil'){this.sfx('chime',.35);this.fx.star(b.x,b.y-14,0x9ff0e8)}else if(this.def.bellKind==='anvil'){this.sfx('clang',.4);this.fx.spark(b.x,b.y-8,6,C.f1,90)}else{this.sfx('bell',.35);this.fx.shard(b.x,b.y-20,6,80)}if(b.rung)return;
+ ringBell(b,fromNet){b.sw=1;if(this.def.bellKind==='bloom'){this.sfx('slash',.5);this.fx.spark(b.x,b.y-10,14,0xb8e070,90)}else if(this.def.bellKind==='lens'){this.sfx('chime',.4);this.fx.spark(b.x,b.y-14,12,0xd8d0ff,90)}else if(this.def.bellKind==='ballista'){this.sfx('clang',.4);this.fx.shard(b.x,b.y-8,6,90)}else if(this.def.bellKind==='sigil'){this.sfx('chime',.35);this.fx.star(b.x,b.y-14,0x9ff0e8)}else if(this.def.bellKind==='anvil'){this.sfx('clang',.4);this.fx.spark(b.x,b.y-8,6,C.f1,90)}else{this.sfx('bell',.35);this.fx.shard(b.x,b.y-20,6,80)}if(b.rung)return;
   if(NET.guest()&&!fromNet){if(!b.req){b.req=1;NET.send({t:'bell',id:b.id});setTimeout(()=>b.req=0,800)}return}
   const ord=this.def.bellOrder;if(ord){const n0=this.bells.filter(q=>q.rung).length;if(ord[n0]!==b.id){// milestone I: the sisters must be struck in the order they drowned
     if(n0>0){for(const q of this.bells)q.rung=false;this.sv.bells=this.sv.bells.filter(id=>!this.bells.some(q=>q.id===id));this.say('THE SIGILS SINK BACK - NOT IN THAT ORDER',2);this.stats.sigilResets=(this.stats.sigilResets||0)+1}
     else this.pop('THE SIGIL IS SILENT',b.x,b.y-30,0x6a9aa0);this.sfx('clang',.25);Save.write(this.sv);return}}
-  b.rung=true;if(!this.sv.bells.includes(b.id))this.sv.bells.push(b.id);const n=this.bells.filter(q=>q.rung).length;const anv=this.def.bellKind==='anvil',sig=this.def.bellKind==='sigil',bal=this.def.bellKind==='ballista',lens=this.def.bellKind==='lens';this.pop(lens?'STAR LENS '+n+'/'+this.bells.length:bal?'BALLISTA WRECKED '+n+'/'+this.bells.length:(sig?'SIGIL ':anv?'ANVIL ':'BELL ')+n+'/'+this.bells.length,b.x,b.y-36,bal?0xe8d8b8:sig?0x9ff0e8:anv?0xffc080:0xd8f2ff);if(bal){this.fx.dust(b.x,b.y,14);this.fx.spark(b.x,b.y-8,10,0xe8d8b8,100)}if(anv)this.fx.spark(b.x,b.y-8,14,C.f1,120,30);this.fx.ember(b.x,b.y-20,12,1.2);if(!NET.guest())this.gainSouls(100);
-  if(n===this.bells.length&&this.def.bellLock&&!this.sv.chDone.includes(this.def.bellLock)){this.sv.chDone.push(this.def.bellLock);for(const c of this.cages)if(c.lock===this.def.bellLock){c.locked=false;this.fx.spark(c.x,c.y-8,16,0xd8f2ff,120)}this.say(lens?'THE LENSES FIND THE STARS - THE ORRERY OPENS':bal?'THE BALLISTAE ARE SILENT - A SEAL BREAKS':sig?'THE SISTERS ANSWER - THE CISTERN DRAINS':anv?'THE FORGE ANVILS ANSWER - A SEAL BREAKS':'THE FROZEN BELLS ANSWER - A SEAL BREAKS',2.5);this.sfx('fanfare',.4)}
+  b.rung=true;if(!this.sv.bells.includes(b.id))this.sv.bells.push(b.id);const n=this.bells.filter(q=>q.rung).length;const anv=this.def.bellKind==='anvil',sig=this.def.bellKind==='sigil',bal=this.def.bellKind==='ballista',lens=this.def.bellKind==='lens',blm=this.def.bellKind==='bloom';this.pop(blm?'BLOOM CUT '+n+'/'+this.bells.length:lens?'STAR LENS '+n+'/'+this.bells.length:bal?'BALLISTA WRECKED '+n+'/'+this.bells.length:(sig?'SIGIL ':anv?'ANVIL ':'BELL ')+n+'/'+this.bells.length,b.x,b.y-36,bal?0xe8d8b8:sig?0x9ff0e8:anv?0xffc080:0xd8f2ff);if(bal){this.fx.dust(b.x,b.y,14);this.fx.spark(b.x,b.y-8,10,0xe8d8b8,100)}if(anv)this.fx.spark(b.x,b.y-8,14,C.f1,120,30);this.fx.ember(b.x,b.y-20,12,1.2);if(!NET.guest())this.gainSouls(100);
+  if(n===this.bells.length&&this.def.bellLock&&!this.sv.chDone.includes(this.def.bellLock)){this.sv.chDone.push(this.def.bellLock);for(const c of this.cages)if(c.lock===this.def.bellLock){c.locked=false;this.fx.spark(c.x,c.y-8,16,0xd8f2ff,120)}this.say(blm?'THE BLIGHT RECOILS - THE RELIQUARY OPENS':lens?'THE LENSES FIND THE STARS - THE ORRERY OPENS':bal?'THE BALLISTAE ARE SILENT - A SEAL BREAKS':sig?'THE SISTERS ANSWER - THE CISTERN DRAINS':anv?'THE FORGE ANVILS ANSWER - A SEAL BREAKS':'THE FROZEN BELLS ANSWER - A SEAL BREAKS',2.5);this.sfx('fanfare',.4)}
   Save.write(this.sv)}
  openChest(c,fromNet){if(c.st!=='shut')return;if(c.sunk&&this.waterAt(c.x,c.y-3)){if(!fromNet){this.say('THE CHEST IS SUNK FAST IN THE SILT',1.6);this.sfx('clang',.2)}return}if(NET.guest()&&!fromNet){if(!c.req){c.req=1;NET.send({t:'chest',id:c.id});setTimeout(()=>c.req=0,800)}return}
   c.open=true;if(!this.sv.chests.includes(c.id))this.sv.chests.push(c.id);Save.write(this.sv);c.t=0;
@@ -839,6 +848,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(sp==='hymn'){for(let i=0;i<8;i++){const a=i/8*6.283;this.fx.star(P.x+Math.cos(a)*30,P.y-10+Math.sin(a)*20,0xb8a8ff)}this.novas.push({x:P.x,y:P.y-10,t:0,m:.5,parry:1});hitR(P.x,P.y-10,44,4*pw);this.sfx('parry',.35)}
   else if(sp==='cinder'){const x0=P.x;for(let i=0;i<4;i++)this.time.delayedCall(i*90,()=>{const x=x0+f*(14+i*20);this.fx.fire(x,GY-2,8,4,1.4);this.light(x,GY-8,30,C.f2,.8);hitR(x,P.y-6,18,4*pw)});this.cam.shake(200,.014);this.sfx('slam',.4)}
   else if(sp==='toll'){this.novas.push({dome:1,owner:'p',harmless:1,x:P.x,y:P.y,R:70,grow:.35,t:0,m:.8});hitR(P.x,P.y-8,64,3.5*pw);for(const e of this.enemies)if(!e.dead&&Math.abs(e.b.x-P.x)<64){e.state='stag';e.t=0}this.cam.shake(260,.016);this.sfx('bell',.55)}
+  else if(sp==='bramble'){const x0=P.x;this.pBrambles=(this.pBrambles||[]).concat([{x:x0,f,t:0,y:P.y}]);this.sfx('roll',.5);this.cam.shake(100,.008);// thorns erupt in a row ahead
+   for(let i=0;i<4;i++)this.time.delayedCall(i*55,()=>hitR(x0+f*(14+i*18),P.y-10,16,4*pw))}
   else if(sp==='nova'){const x0=P.x,y0=P.y-8;this.pNovas=(this.pNovas||[]).concat([{x:x0,y:y0,t:0}]);this.sfx('chime',.6);this.flashA=.06;
    for(let i=0;i<3;i++)this.time.delayedCall(i*70,()=>hitR(x0,y0,22+i*14,4*pw))}
   else if(sp==='bolt'){const x0=P.x,y0=P.y-9;this.pBolts=(this.pBolts||[]).concat([{x:x0+f*8,y:y0,f,t:0}]);this.sfx('shot',.5);this.cam.shake(120,.008);// a ballista bolt that pierces its whole line
@@ -848,7 +859,12 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(sp==='forge'){this.cam.shake(240,.018);this.sfx('slam',.45);this.fx.dust(P.x+f*14,GY,12);// the anvil comes down: three molten pillars walk forward
    const x0=P.x;for(let i=0;i<3;i++)this.time.delayedCall(80+i*110,()=>{const x=x0+f*(18+i*22);this.fx.fire(x,GY-2,10,5,1.6);this.fx.ember(x,GY-10,6,1.4);this.light(x,GY-14,36,C.f2,.9);this.forgeCols=(this.forgeCols||[]).concat([{x,t:0}]);hitR(x,P.y-8,16,4*pw)})}}
  drawLoot(g,ga){const t=this.t;
-  if(this.def.bellKind==='lens')for(const b of this.bells){const x=Math.round(b.x),y=b.y,up=b.rung,tt=this.t;// a brass star lens on a tripod: face-down (dark) until struck, then turned to the sky and shining
+  if(this.def.bellKind==='bloom')for(const b of this.bells){const x=Math.round(b.x),y=b.y,cut=b.rung,tt=this.t;// a blighted bloom: a swollen, pulsing pod on a thorny stalk, venting spores; cut = a withered stump
+   line(g,x,y,x,y-(cut?4:12),0x3a5a2a);px(g,x-1,y-6,0x6a8a40);px(g,x+1,y-9,0x6a8a40);
+   if(cut){g.fillStyle(0x4a3a2a);g.fillRect(x-2,y-5,5,2);px(g,x-3,y-1,0x5a4a30)}
+   else{const pu=Math.round(Math.sin(tt*3+x)*1);g.fillStyle(0x6a2a4a);g.fillRect(x-4-pu,y-19-pu,9+pu*2,8+pu*2);g.fillStyle(0xa84a6a);g.fillRect(x-3,y-18,7,2);g.fillStyle(0xd8e890);px(g,x-1,y-15,0xd8e890);px(g,x+2,y-14,0xd8e890);
+    glow(ga,x,y-15,8,0xb8e070,.18);if(Math.random()<.1)this.fx.spark(x+rnd(-4,4),y-20,1,0xb8e070,20)}}
+  else if(this.def.bellKind==='lens')for(const b of this.bells){const x=Math.round(b.x),y=b.y,up=b.rung,tt=this.t;// a brass star lens on a tripod: face-down (dark) until struck, then turned to the sky and shining
    const br=0x8a7a4a,bh=0xd8c080;line(g,x,y-12,x-6,y,br);line(g,x,y-12,x+6,y,br);line(g,x,y-12,x,y,br);g.fillStyle(br);g.fillRect(x-3,y-15,7,4);
    if(up){g.fillStyle(bh);g.fillRect(x-1,y-22,3,8);g.fillStyle(0xd8d0ff);g.fillRect(x-2,y-25,5,3);glow(ga,x,y-26,9+Math.sin(tt*3),0xb8b0ff,.3);line(ga,x,y-28,x,y-120,0xb8b0ff,.12)}
    else{g.fillStyle(bh);g.fillRect(x-5,y-13,10,2);g.fillStyle(0x2a2648);g.fillRect(x-4,y-11,8,2);px(ga,x+Math.round(Math.sin(tt*2)*3),y-14,0xd8d0ff,.4)}}
@@ -896,6 +912,31 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   }
  drawForgeCols(ga){const t=this.t;// the ASHWROUGHT MAUL's molten pillars (any stage)
   for(let i=(this.forgeCols||[]).length-1;i>=0;i--){const c=this.forgeCols[i];c.t+=this.dt||.016;const h=Math.round(30*Math.sin(Math.min(1,c.t/.5)*Math.PI));if(c.t>.5){this.forgeCols.splice(i,1);continue}for(let y=0;y<h;y+=2){ga.fillStyle(y%4?C.f1:C.f2,.7);ga.fillRect(c.x-3+Math.round(Math.sin(y*.5+t*20)),GY-y-2,6,2)}glow(ga,c.x,GY-h/2,12,C.f2,.3)}}
+ drawPBrambles(g,ga){const dt=this.dt||.016;for(let i=this.pBrambles.length-1;i>=0;i--){const b=this.pBrambles[i];b.t+=dt;if(b.t>.5){this.pBrambles.splice(i,1);continue}
+   for(let k=0;k<4;k++){const tk=b.t-k*.055;if(tk<0)continue;const h=Math.round(Math.min(1,tk*8)*(14-k)*(1-Math.max(0,b.t-.35)/.15)),x=Math.round(b.x+b.f*(14+k*18)),y=Math.round(b.y);
+    for(let s=-1;s<=1;s++){line(g,x+s*4,y,x+s*5,y-h+Math.abs(s)*3,0x4a6a2a);px(g,x+s*5,y-h+Math.abs(s)*3,0xa8c870)}glow(ga,x,y-h/2,6,0xb8e070,.12)}}}
+ drawCloisterFX(g,ga,cX,cY){const t=this.t;
+  // cloister arcade behind (round arches on columns), vines hanging over everything, spore clouds that bloom pale and fade, thorn brakes on the walks
+  for(let wx=Math.floor((cX*.5-60)/80)*80;wx<cX*.5+W+60;wx+=80){const x=Math.round(wx+cX*.5),top=60;ga.fillStyle(0x2a3a24,.14);ga.fillRect(x,top,8,110);for(let a=0;a<=8;a++){const an=Math.PI*a/8;ga.fillRect(Math.round(x+40-Math.cos(an)*36),Math.round(top-Math.sin(an)*24),4,4)}
+   for(let k=0;k<6;k++){const vx=x+10+k*11,vl=18+((k*13+wx)%30);for(let j=0;j<vl;j+=3)px(ga,vx+Math.round(Math.sin(t*1.2+j*.2+k)*1.5),top-8+j,0x4a6a3a,.25)}}
+  for(const vx of this.def.vines||[]){if(vx<cX-40||vx>cX+W+40)continue;for(let j=0;j<200;j+=4){const y=-200+j,x=vx+Math.round(Math.sin(j*.08+t*.8)*3);px(g,x,y,0x3a5a2a);if(j%12===0){px(g,x+1,y,0x6a8a40);px(g,x-1,y+1,0x6a8a40)}}}
+  for(const z of this.def.spores||[]){if(z.r[2]<cX||z.r[0]>cX+W)continue;const on=this.gustOn(z),cx=(z.r[0]+z.r[2])/2,cy=(z.r[1]+z.r[3])/2;
+   for(let i=0;i<(on?26:8);i++){const sx=z.r[0]+((i*61+Math.floor(t*12))%(z.r[2]-z.r[0])),sy=z.r[3]-((i*37+Math.floor(t*(on?18:6)))%(z.r[3]-z.r[1]));px(ga,sx,sy,i%3?0xb8e070:0xe8f0b0,on?.55:.15)}
+   if(on)glow(ga,cx,cy,(z.r[2]-z.r[0])*.35,0x9ac050,.1)}
+  for(const th of this.def.thorns||[]){if(th[1]<cX||th[0]>cX+W)continue;for(let x=th[0];x<th[1];x+=3){const h=3+((x*7)%5);line(g,x,th[2],x+1,th[2]-h,0x3a4a24);px(g,x+1,th[2]-h,0xc8c090)}}
+  if(cX>ARENA_L-W){// the arena: a rose window choked by vines; in phase 3 the rot rolls from one side of the garden to the other
+   const cx=3160,cy=-20;for(let a=0;a<16;a++){const an=a/16*Math.PI*2;line(ga,cx,cy,cx+Math.cos(an)*34,cy+Math.sin(an)*34,0x6a8a40,.2)}glow(ga,cx,cy,30,0xb8e070,.06);
+   const B=this.boss;if(B&&B.kind==='prioress'&&this.bossState==='fight'&&B.phase>=3){const s=Math.sin(t*1.2);if(Math.abs(s)>.3){const x0=s>0?ARENA_L:(ARENA_L+ARENA_R)/2;for(let i=0;i<40;i++)px(ga,x0+((i*29+Math.floor(t*20))%((ARENA_R-ARENA_L)/2)),GY-((i*17+Math.floor(t*14))%80),i%3?0xb8e070:0xe8f0b0,.5)}}}}
+ drawPrioress(g,ga,B){const rise=B.rise===undefined?1:B.rise,f=B.f,t=this.t,p=B.phase||1;const x=Math.round(B.x),y=Math.round(GY-(1-rise)*60);const fl=B.flash>0;if(B.flash>0&&this.dt)B.flash--;
+  const rb=fl?0xffffff:0x2a3a24,rh=fl?0xffffff:0x4a6a3a,sk=fl?0xffffff:0xd8d0c0;this.light(x,y-28,56+p*8,0xb8e070,.28+p*.06);
+  // a tall wimpled prioress grown through with briar: green habit, a crown of thorns and roses (more blooms each phase), thorn tendrils trailing, the thornbrand
+  for(let i=0;i<26;i++){const w=8+Math.floor(i/2.5);g.fillStyle(i%6===0?rh:rb);g.fillRect(x-Math.floor(w/2),y-26+i,w,1)}
+  for(let k=0;k<5;k++){const tx=x-f*(6+k*3),ty=y-2-k;line(g,x-f*4,y-6,tx-f*Math.round(Math.sin(t*2+k)*3),ty,0x3a5a2a);px(g,tx,ty-1,0xc8c090)}
+  g.fillStyle(rb);g.fillRect(x-6,y-42,12,16);g.fillStyle(sk);g.fillRect(x-4,y-48,9,7);g.fillStyle(0xe8e0d8);g.fillRect(x-5,y-49,11,2);g.fillStyle(0x05050a);px(g,x+f*1,y-45,0x05050a);px(g,x+f*3,y-45,0x05050a);
+  const ea=B.eyes===undefined?1:B.eyes;px(ga,x+f,y-45,0xc8f080,ea);px(ga,x+f*3,y-45,0xc8f080,ea);
+  for(let k=0;k<7;k++){const cx=x-5+k*2,cy=y-51-(k%2);px(g,cx,cy,0x4a6a2a);px(g,cx,cy-1,0xc8c090)}for(let k=0;k<p+1;k++)px(g,x-4+k*3,y-52,0xc84a5a);
+  const a=B.state==='wind'?-1.6:B.state==='cast'?-.9:.35+Math.sin(t*1.5)*.1,bx=x+f*7+Math.round(f*Math.cos(a)*18),by=y-28+Math.round(Math.sin(a)*18);line(g,x+f*7,y-28,bx,by,0xa8b8a0);px(g,bx,by,0xffffff);for(let k=0;k<3;k++)px(g,x+f*(9+k*4),y-28+Math.round(Math.sin(a)*(k*4+4))-1,0x4a6a2a);
+  if(B.state==='wind'&&(B.next==='lash'||B.next==='bramble'||B.next==='rot')){const k=clamp(B.t/B.wt,0,1);for(let i=0;i<10;i++)px(ga,x-30+i*6,GY-Math.round(k*10*((i%3)+1)),0xb8e070,.5*k)}}
  drawPNovas(g,ga){const dt=this.dt||.016;for(let i=this.pNovas.length-1;i>=0;i--){const n=this.pNovas[i];n.t+=dt;if(n.t>.4){this.pNovas.splice(i,1);continue}const R=10+n.t*120,a=1-n.t/.4;
    for(let k=0;k<20;k++){const an=k/20*Math.PI*2;px(ga,n.x+Math.cos(an)*R,n.y+Math.sin(an)*R*.8,k%2?0xd8d0ff:0xffffff,a)}glow(ga,n.x,n.y,R*.5,0xb8b0ff,.2*a)}}
  drawSpireFX(g,ga,cX,cY){const t=this.t;
@@ -1089,6 +1130,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.time.delayedCall(1600,()=>{this.victory={t:0,sel:0,clear:!!this.def.next};this.physics.pause()})}
  // ---------------- lords (milestone C): the Pale Cantor (cathedral) and Vulcrest the Cinder King (cinderdeep), 3 phases each ----------------
  pickLord(B,adx){const r=Math.random(),p=B.phase;
+  if(B.kind==='prioress'){if(p>=3&&r<.3)return'rot';if(p>=2&&r<.35)return'bramble';return r<.6?'lash':'charge'}
   if(B.kind==='astronomer'){if(p>=3&&r<.3)return'comet';if(p>=2&&r<.3)return'pull';return r<.65?'lance':'charge'}
   if(B.kind==='marshal'){if(p>=3&&r<.3)return'rubble';if(p>=2&&r<.3)return'gust';if(adx<44&&r<.5)return'slam';return r<.7?'volley':'charge'}
   if(B.kind==='abbess'){if(p>=3&&r<.3)return'deluge';if(p>=2&&r<.35)return'bubbles';if(adx<44&&r<.5)return'slam';return r<.75?'wave':'charge'}
@@ -1109,11 +1151,11 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(B.state==='stag'){if(Math.random()<.4)this.fx.star(B.x+rnd(-8,8),B.y-rnd(30,44),C.f1);if(B.t>TUNE.stagT){B.state='walk';B.cd=.6}}
    else if(B.state==='roar'){if(Math.random()<.8)hot?this.fx.fire(B.x+rnd(-14,14),B.y-rnd(0,40),2,3,1.6):this.fx.star(B.x+rnd(-16,16),B.y-rnd(0,48),0xb8a8ff);if(B.t>1.3){B.state='walk';B.cd=.5}}
    else if(B.state==='glide'){const q=ease(Math.min(1,B.t/.8));B.x=lerp(B.gx0,B.gx,q);B.y=lerp(B.gy0,B.gy,q);if(Math.random()<.6)hot?this.fx.ember(B.x+rnd(-10,10),B.y-rnd(0,40),1,1):this.fx.star(B.x+rnd(-10,10),B.y-rnd(0,40),0xb8a8ff);if(B.t>.8){B.state=B.gy<GY?'perch':'walk';B.t=0;B.cd=.8;B.fire=0}}
-   else if(B.state==='perch'){B.f=Math.sign(dx)||1;B.fire=(B.fire||0)-dt;if(B.fire<0&&B.t<2.2){B.fire=.7;const a=Math.atan2(P.y-8-(B.y-24),dx);for(const o of[-.25,0,.25])this.shots.push({x:B.x,y:B.y-24,vx:Math.cos(a+o)*80,vy:Math.sin(a+o)*80,t:0,c:hot?'fire':K==='abbess'?'water':K==='marshal'?'bolt':K==='astronomer'?'star':'note',dmg:12});this.sfx('shot',.25)}
+   else if(B.state==='perch'){B.f=Math.sign(dx)||1;B.fire=(B.fire||0)-dt;if(B.fire<0&&B.t<2.2){B.fire=.7;const a=Math.atan2(P.y-8-(B.y-24),dx);for(const o of[-.25,0,.25])this.shots.push({x:B.x,y:B.y-24,vx:Math.cos(a+o)*80,vy:Math.sin(a+o)*80,t:0,c:hot?'fire':K==='abbess'?'water':K==='marshal'?'bolt':K==='astronomer'?'star':K==='prioress'?'thorn':'note',dmg:12});this.sfx('shot',.25)}
     if(B.t>2.6){B.state='glide';B.t=0;B.gx0=B.x;B.gy0=B.y;B.gx=clamp(P.x+(P.x>3170?-40:40),ARENA_L+30,ARENA_R-30);B.gy=GY}}
    else if(B.state==='walk'){B.f=Math.sign(dx)||1;if(B.y<GY)B.y=Math.min(GY,B.y+140*dt);if(adx>30)B.x+=B.f*spd*dt;B.step=(B.step||0)+dt*6;
-    if(!king&&B.phase>=2){if(B.loftCd<0&&B.cd<0&&B.y>=GY){B.state='glide';B.t=0;B.gx0=B.x;B.gy0=B.y;B.gx=3170;B.gy=80;B.loftCd=8;this.say(K==='astronomer'?'THE ASTRONOMER RISES TO HER TELESCOPE':K==='marshal'?'THE CASTELLAN MOUNTS THE BROKEN WALL':K==='abbess'?'THE ABBESS RISES TO THE DROWNED CHOIR':K==='smith'?'THE SMITH CLIMBS THE CRUCIBLE GANTRY':K==='toller'?'THE TOLLER CLIMBS INTO THE BELL FRAME':'THE CANTOR ASCENDS TO THE LOFT',1.4)}}
-    if(B.state==='walk'&&B.cd<0){B.next=this.pickLord(B,adx);B.state='wind';B.t=0;B.wt=({slam:.7,hymn:.75,charge:.6,requiem:.8,meteor:.8,inferno:.9,toll:.7,peal:.95,bellows:.7,anvil:.75,pour:.9,wave:.7,bubbles:.75,deluge:.9,volley:.75,gust:.7,rubble:.9,lance:.7,pull:.7,comet:.9})[B.next]*quick;B.eyeFlash=.3;this.sfx('charge',.4)}}
+    if(!king&&B.phase>=2){if(B.loftCd<0&&B.cd<0&&B.y>=GY){B.state='glide';B.t=0;B.gx0=B.x;B.gy0=B.y;B.gx=3170;B.gy=80;B.loftCd=8;this.say(K==='prioress'?'THE PRIORESS CLIMBS HER TRELLIS':K==='astronomer'?'THE ASTRONOMER RISES TO HER TELESCOPE':K==='marshal'?'THE CASTELLAN MOUNTS THE BROKEN WALL':K==='abbess'?'THE ABBESS RISES TO THE DROWNED CHOIR':K==='smith'?'THE SMITH CLIMBS THE CRUCIBLE GANTRY':K==='toller'?'THE TOLLER CLIMBS INTO THE BELL FRAME':'THE CANTOR ASCENDS TO THE LOFT',1.4)}}
+    if(B.state==='walk'&&B.cd<0){B.next=this.pickLord(B,adx);B.state='wind';B.t=0;B.wt=({slam:.7,hymn:.75,charge:.6,requiem:.8,meteor:.8,inferno:.9,toll:.7,peal:.95,bellows:.7,anvil:.75,pour:.9,wave:.7,bubbles:.75,deluge:.9,volley:.75,gust:.7,rubble:.9,lance:.7,pull:.7,comet:.9,lash:.7,bramble:.75,rot:.9})[B.next]*quick;B.eyeFlash=.3;this.sfx('charge',.4)}}
    else if(B.state==='wind'){const c=hot?C.f1:0xb8a8ff;if(Math.random()<.7)hot?this.fx.fire(B.x+B.f*rnd(4,18),B.y-rnd(14,34),1,2,1):this.fx.star(B.x+B.f*rnd(4,16),B.y-rnd(20,40),c);
     if(B.t>B.wt)this.lordStrike(B,dx)}
    else if(B.state==='slam'){if(B.t<.1&&Math.abs(P.x-(B.x+B.f*16))<18&&P.y>GY-30)this.hurtPlayer(king?28:24,B.x,'boss');if(B.state==='slam'&&B.t>.6){B.state='walk';B.cd=rnd(.8,1.5)*quick}}
@@ -1137,8 +1179,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(n==='charge'){B.state='charge';B.f=Math.sign(dx)||1}
   else if(n==='hymn'){B.state='cast';B.dur=1.1;const ring=(N,off,sp)=>{for(let i=0;i<N;i++){const a=(i+.5)/N*(Math.PI+1.2)-.6+off;this.shots.push({x:B.x,y:B.y-30,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,t:0,c:'note',dmg:12,life:4})}};
    ring(p>=2?9:7,0,70);if(p>=2)this.time.delayedCall(380,()=>{if(this.boss&&this.bossState==='fight')ring(8,.17,85)});this.novas.push({x:B.x,y:B.y-30,t:0,m:.4,parry:1});this.sfx('parry',.35)}
-  else if(n==='requiem'||n==='meteor'||n==='pour'||n==='deluge'||n==='rubble'||n==='comet'){B.state='cast';B.dur=1.2;const N=king?(p>=3?7:5):7;king=king||smith;
-   for(let i=0;i<N;i++){const x=clamp(P.x+rnd(-70,70)+(i===0?0:0),ARENA_L+10,ARENA_R-10),d=.55+i*.13;this.shots.push({x:i===0?P.x:x,y:this.cam.scrollY-6,vx:0,vy:40,g:king?420:520,t:0,delay:d,d0:d,c:king?'fire':n==='deluge'?'water':n==='rubble'?'stone':n==='comet'?'star':'ice',r:king||n==='rubble'||n==='comet'?9:6,dmg:king?18:16,life:3})}
+  else if(n==='requiem'||n==='meteor'||n==='pour'||n==='deluge'||n==='rubble'||n==='comet'||n==='rot'){B.state='cast';B.dur=1.2;const N=king?(p>=3?7:5):7;king=king||smith;
+   for(let i=0;i<N;i++){const x=clamp(P.x+rnd(-70,70)+(i===0?0:0),ARENA_L+10,ARENA_R-10),d=.55+i*.13;this.shots.push({x:i===0?P.x:x,y:this.cam.scrollY-6,vx:0,vy:40,g:king?420:520,t:0,delay:d,d0:d,c:king?'fire':n==='deluge'?'water':n==='rubble'?'stone':n==='comet'?'star':n==='rot'?'spore':'ice',r:king||n==='rubble'||n==='comet'||n==='rot'?9:6,dmg:king?18:16,life:3})}
    this.sfx('charge',.4);if(king)this.fx.ember(B.x,B.y-40,20,2.5)}
   else if(n==='toll'||n==='peal'){B.state='cast';B.dur=n==='peal'?2:1;const toll=()=>{if(!this.boss||this.bossState!=='fight')return;this.flames.push({x:B.x-10,dir:-1,t:0,ice:1},{x:B.x+10,dir:1,t:0,ice:1});this.novas.push({dome:1,owner:'b',harmless:1,x:B.x,y:GY,R:60,grow:.3,t:0,m:.7});this.cam.shake(220,.014);this.sfx('bell',.5);B.bellSw=1};
    toll();if(n==='peal'){this.time.delayedCall(650,toll);this.time.delayedCall(1300,toll)}}
@@ -1146,6 +1188,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   // milestone I: the Abbess — a tide-wave along the floor both ways (twice from phase 2), slow homing drowned-breath bubbles
   // milestone J: the Castellan — ballista volleys from the walls, a gale that hurls you away (his shield-wind), rubble when the walls come down
   // milestone K: the Astronomer — star lances along the floor and the air, a gravity well that drags you in, comets when the sky falls
+  // milestone L: the Prioress — vine lashes along the walk, bramble rows erupting from the soil, rotting spore pods when the garden breathes
+  else if(n==='lash'){B.state='cast';B.dur=1;const N=p>=3?5:p>=2?4:3;for(let i=0;i<N;i++)this.shots.push({x:B.x+B.f*10,y:GY-6-(i%2)*16,vx:B.f*(150+i*12),vy:0,t:0,delay:.12+i*.14,d0:.3,c:'thorn',dmg:13,r:5,life:2.4});this.sfx('slash',.4)}
+  else if(n==='bramble'){B.state='cast';B.dur=1.3;const N=p>=3?7:5;for(let i=0;i<N;i++){const x=clamp(P.x+(i-(N>>1))*26,ARENA_L+8,ARENA_R-8);this.shots.push({x,y:GY+4,vx:0,vy:-200,g:300,t:0,delay:.35+Math.abs(i-(N>>1))*.1,d0:.5,c:'thorn',dmg:14,r:6,life:1.1})}this.sfx('roll',.4)}
   else if(n==='lance'){B.state='cast';B.dur=1;const N=p>=3?7:p>=2?5:3;for(let i=0;i<N;i++){const a=-.5+i/(N-1||1);this.shots.push({x:B.x,y:B.y-30,vx:B.f*170*Math.cos(a),vy:120*Math.sin(a)+40,t:0,delay:.15+i*.08,d0:.3,c:'star',dmg:13,r:5,life:2.4})}this.sfx('chime',.4)}
   else if(n==='pull'){B.state='cast';B.dur=1.4;this.novas.push({dome:1,owner:'b',harmless:1,x:B.x,y:GY-20,R:70,grow:.3,t:0,m:.9});this.sfx('charge',.5)}
   else if(n==='volley'){B.state='cast';B.dur=1;const N=p>=3?6:p>=2?4:3;for(let i=0;i<N;i++){const side=i%2?1:-1,x=side<0?ARENA_L+6:ARENA_R-6,y=i%4<2?GY-8:GY-30;this.shots.push({x,y,vx:-side*160,vy:0,t:0,delay:.25+i*.22,d0:.4,c:'bolt',dmg:14,r:5,life:2.6})}this.sfx('charge',.4)}
@@ -1210,6 +1255,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  updateCine(dt){const c=this.cine;if(!c)return;c.t+=dt;const B=this.boss;this.bars=Math.min(1,c.t/.5);
   const K=B.kind;
   if(K==='king'&&c.t>.3&&c.t<1.6&&Math.random()<.5)this.fx.fire(ARENA_L+rnd(20,340),GY,3,3,1.6);
+  if(K==='prioress'){if(!c.said){c.said=1;this.say('THE GARDEN STIRS AROUND YOU',1.6);this.sfx('roll',.5)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('slash',.5);this.cam.shake(220,.01);for(let i=0;i<7;i++)this.fx.spark(ARENA_L+30+i*50,GY-4,5,0x8ab050,70)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('fanfare',.35);this.flashA=.1}if(c.t<1.8&&Math.random()<.5)this.fx.spark(B.x+rnd(-30,30),GY-rnd(0,50),1,0xb8e070,25)}
   if(K==='astronomer'){if(!c.said){c.said=1;this.say('THE STARS WHEEL ABOUT THE SPIRE',1.6);this.sfx('chime',.6)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('charge',.5);this.flashA=.12;for(let i=0;i<8;i++)this.fx.spark(ARENA_L+20+i*45,GY-90,4,0xd8d0ff,60)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('fanfare',.4);this.cam.shake(200,.008)}if(c.t<1.8&&Math.random()<.4)this.fx.spark(B.x+rnd(-30,30),GY-rnd(0,60),1,0xd8d0ff,30)}
   if(K==='marshal'){if(!c.said){c.said=1;this.say('A WAR HORN SOUNDS FROM THE RUINED KEEP',1.6);this.sfx('charge',.6)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('slam',.5);this.cam.shake(300,.014);for(let i=0;i<5;i++)this.fx.shard(ARENA_L+40+i*70,GY-60,6,80)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('clang',.7);this.flashA=.15}if(c.t<1.8&&Math.random()<.4)this.fx.dust(B.x+rnd(-30,30),GY,2)}
   if(K==='abbess'){if(!c.said){c.said=1;this.say('THE WATER REMEMBERS A HYMN',1.6);this.sfx('chime',.6)}if(c.t>.7&&!c.h1){c.h1=1;this.splash(B.x,GY-2,20)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('chime',.8);this.flashA=.18;this.tideFlash=1}if(c.t<1.8&&Math.random()<.5)this.bubbles.push({x:B.x+rnd(-30,30),y:GY-2,t:0,top:GY-90})}
@@ -1261,7 +1307,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const M=o.pts.pts;{const ca=Math.min(1,o.t*8)*fade;for(let xx=Math.round(this.cam.scrollX)-2;xx<this.cam.scrollX+W+2;xx+=1){const cy0=Math.round(this.cam.scrollY),yy=3+Math.round(Math.sin(xx*.21)*1.5+Math.sin(xx*.07+this.t*3)*2);this.gn.fillStyle(0x07050f,.8*ca);this.gn.fillRect(xx,cy0,1,yy);px(ga,xx,cy0+yy,0x6a58c8,.5*ca)}}glow(ga,o.x,o.gy-4,14,C.bolt,.2*fade);dl(M,C.bolt,.6*fade,-1);dl(M,C.bolt,.6*fade,1);dl(M,C.boltC,fade,0);o.pts.br.forEach(s=>dl(s,C.bolt,.8*fade,0));
    this.light(o.x,o.gy-40,130,C.bolt,.9*fade)}
   for(const s of this.shots){if(s.delay>0){const k=1-s.delay/(s.d0||1),gy=this.lv.floorAt(s.x,s.y+4);for(let i=-4;i<=4;i+=2)px(ga,s.x+i,gy-1,s.c==='fire'?C.f2:C.ice1,.3+.6*k*(Math.floor(this.t*16)%2));continue}
-   const c0=s.c==='fire'?C.f2:s.c==='note'?0xb8a8ff:s.c==='water'?0x2a9aa8:s.c==='bolt'?0x8a6a44:s.c==='stone'?0x6a6660:s.c==='star'?0x8a80e8:C.ice3,c1=s.c==='fire'?C.f1:s.c==='note'?0xe8e0ff:s.c==='water'?0xb8f8f0:s.c==='bolt'?0xd8d8e0:s.c==='stone'?0xb8b0a0:s.c==='star'?0xf0ecff:C.ice1,big=s.r>6?1:0;glow(ga,s.x,s.y,6+big*3,c0,.22);ga.fillStyle(c1);ga.fillRect(Math.round(s.x)-1-big,Math.round(s.y)-1-big,3+big*2,3+big*2);px(ga,s.x,s.y,0xffffff);
+   const c0=s.c==='fire'?C.f2:s.c==='note'?0xb8a8ff:s.c==='water'?0x2a9aa8:s.c==='bolt'?0x8a6a44:s.c==='stone'?0x6a6660:s.c==='star'?0x8a80e8:s.c==='spore'?0x8aa840:s.c==='thorn'?0x4a6a2a:C.ice3,c1=s.c==='fire'?C.f1:s.c==='note'?0xe8e0ff:s.c==='water'?0xb8f8f0:s.c==='bolt'?0xd8d8e0:s.c==='stone'?0xb8b0a0:s.c==='star'?0xf0ecff:s.c==='spore'?0xd8f0a0:s.c==='thorn'?0xa8c870:C.ice1,big=s.r>6?1:0;glow(ga,s.x,s.y,6+big*3,c0,.22);ga.fillStyle(c1);ga.fillRect(Math.round(s.x)-1-big,Math.round(s.y)-1-big,3+big*2,3+big*2);px(ga,s.x,s.y,0xffffff);
    if(s.c==='bolt'){const d=Math.sign(s.vx)||1;g.fillStyle(0x6a4a2a);g.fillRect(Math.round(s.x)-d*12,Math.round(s.y),12,1);px(g,s.x-d*12,s.y-1,0xd8d0c0);px(g,s.x-d*12,s.y+1,0xd8d0c0)}
    if(s.c==='note'){px(ga,s.x+1,s.y-2,c1);px(ga,s.x+1,s.y-3,c1);px(ga,s.x+2,s.y-3,c1)}this.light(s.x,s.y,22+big*8,c0,.5)}
   for(const a of this.arrows){const x=Math.round(a.x),y=Math.round(a.y),d=Math.sign(a.vx);if(a.ls){for(let k=0;k<14;k++)px(ga,x-d*k,y+((k*7+Math.floor(this.t*30))%3)-1,k<3?0xffffff:0xffe08a);g.fillStyle(0xfff4c0);g.fillRect(Math.min(x,x-d*12),y,12,1);glow(ga,x,y,6,0xffd870,.35);this.light(x,y,30,0xffd870,.7);continue}g.fillStyle(0x8a6a4a);g.fillRect(Math.min(x,x-d*6),y,6,1);px(g,x,y,0xd8d0ee);px(g,x-d*6,y-1,0xd8d0ee);px(g,x-d*6,y+1,0xd8d0ee);if(a.pierce){glow(ga,x,y,4,C.f1,.3);px(ga,x+d,y,0xffffff)}}
@@ -1329,7 +1375,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    g.fillStyle(L.rim||0xffb04a,.8);g.fillRect(x-4,y-7-sq,9,7+sq);// orange rim
    g.fillStyle(L.d||0x4a1008);g.fillRect(x-3,y-5-sq,7,5+sq);g.fillStyle(c);g.fillRect(x-3,y-6-sq,7,4+sq);g.fillStyle(l);g.fillRect(x-2,y-6-sq,5,1);px(g,x-1+f,y-4,C.f0);px(g,x+1+f,y-4,C.f0);
    glow(ga,x,y-4,fuse?6+e.t*16:6,C.f2,fuse?.3:.15);this.light(x,y-4,fuse?40:20,C.f2,fuse?.7:.35)}}
- drawBoss(g,ga,B){if(B.kind==='astronomer')return this.drawAstronomer(g,ga,B);if(B.kind==='marshal')return this.drawMarshal(g,ga,B);if(B.kind==='abbess')return this.drawAbbess(g,ga,B);if(B.kind==='smith')return this.drawSmith(g,ga,B);if(B.kind==='toller')return this.drawToller(g,ga,B);if(B.kind==='cantor')return this.drawCantor(g,ga,B);if(B.kind==='king')return this.drawKing(g,ga,B);return this.drawWarden(g,ga,B)}
+ drawBoss(g,ga,B){if(B.kind==='prioress')return this.drawPrioress(g,ga,B);if(B.kind==='astronomer')return this.drawAstronomer(g,ga,B);if(B.kind==='marshal')return this.drawMarshal(g,ga,B);if(B.kind==='abbess')return this.drawAbbess(g,ga,B);if(B.kind==='smith')return this.drawSmith(g,ga,B);if(B.kind==='toller')return this.drawToller(g,ga,B);if(B.kind==='cantor')return this.drawCantor(g,ga,B);if(B.kind==='king')return this.drawKing(g,ga,B);return this.drawWarden(g,ga,B)}
  drawWarden(g,ga,B){const x=Math.round(B.x),f=B.f,rise=B.rise===undefined?1:B.rise;const y=Math.round(GY+(1-rise)*40),X=d=>x+d*f;const fl=B.flash>0;if(B.flash>0&&this.dt)B.flash--;
   const c=fl?0xbfe4ff:B.phase2?0x5a7ab8:0x4a4a78,s=fl?0x8fc8f0:0x2a2a50,h=fl?0xffffff:0x9fb8e8;
   glow(ga,x,y-18,40,C.ice4,B.phase2?.14:.09);this.light(x,y-20,56,C.ice3,B.phase2?.45:.3);
@@ -1353,7 +1399,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(this.flashF>0){ga.fillStyle(0xd8d0ff,.15);ga.fillRect(0,0,W,H);if(!this.paused)this.flashF--}
   const c=this.cine;
   if(c&&c.t>1.9&&c.t<3.9){const a=Math.min(1,(c.t-1.9)/.3)*Math.min(1,(3.9-c.t)/.3);const n=this.def.boss.name,sub=this.def.boss.sub;
-   const nc=this.def.boss.kind==='astronomer'?0xd8d0ff:this.def.boss.kind==='marshal'?0xe8d8b8:this.def.boss.kind==='abbess'?0xa8f0e8:this.def.boss.kind==='smith'?0xffc080:this.def.boss.kind==='toller'?0xd8f2ff:this.def.boss.kind==='king'?0xffd8a0:this.def.boss.kind==='cantor'?0xe8e0ff:0xd8f2ff;drawText(g,n,Math.round(W/2-textW(n,2)/2),130,nc,2,0x05040b,a);drawText(g,sub,Math.round(W/2-textW(sub)/2),145,0x8a86c0,1,null,a);g.fillStyle(this.def.boss.kind==='king'||this.def.boss.kind==='smith'?C.f2:0x9fd8ff,a);const lw=Math.round(120*Math.min(1,(c.t-1.9)/.6));g.fillRect(W/2-lw/2,141,lw,1)}
+   const nc=this.def.boss.kind==='prioress'?0xc8e890:this.def.boss.kind==='astronomer'?0xd8d0ff:this.def.boss.kind==='marshal'?0xe8d8b8:this.def.boss.kind==='abbess'?0xa8f0e8:this.def.boss.kind==='smith'?0xffc080:this.def.boss.kind==='toller'?0xd8f2ff:this.def.boss.kind==='king'?0xffd8a0:this.def.boss.kind==='cantor'?0xe8e0ff:0xd8f2ff;drawText(g,n,Math.round(W/2-textW(n,2)/2),130,nc,2,0x05040b,a);drawText(g,sub,Math.round(W/2-textW(sub)/2),145,0x8a86c0,1,null,a);g.fillStyle(this.def.boss.kind==='king'||this.def.boss.kind==='smith'?C.f2:0x9fd8ff,a);const lw=Math.round(120*Math.min(1,(c.t-1.9)/.6));g.fillRect(W/2-lw/2,141,lw,1)}
   if(!c&&!this.victory){
    const bar=(y,v,m,col,dark,w,fl)=>{g.fillStyle(0x07050f);g.fillRect(4,y-2,w+4,7);g.fillStyle(0x7a5a24);g.fillRect(5,y-1,w+2,1);g.fillRect(5,y+3,w+2,1);g.fillRect(5,y-1,1,5);g.fillRect(w+6,y-1,1,5);
     g.fillStyle(0xd8b060);g.fillRect(5,y-1,1,1);g.fillRect(w+6,y-1,1,1);g.fillRect(5,y+3,1,1);g.fillRect(w+6,y+3,1,1);
@@ -1363,7 +1409,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    // flasks (code-drawn)
    for(let i=0;i<TUNE.flaskN;i++){const fx=6+i*8,fy=25,full=i<P.flasks;g.fillStyle(0x07050f);g.fillRect(fx-1,fy-1,7,9);g.fillStyle(0x8a84a8);g.fillRect(fx+2,fy,1,2);g.fillStyle(full?C.f2:0x2a2245);g.fillRect(fx,fy+2,5,5);g.fillStyle(full?C.f0:0x3a3060);g.fillRect(fx+1,fy+3,1,2);if(full)glow(ga,fx+2,fy+4,4,C.f2,.2)}
    {const nF=this.cages.filter(c=>c.freed).length,str=nF+'/'+this.cages.length,ex=34,ey=26;g.fillStyle(0x07050f);g.fillRect(ex-2,ey-2,textW(str)+11,10);g.fillStyle(C.f2);g.fillRect(ex,ey+1,3,4);g.fillStyle(C.f1);g.fillRect(ex+1,ey,1,4);px(g,ex+1,ey-1,C.f0);glow(ga,ex+1,ey+3,4,C.f2,.25);drawText(g,str,ex+6,ey,nF===this.cages.length?0xffe2a8:0xd8d0ee);const lv='LV '+this.lvl;drawText(g,lv,ex+textW(str)+14,ey,0x8a86c0);
-   if(this.bells.length){const nb=this.bells.filter(b=>b.rung).length,bs=(this.def.bellKind==='lens'?'LENSES ':this.def.bellKind==='ballista'?'BALLISTAE ':this.def.bellKind==='sigil'?'SIGILS ':this.def.bellKind==='anvil'?'ANVILS ':'BELLS ')+nb+'/'+this.bells.length,by=ey+10;g.fillStyle(0x07050f);g.fillRect(ex-2,by-2,textW(bs)+4,10);drawText(g,bs,ex,by,nb===this.bells.length?0xffe2a8:0xb8d8ff)}
+   if(this.bells.length){const nb=this.bells.filter(b=>b.rung).length,bs=(this.def.bellKind==='bloom'?'BLOOMS ':this.def.bellKind==='lens'?'LENSES ':this.def.bellKind==='ballista'?'BALLISTAE ':this.def.bellKind==='sigil'?'SIGILS ':this.def.bellKind==='anvil'?'ANVILS ':'BELLS ')+nb+'/'+this.bells.length,by=ey+10;g.fillStyle(0x07050f);g.fillRect(ex-2,by-2,textW(bs)+4,10);drawText(g,bs,ex,by,nb===this.bells.length?0xffe2a8:0xb8d8ff)}
    {const bf=this.buffs||{};let bx=ex;for(const[k,c,l]of[['guard',0xd8f2ff,'RIME'],['stam',0x9fe86a,'LEAF']])if(bf[k]>0){const s=l+' '+Math.ceil(bf[k]);drawText(g,s,bx,ey+(this.bells.length?20:10),c);bx+=textW(s)+6}}}
    for(const ch of this.chs)if(ch.active){const s2=ch.type==='timer'?ch.name+' '+Math.max(0,ch.t).toFixed(1):ch.name+' - WAVE '+(ch.wave+1)+'/'+ch.waves.length;drawText(g,s2,Math.round(W/2-textW(s2)/2),this.touch?22:8,ch.type==='timer'&&ch.t<3&&Math.floor(t*8)%2?0xd8402a:0xffe2a8)}
    if(P.flaskFlash>0){P.flaskFlash-=this.dt;if(Math.floor(t*16)%2)g.fillStyle(0xd8402a).fillRect(4,34,24,1)}
@@ -1408,7 +1454,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  itemList(){const sv=this.sv,o=[];sv.inv.filter(i=>WEAPONS[i]).forEach(i=>o.push([i,WEAPONS[i].hand==='off'?'OFF HAND':'WEAPON']));sv.inv.filter(i=>ARMORS[i]).forEach(i=>o.push([i,'ARMOR']));
   Object.keys(SPELLS).forEach(i=>o.push([i,'SORCERY']));Object.keys(MIRACLES).filter(i=>sv.inv.includes(i)).forEach(i=>o.push([i,'MIRACLE']));o.push(['flask','x'+(TUNE.flaskN+(sv.flaskBonus||0))]);return o}
  shopList(){const sv=this.sv;return SHOP.filter(([id])=>id==='flask'?(sv.flaskBonus||0)<2:!sv.inv.includes(id))}
- keeperLines(){const sv=this.sv,B=KEEPER.bell,F=KEEPER.forge,Cr=KEEPER.crypt,Kp=KEEPER.keep,Sp=KEEPER.spire,L=KEEPER.lines[this.keeperTier()];return[...L,...(sv.lords.includes('toller')?B.slain:sv.lords.includes('cantor')?B.open:B.sealed),...(sv.lords.includes('smith')?F.slain:sv.lords.includes('toller')?F.open:sv.lords.includes('cantor')?F.sealed:[]),...(sv.lords.includes('abbess')?Cr.slain:sv.lords.includes('smith')?Cr.open:sv.lords.includes('toller')?Cr.sealed:[]),...(sv.lords.includes('marshal')?Kp.slain:sv.lords.includes('abbess')?Kp.open:sv.lords.includes('smith')?Kp.sealed:[]),...(sv.lords.includes('astronomer')?Sp.slain:sv.lords.includes('marshal')?Sp.open:sv.lords.includes('abbess')?Sp.sealed:[])]}
+ keeperLines(){const sv=this.sv,B=KEEPER.bell,F=KEEPER.forge,Cr=KEEPER.crypt,Kp=KEEPER.keep,Sp=KEEPER.spire,Cl=KEEPER.cloister,L=KEEPER.lines[this.keeperTier()];return[...L,...(sv.lords.includes('toller')?B.slain:sv.lords.includes('cantor')?B.open:B.sealed),...(sv.lords.includes('smith')?F.slain:sv.lords.includes('toller')?F.open:sv.lords.includes('cantor')?F.sealed:[]),...(sv.lords.includes('abbess')?Cr.slain:sv.lords.includes('smith')?Cr.open:sv.lords.includes('toller')?Cr.sealed:[]),...(sv.lords.includes('marshal')?Kp.slain:sv.lords.includes('abbess')?Kp.open:sv.lords.includes('smith')?Kp.sealed:[]),...(sv.lords.includes('astronomer')?Sp.slain:sv.lords.includes('marshal')?Sp.open:sv.lords.includes('abbess')?Sp.sealed:[]),...(sv.lords.includes('prioress')?Cl.slain:sv.lords.includes('astronomer')?Cl.open:sv.lords.includes('marshal')?Cl.sealed:[])]}
  keeperTier(){const sv=this.sv;return sv.endings.length?3:Math.min(2,sv.lords.length)}
  travel(to,ret){const sv=this.sv;this.menu=null;this.cam.fadeOut(500,7,5,15);this.physics.pause();this.travelling=1;
   const side=this.def.side,extra=to==='shrine'?{hubNext:side?sv.hubNext:ret.next,retBonfire:side?!!sv.retBonfire:!!ret.bonfire,bonfire:false}:STAGE_DEFS[to].side?{bonfire:false}:{bonfire:!!sv.retBonfire,retBonfire:false};
@@ -1417,6 +1463,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(const c of this.chests)if(c.st==='shut'&&near(c.x,14)&&Math.abs(P.y-c.y)<16){this.openChest(c);return true}
   if(D.stair&&near(D.stair.x,18)){if(!this.sv.lords.includes('cantor')&&!Q.has('stairopen')){this.say('THE FROZEN STAIR IS SEALED BY RIME',2);this.sfx('clang',.3);return true}
    if(NET.guest()){this.pop('THE HOST LEADS THE WAY',P.x,P.y-26,0x9ff0dc);return true}this.say('CLIMBING THE FROZEN STAIR',1.5);this.sfx('bell',.4);this.travel('belltower');return true}
+  if(D.arch&&near(D.arch.x,14)){if(!this.sv.lords.includes('astronomer')&&!Q.has('cloisteropen')){this.say('THORNS CHOKE THE ARCH',2);this.sfx('slash',.3);return true}
+   if(NET.guest()){this.pop('THE HOST LEADS THE WAY',P.x,P.y-26,0x9ff0dc);return true}this.say('THROUGH THE OVERGROWN ARCH',1.5);this.sfx('roll',.4);this.travel('cloister');return true}
   if(D.lift&&near(D.lift.x,14)){if(!this.sv.lords.includes('marshal')&&!Q.has('spireopen')){this.say('THE STAR LIFT WILL NOT RISE',2);this.sfx('clang',.3);return true}
    if(NET.guest()){this.pop('THE HOST LEADS THE WAY',P.x,P.y-26,0x9ff0dc);return true}this.say('THE STAR LIFT RISES',1.5);this.sfx('chime',.5);this.travel('spire');return true}
   if(D.gate&&near(D.gate.x,14)){if(!this.sv.lords.includes('abbess')&&!Q.has('keepopen')){this.say('THE KEEP GATE IS BARRED FROM THIS SIDE',2);this.sfx('clang',.3);return true}
@@ -1457,6 +1505,12 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
     for(let i=0;i<5;i++){const ix=sx-10+i*5,l=3+((i*7)%4);g.fillStyle(0xb8d8ff);g.fillRect(ix,GY-42,1,l);px(g,ix,GY-42+l,0xffffff)}
     if(!open){g.fillStyle(0x9fc8f0,.55);g.fillRect(sx-12,GY-40,24,40);for(let y=GY-38;y<GY;y+=5)px(ga,sx-10+((y*7)%20),y,0xffffff,.6)}else{glow(ga,sx,GY-30,16,0x9fd8ff,.12+.04*Math.sin(t*3));if(Math.random()<.2)this.fx.snow(sx+rnd(-10,10),GY-44)}
     if(Math.abs(P.x-sx)<30)drawText(g,open?'^ THE FROZEN BELL TOWER':'THE FROZEN STAIR - SEALED',Math.max(2,Math.round(sx-textW(open?'^ THE FROZEN BELL TOWER':'THE FROZEN STAIR - SEALED')/2)),GY-58,open?0xb8e0ff:0x7a86a8)}
+   if(D.arch){const sx=D.arch.x,open=this.sv.lords.includes('astronomer')||Q.has('cloisteropen');// milestone L: the Overgrown Arch, a trellis door choked with thorns until the stars go dark
+    g.fillStyle(0x3a3428);g.fillRect(sx-13,GY-36,3,36);g.fillRect(sx+10,GY-36,3,36);for(let a=0;a<=8;a++){const an=Math.PI*a/8;g.fillRect(Math.round(sx-Math.cos(an)*11)-1,Math.round(GY-36-Math.sin(an)*8),3,3)}
+    g.fillStyle(open?0x0c140a:0x1a2414);g.fillRect(sx-10,GY-36,20,36);
+    for(let i=0;i<(open?8:22);i++){const vx=sx-12+((i*7)%25),vy=GY-44+((i*11)%44);px(g,vx,vy,i%3?0x3a5a2a:0x6a8a40);if(!open&&i%4===0)px(g,vx+1,vy-1,0xa8a070)}
+    if(open){for(let k=0;k<3;k++)px(g,sx-6+k*6,GY-30+k*5,0xe8e0e8);glow(ga,sx,GY-18,12,0xb8e070,.08)}
+    if(Math.abs(P.x-sx)<22){const s=open?'^ THE BLIGHTED CLOISTER':'THE OVERGROWN ARCH - THORNED';drawText(g,s,Math.max(2,Math.min(638-textW(s),Math.round(sx-textW(s)/2))),GY-74,open?0xc8e890:0x8a8690)}}
    if(D.lift){const sx=D.lift.x,open=this.sv.lords.includes('marshal')||Q.has('spireopen');// milestone K: the Star Lift, a brass orrery cage that climbs to the spire
     g.fillStyle(0x4a4260);g.fillRect(sx-12,GY-44,2,44);g.fillRect(sx+10,GY-44,2,44);g.fillRect(sx-12,GY-46,24,2);line(g,sx,GY-46,sx,GY-120,0x3a3450);
     g.fillStyle(open?0x8a7a4a:0x4a4232);for(let y=GY-40;y<GY;y+=10)g.fillRect(sx-10,y,20,1);const a=t*(open?1.2:.1);for(let k=0;k<3;k++){const ax=sx+Math.round(Math.cos(a+k*2.1)*8),ay=GY-24+Math.round(Math.sin(a+k*2.1)*4);px(g,ax,ay,open?0xd8d0ff:0x5a5470)}
@@ -1516,7 +1570,7 @@ const ENDINGS={rekindle:{title:'TO LINK THE FIRST FLAME',lines:['THE ASHEN ONE K
  fade:{title:'THE AGE OF DARK',lines:['THE ASHEN ONE TURNED FROM THE FIRST FLAME','AND LET IT GUTTER INTO NOTHING.','IN THE DARK, SMALL LIGHTS BEGAN TO STIR.'],col:0x9fb8ff}};
 class Ending extends Phaser.Scene{constructor(){super('ending')}
  init(d){this.kind=d&&ENDINGS[d.kind]?d.kind:'rekindle'}
- create(){Object.assign(C,BASEPAL);const sv=Save.load()||{};this.sv=sv;sv.endings=sv.endings||[];if(!sv.endings.includes(this.kind))sv.endings.push(this.kind);sv.lastEnding=this.kind;Save.write(sv);this.lines=[...ENDINGS[this.kind].lines,...((sv.lords||[]).includes('toller')?[BELL_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('smith')?[FORGE_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('abbess')?[CRYPT_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('marshal')?[KEEP_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('astronomer')?[SPIRE_ENDING[this.kind]]:[])];
+ create(){Object.assign(C,BASEPAL);const sv=Save.load()||{};this.sv=sv;sv.endings=sv.endings||[];if(!sv.endings.includes(this.kind))sv.endings.push(this.kind);sv.lastEnding=this.kind;Save.write(sv);this.lines=[...ENDINGS[this.kind].lines,...((sv.lords||[]).includes('toller')?[BELL_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('smith')?[FORGE_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('abbess')?[CRYPT_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('marshal')?[KEEP_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('astronomer')?[SPIRE_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('prioress')?[CLOISTER_ENDING[this.kind]]:[])];
   this.fx=new FX(this);this.gn=this.add.graphics().setDepth(4);this.ga=this.add.graphics().setDepth(5).setBlendMode(Phaser.BlendModes.ADD);this.gt=this.add.graphics().setDepth(6);
   this.t=0;this.card=null;this.sel=0;heroStyle(WEAPONS[(sv.eq||{}).main],false,ARMORS[(sv.eq||{}).armor]);this.stars=[...Array(70)].map((_,i)=>[(i*73)%W,(i*41)%110,(i%5)/5]);
   this.cameras.main.fadeIn(900,this.kind==='fade'?2:40,this.kind==='fade'?2:20,this.kind==='fade'?6:5);try{this.sound.play(this.kind==='fade'?'chime':'fanfare',{volume:.4})}catch(e){}

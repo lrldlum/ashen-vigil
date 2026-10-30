@@ -19,7 +19,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   this.peer.on('disconnected',()=>{try{this.peer.reconnect()}catch(e){}})},
  startJoin(code,cb){if(typeof Peer==='undefined'){cb&&cb('PEERJS MISSING');return}this.role='guest';this.code=code.toUpperCase();this.status='CONNECTING TO '+this.code;this.joinCb=cb;this.refused=0;
   // r6: give up after 15 s (strict NAT / blocked UDP never opens the channel) instead of hanging on CONNECTING
-  clearTimeout(this.jt);const jc=cb;this.jt=setTimeout(()=>{if(this.joinCb===jc){this.joinCb=null;this.leave(true);this.role=null;this.err=this.status='CONNECTION FAILED';jc('CONNECTION FAILED - TRY ANOTHER NETWORK')}},+(new URLSearchParams(location.search).get('jointimeout'))||15000);
+  clearTimeout(this.jt);const jc=cb;this.jt0=performance.now();this.jtFired=0;this.jt=setTimeout(()=>{if(this.joinCb===jc){this.jtFired=performance.now();this.joinCb=null;this.leave(true);this.role=null;this.err=this.status='CONNECTION FAILED';jc('CONNECTION FAILED - TRY ANOTHER NETWORK')}},+(new URLSearchParams(location.search).get('jointimeout'))||15000);
   this.peer=new Peer(undefined,this.opts());
   this.peer.on('open',()=>{this.bind(this.peer.connect(this.pid(this.code),{reliable:true,serialization:'json'}))});
   this.peer.on('error',e=>{const m=e.type==='peer-unavailable'?'NO ROOM WITH THAT CODE':String(e.type||e).toUpperCase();this.status=m;this.err=m;if(this.joinCb){this.joinCb(m);this.joinCb=null;this.leave(true)}})},

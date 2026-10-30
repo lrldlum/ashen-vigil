@@ -206,3 +206,20 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Story ties: keeper lines (sealed, open, slain), an ending line on both endings, and lore a3 tying her to the Castellan.
 - Co-op: the host is authoritative for lenses, chests, mimics, star shots and the boss (the guest derives the well and the low gravity from boss state). Gravity tides and star platforms run locally per client from the shared clock.
 - Tests: `test/K.mjs` (27 checks). milestoneE's lore total counts the spire.
+
+## Milestone L — r6fix join-timeout fix + The Blighted Cloister
+- **r6fix reliability:** the join-timeout check used to time the wait with the test runner's clock, so a slow broker or a busy box gave 28 s or 315 s readings. net.js now stamps `NET.jt0` when a join starts and `NET.jtFired` when the timer gives up. The test measures that span on the page's own clock and must land in 14–17 s; the runner's wall time is only logged. It also waits for the join to really start before its mid-check.
+- New stage `cloister` (THE BLIGHTED CLOISTER), reached by the Overgrown Arch in the Ash Shrine (x 250). The arch stays thorned until the Astronomer is slain (`?cloisteropen` for testing). Bonfire TRELLIS VIGIL.
+- Drawn in code: a cloister arcade, hanging vines over the chains (`def.vines`), pulsing spore clouds, thorn brakes, and a vine-choked rose window over the arena.
+  - **Poison spores:** pulsing clouds (`def.spores`) build up blight and drain HP while they bloom. They never kill (HP floors at 1). Tracked as `stats.poisoned`.
+  - **Thorn brakes:** `def.thorns` strips hurt and bounce you (`stats.thorned`).
+- Collectible: four blighted blooms (`bellKind:'bloom'`). Cutting them all unseals the `cl_reliquary` cage. Lore g2 hints at it.
+- Routes and secrets: high gallery by chain and a low crypt; hidden chests ch_c2/ch_c3; mimics ch_c4/ch_c6; lore g1–g3.
+- **The Thorned Prioress** (`prioress`, 64 hp):
+  - garden cinematic, three phases;
+  - attacks: vine lashes, bramble rows erupting from the soil (phase 2+), climbing her trellis with thorn shots, rot spore pods (phase 3) and charge;
+  - in phase 3 the rot rolls from one half of the arena to the other.
+- **Signature weapon:** PRIORESS'S THORNBRAND (sword). Its 'bramble' special erupts a row of thorns ahead; isolated damage is within 0.7–1.3× FROSTBRAND.
+- Story ties: keeper lines (sealed, open, slain), an ending line on both endings, and lore g3 tying her to the Astronomer.
+- Co-op: the host is authoritative for blooms, chests, mimics, thorn and spore shots, and the boss (the guest derives the phase-3 rot from boss state and the clock). Spore clouds and thorns run locally per client.
+- Tests: `test/L.mjs` (27 checks). milestoneE's lore total counts the cloister.
