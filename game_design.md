@@ -43,7 +43,7 @@ assets/       see assets/README.md
 - Vertical rooms (shafts) switch to vertical follow. Boss rooms lock (gates close) and camera fixed.
 - Look-ahead: offset 24 px toward facing, eased 0.3 s.
 
-## 5. Controls (keyboard; gamepad mirror)
+## 5. Controls (keyboard and Xbox controller; button map in README.md)
 | Action | Keys | Pad |
 |---|---|---|
 | Move | ←/→ or A/D; ↑/↓ or W/S aim & ladders | stick/dpad |

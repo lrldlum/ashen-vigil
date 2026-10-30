@@ -391,7 +391,8 @@ class Title extends Phaser.Scene{constructor(){super('title')}
    drawText(g,CL.desc,Math.round(W/2-textW(CL.desc)/2),148,0xd8d0ee);heroStyle(WEAPONS[CL.main],false,ARMORS[CL.armor]);drawHero(g,262,122,1,'idle',Math.floor(this.t*2)%2,this.t);heroStyle(null,false,null);
    }
   if(this.mode==='slots')drawText(g,'ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK',Math.round(W/2-textW('ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK')/2),164,0x5d5990,1,null);
-  if(this.mode==='slots')drawText(g,'V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND',Math.round(W/2-textW('V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND')/2),171,0x5d5990,1,null)}}
+  if(this.mode==='slots')drawText(g,'V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND',Math.round(W/2-textW('V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND')/2),171,0x5d5990,1,null);
+  if(this.mode==='slots')drawText(g,'XBOX PAD: A JUMP  B ROLL  X ATTACK  START PAUSE',Math.round(W/2-textW('XBOX PAD: A JUMP  B ROLL  X ATTACK  START PAUSE')/2),157,0x7a76b0,1,null)}}
 // ===================================================================
 class Lab extends Phaser.Scene{constructor(){super('lab')}
  create(){makeBG(this)(0);this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.fx=new FX(this);this.ga=this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);this.gn=this.add.graphics();this.t=0}
@@ -534,9 +535,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(window.__inp)return window.__inp(this);
   if(DEMO)return this.demoInput();
   const T=this.touchState(),sh=K.SHIFT.isDown,xP=J(K.X),upP=J(K.UP)|J(K.E);
-  return{l:K.LEFT.isDown||T.l,r:K.RIGHT.isDown||T.r,up:K.UP.isDown||T.up,dn:K.DOWN.isDown||T.dn,jump:K.Z.isDown||K.SPACE.isDown||T.jump,jumpP:J(K.Z)|J(K.SPACE)|T.jumpP,
+  const o={l:K.LEFT.isDown||T.l,r:K.RIGHT.isDown||T.r,up:K.UP.isDown||T.up,dn:K.DOWN.isDown||T.dn,jump:K.Z.isDown||K.SPACE.isDown||T.jump,jumpP:J(K.Z)|J(K.SPACE)|T.jumpP,
    atkP:(xP&&!sh)||T.atkP,parryP:J(K.A)||(xP&&sh)||T.parryP,rollP:J(K.C)||T.rollP,iceP:J(K.V)||T.iceP,boltP:J(K.S)||T.boltP,domeP:J(K.D)||T.domeP,
-   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP,healP:J(K.G),lspearP:J(K.T),blessP:J(K.R),mirP:T.mirP}}
+   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP,healP:J(K.G),lspearP:J(K.T),blessP:J(K.R),mirP:T.mirP};const G=typeof PAD!=='undefined'&&PAD.take(0);if(G)for(const k in G)if(G[k])o[k]=true;return o}
  demoInput(){const P=this.player,A=this.ai,o={};A.t+=this.dt;A.roll-=this.dt;A.bolt-=this.dt;
   let near=null,nd=1e9;for(const e of this.enemies)if(!e.dead){const d=e.b.x-P.x;if(d>-20&&d<nd){nd=d;near=e}}
   const B=this.boss&&this.bossState==='fight'?this.boss:null;
@@ -1667,7 +1668,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
  drawPause(g){g.fillStyle(0x05040b,.82);g.fillRect(0,0,W,H);drawText(g,'PAUSED',Math.round(W/2-textW('PAUSED',2)/2),22,0xffe2a8,2);
-  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST AT BONFIRE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME'];
+  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST AT BONFIRE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME','XBOX PAD: STICK/DPAD MOVE  A JUMP  B ROLL',' X ATTACK  Y HEAVY  LB PARRY  START RESUME'];
   L.forEach((s,i)=>drawText(g,s,56,44+i*12,i===8||i===9?0x9fd8ff:0xd8d0ee))}
  drawVictory(g,ga){const V=this.victory,a=Math.min(1,V.t/.6);g.fillStyle(0x05040b,.78*a);g.fillRect(0,0,W,H);
   g.fillStyle(0x7a5a24,a);g.fillRect(60,30,200,1);g.fillRect(60,150,200,1);
