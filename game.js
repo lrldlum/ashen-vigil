@@ -18,9 +18,12 @@ const ICE=[C.ice0,C.ice1,C.ice2,C.ice3,C.ice4,C.ice5], FIRE=[C.f0,C.f1,C.f2,C.f3
 const rnd=(a,b)=>a+Math.random()*(b-a), ri=(a,b)=>Math.floor(rnd(a,b+1)), clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const lerp=(a,b,t)=>a+(b-a)*t, ease=t=>1-Math.pow(1-t,3);
 // ---------- save ----------
-const SAVE_KEY='ashenVigil.save.v1';
-const Save={load(){try{return JSON.parse(localStorage.getItem(SAVE_KEY))||null}catch(e){return null}},
- write(d){try{localStorage.setItem(SAVE_KEY,JSON.stringify(d))}catch(e){}}, clear(){localStorage.removeItem(SAVE_KEY)}};
+// 3 save slots (milestone D). Slot 1 keeps the original key so older saves still load.
+const slotKey=i=>i?'ashenVigil.save.v1.s'+(i+1):'ashenVigil.save.v1';
+const Save={slot:Q.has('slot')?clamp((+Q.get('slot')||1)-1,0,2):clamp(+(localStorage.getItem('ashenVigil.slot')||0),0,2),
+ key(){return slotKey(this.slot)},use(i){this.slot=i;try{localStorage.setItem('ashenVigil.slot',String(i))}catch(e){}},
+ load(i=this.slot){try{return JSON.parse(localStorage.getItem(slotKey(i)))||null}catch(e){return null}},
+ write(d){try{localStorage.setItem(this.key(),JSON.stringify(d))}catch(e){}}, clear(i=this.slot){localStorage.removeItem(slotKey(i))}};
 // ---------- tiny 3x5 pixel font ----------
 const FONT={A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110101101101110',E:'111100110100111',F:'111100110100100',
 G:'011100101101011',H:'101101111101101',I:'111010010010111',J:'001001001101010',K:'101101110101101',L:'100100100100111',
@@ -164,15 +167,21 @@ class HeroBuf{constructor(){this.a=new Int32Array(HB_W*HB_H);this.o=new Int32Arr
 const HERO=new HeroBuf();
 const RUN_F=[[3,0],[2,-1],[0,-2],[-2,-2],[-3,-1],[-1,0]],RUN_K=[[2,-3],[2,-4],[1,-4],[0,-3],[-1,-3],[0,-3]],RUN_BOB=[0,-1,0,0,-1,0];
 // pose: hy hip height, ln torso lean, bk/bf back knee/foot, fk/ff front knee/foot, ba/fa hands, sw sword angle (deg, 0=forward,-90=up) or null
-function heroPose(st,fr,t,combo){const P={hy:-6,ln:0,bk:[-1,-3],bf:[-2,0],fk:[1,-3],ff:[1,0],ba:[-2,-7],fa:[2,-7],sw:-50,swL:9,item:null,cape:Math.sin(t*8)};
+const HSTY={wt:'sword',swL:9,heavy:false};const HC0={...HC};
+function heroPose(st,fr,t,combo){const P={hy:-6,ln:0,bk:[-1,-3],bf:[-2,0],fk:[1,-3],ff:[1,0],ba:[-2,-7],fa:[2,-7],sw:HSTY.wt==='bow'?null:-50,swL:HSTY.swL,item:HSTY.wt==='bow'&&st!=='cast'&&st!=='drink'?'bow':null,cape:Math.sin(t*8)};
  switch(st){
   case'idle':if(fr){P.fa=[2,-6];P.sw=-45;P.hy=-6}break;
   case'run':{const a=fr,b=(fr+3)%6;P.hy=-6+RUN_BOB[fr];P.ln=1;P.fk=RUN_K[a];P.ff=RUN_F[a];P.bk=RUN_K[b];P.bf=RUN_F[b];P.fa=[2-Math.round(RUN_F[a][0]*.5),-7];P.ba=[-1+Math.round(RUN_F[a][0]*.5),-7];P.sw=-35;P.cape+=1.5;break}
   case'jump':P.fk=[2,-5];P.ff=[1,-3];P.bk=[-1,-3];P.bf=[-2,-1];P.fa=[3,-9];P.ba=[-3,-9];P.sw=-70;break;
   case'fall':P.fk=[1,-3];P.ff=[2,0];P.bk=[-1,-3];P.bf=[-3,-1];P.fa=[3,-8];P.ba=[-3,-10];P.sw=-30;P.cape+=2;break;
   case'atk':P.fk=[2,-3];P.ff=[3,0];P.bk=[-2,-3];P.bf=[-3,0];
+   {const W=HSTY.wt;
+   if(W==='bow'){P.fa=[[3,-9],[4,-9],[5,-9],[4,-9]][fr];P.ba=[[1,-9],[0,-9],[-1,-9],[0,-9]][fr];P.sw=null;P.item='bow';P.ln=0;break}
+   if(HSTY.heavy&&W!=='axe'&&W!=='dagger'&&W!=='spear'){P.ln=[-2,0,2,2][fr];P.fa=[[-1,-13],[1,-14],[4,-6],[3,-5]][fr];P.sw=[-170,-120,60,40][fr];P.ba=[-1,-12];break}
+   if(W==='dagger'||W==='spear'||(W==='staff'&&!HSTY.heavy)){P.ln=[0,2,2,1][fr];P.fa=[[0,-8],[5,-8],[6,-8],[3,-7]][fr];P.sw=[-10,-4,-2,-8][fr];if(combo===1)P.fa[1]-=2;if(combo===2)P.fa[1]+=1;P.ba=[-3,-7];break}
+   if(W==='axe'&&HSTY.heavy){P.ln=[0,1,1,0][fr];P.fa=[[-2,-7],[4,-7],[-3,-7],[3,-7]][fr];P.sw=[180,0,180,20][fr];P.ba=[-3,-7];break}
    if(!combo){P.ln=[-1,1,2,1][fr];P.fa=[[-1,-11],[4,-9],[4,-6],[3,-6]][fr];P.sw=[-140,-20,45,20][fr]}
-   else{P.ln=[0,1,1,0][fr];P.fa=[[2,-5],[4,-9],[3,-11],[3,-8]][fr];P.sw=[60,-30,-80,-50][fr]}P.ba=[-2,-8];break;
+   else{P.ln=[0,1,1,0][fr];P.fa=[[2,-5],[4,-9],[3,-11],[3,-8]][fr];P.sw=[60,-30,-80,-50][fr]}P.ba=[-2,-8];break}
   case'roll':P.roll=fr;break;
   case'rollrec':P.hy=-5;P.fk=[2,-2];P.ff=[2,0];P.bk=[-1,-2];P.bf=[-3,0];P.fa=[3,-6];P.sw=-20;break;
   case'cast':P.fa=[[2,-8],[4,-10],[5,-11]][fr];P.ln=fr>1?1:0;P.item='staff';P.sw=null;P.ba=[-2,-6];break;
@@ -205,10 +214,18 @@ function rasterHero(B,P){B.clear();
  // front arm + held item
  B.line(ln+1,hy-4,P.fa[0],P.fa[1],HC.b);
  if(P.sw!==null){const a=P.sw*Math.PI/180,c=Math.cos(a),s=Math.sin(a);const hx0=P.fa[0],hy0=P.fa[1];
-  B.set(hx0-s,hy0+c,HC.gd);B.set(hx0+s,hy0-c,HC.gd);B.line(hx0+c,hy0+s,hx0+c*P.swL,hy0+s*P.swL,HC.st);B.set(hx0+c*(P.swL+1),hy0+s*(P.swL+1),0xffffff);B.set(hx0-c,hy0-s,HC.sd)}
+  const W=HSTY.wt,L=P.swL,tipX=hx0+c*L,tipY=hy0+s*L;
+  if(W==='staff'){B.line(hx0-c*3,hy0-s*3,tipX,tipY,HC.staff);B.rect(tipX-1,tipY-1,2,2,0x9fd8ff);B.set(tipX,tipY,0xffffff)}
+  else{B.set(hx0-s,hy0+c,HC.gd);B.set(hx0+s,hy0-c,HC.gd);
+   if(W==='spear'){B.line(hx0-c*3,hy0-s*3,tipX,tipY,HC.staff);B.line(tipX-c*3,tipY-s*3,tipX,tipY,HC.st);B.set(tipX+c,tipY+s,0xffffff)}
+   else{B.line(hx0+c,hy0+s,tipX,tipY,HC.st);if(W==='greatsword'){B.line(hx0+c-s,hy0+s+c,tipX-s,tipY+c,HC.sd);B.set(hx0-s*2,hy0+c*2,HC.gd);B.set(hx0+s*2,hy0-c*2,HC.gd)}
+    if(W==='axe'){B.line(tipX-s*2,tipY+c*2,tipX+s*2,tipY-c*2,HC.st);B.line(tipX-s*2-c,tipY+c*2-s,tipX+s*2-c,tipY-c*2-s,HC.sd)}
+    B.set(tipX+c,tipY+s,0xffffff)}B.set(hx0-c,hy0-s,HC.sd)}}
+ if(P.item==='bow'){const x0=P.fa[0],y0=P.fa[1];for(let k=-5;k<=5;k++)B.set(x0+1+Math.round(Math.cos(k/5*1.2)*2)-2,y0+k,k===-5||k===5?HC.sd:HC.staff);B.line(x0-1,y0-5,x0-1,y0+5,0xd8d0ee)}
  if(P.item==='staff'){B.line(P.fa[0]-1,P.fa[1]+5,P.fa[0]+2,P.fa[1]-6,HC.staff);B.set(P.fa[0]+2,P.fa[1]-7,0xffffff)}
  if(P.item==='flask'){B.rect(P.fa[0],P.fa[1]-1,2,3,HC.fl);B.set(P.fa[0],P.fa[1]-2,HC.sd)}
  B.set(P.fa[0],P.fa[1],HC.h);B.outline()}
+function heroStyle(wp,heavy,arm){HSTY.wt=wp?wp.type:'sword';HSTY.swL=wp?(wp.swL||9):9;HSTY.heavy=!!heavy;Object.assign(HC,HC0,arm&&arm.pal||{})}
 function drawHero(g,x,y,f,st,fr,t,o={}){rasterHero(HERO,heroPose(st,fr,t,o.combo));HERO.blit(g,x,y,f,o.flash,o.alpha??1)}
 // ---------- LevelKit: tile grid built from a STAGE_DEFS entry (stages.js). Shared by every stage. ----------
 const TS=8,K_EMPTY=0,K_SOLID=1,K_ONEWAY=2,K_CHAIN=3,K_SPIKE=4,LEVELS={};
@@ -262,10 +279,19 @@ function makeBG(scene,sx=''){const L=[['sky',0],['far',.15],['near',.4]].map(([k
 // ===================================================================
 class Title extends Phaser.Scene{constructor(){super('title')}
  create(){Object.assign(C,BASEPAL);this.bg=makeBG(this);this.fx=new FX(this);this.ga=this.add.graphics().setBlendMode(Phaser.BlendModes.ADD).setDepth(5);this.gn=this.add.graphics().setDepth(4);this.gt=this.add.graphics().setDepth(6);
-  this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.t=0;this.save=Save.load();this.sel=0;
-  const k=this.input.keyboard;k.on('keydown',e=>{if(this.save&&(e.key==='ArrowUp'||e.key==='ArrowDown'))this.sel^=1;if(e.key==='Enter'||e.key===' '||e.key==='z'){this.go()}});
-  this.input.on('pointerdown',p=>{if(this.save){if(p.y>=108&&p.y<119)this.sel=0;else if(p.y>=119&&p.y<132)this.sel=1;else return}this.go()})}
- go(){if(this.gone)return;this.gone=1;const cont=this.save&&this.sel===0;if(!cont)Save.clear();this.cameras.main.fadeOut(400,7,5,15);this.time.delayedCall(420,()=>this.scene.start('stage',{fresh:!cont}))}
+  this.add.tileSprite(0,GY,W,24,'ground').setOrigin(0);this.t=0;heroStyle(null,false,null);
+  // milestone D: 3 save slots + class select
+  this.saves=[0,1,2].map(i=>Save.load(i));this.mode='slots';this.sel=Save.slot;this.csel=0;this.erase=-1;
+  const k=this.input.keyboard;k.on('keydown',e=>this.key(e.key));
+  this.input.on('pointerdown',p=>{if(this.mode==='slots'){const i=Math.floor((p.y-96)/11);if(i>=0&&i<3){if(this.sel===i)this.key('Enter');else this.sel=i}}
+   else{const i=Math.floor((p.y-50)/10);if(p.x<110&&i>=0&&i<10){if(this.csel===i)this.key('Enter');else this.csel=i}else if(p.y>160)this.key('Escape')}})}
+ key(k){if(this.gone)return;const up=k==='ArrowUp',dn=k==='ArrowDown',ok=k==='Enter'||k===' '||k==='z'||k==='Z';
+  if(this.mode==='slots'){if(up)this.sel=(this.sel+2)%3;if(dn)this.sel=(this.sel+1)%3;if(up||dn)this.erase=-1;
+   if((k==='Delete'||k==='Backspace'||k==='x'||k==='X')&&this.saves[this.sel]){if(this.erase===this.sel){Save.clear(this.sel);this.saves[this.sel]=null;this.erase=-1}else this.erase=this.sel}
+   if(ok){Save.use(this.sel);if(this.saves[this.sel])this.go(false);else{this.mode='class';this.csel=0}}}
+  else{if(up)this.csel=(this.csel+9)%10;if(dn)this.csel=(this.csel+1)%10;if(k==='Escape'||k==='c'||k==='C')this.mode='slots';
+   if(ok){const c=CLASS_ORDER[this.csel],CL=CLASSES[c];Save.write({cls:c,stats:RPG.classStats(c),eq:{main:CL.main,off:CL.off,armor:CL.armor},inv:[CL.main,CL.off,CL.armor,...(CL.extra||[])].filter(Boolean),bonfire:false,souls:0,bossDown:false,stage:'ramparts'});this.go(true)}}}
+ go(isNew){if(this.gone)return;this.gone=1;this.cameras.main.fadeOut(400,7,5,15);this.time.delayedCall(420,()=>this.scene.start('stage',{fresh:false}))}
  update(_,d){const dt=d/1000;this.t+=dt;this.bg(this.t*8);const ga=this.ga,gn=this.gn,g=this.gt;ga.clear();gn.clear();g.clear();
   // bonfire + kneeling knight silhouette
   const bx=200,by=GY;if(Math.random()<.9)this.fx.fire(bx,by-3,2,3);if(Math.random()<.2)this.fx.ember(bx,by-8,1);this.fx.update(dt);
@@ -278,9 +304,16 @@ class Title extends Phaser.Scene{constructor(){super('title')}
   g.fillStyle(0xfff0c0,1);for(let i=0;i<title.length;i++)if(title[i]!==' ')g.fillRect(tx+i*16,ty,4,1);
   if(Math.random()<.5)this.fx.ember(rnd(tx,tx+tw),ty+20,1,.6);
   drawText(g,'A TALE OF THE LAST KINDLING',Math.round(W/2-textW('A TALE OF THE LAST KINDLING')/2),ty+26,0x8a86c0);
-  const blink=Math.floor(this.t*2)%2===0;
-  if(this.save){drawText(g,(this.sel===0?'> ':'  ')+'CONTINUE',118,111,this.sel===0?0xffe2a8:0x6b67a0);drawText(g,(this.sel===1?'> ':'  ')+'NEW GAME',118,121,this.sel===1?0xffe2a8:0x6b67a0)}
-  else if(blink)drawText(g,'PRESS ENTER',Math.round(W/2-textW('PRESS ENTER')/2),116,0xffe2a8);
+  if(this.mode==='slots'){const fmt=v=>{v=Math.floor(v||0);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`};
+   this.saves.forEach((s,i)=>{const on=this.sel===i;let str;if(!s)str='SLOT '+(i+1)+'   - NEW JOURNEY -';else{const c=CLASSES[s.cls]?s.cls:'knight';str='SLOT '+(i+1)+'  '+CLASSES[c].name+' LV '+RPG.level(c,s.stats||RPG.classStats(c))+'  '+((STAGE_DEFS[s.stage]||STAGE_DEFS.ramparts).name.replace('THE ','').split(' ')[0])+'  '+fmt(s.time)+(s.ng?'  NG+'+s.ng:'')}
+    if(this.erase===i)str='SLOT '+(i+1)+'  ERASE? PRESS DEL AGAIN';const x=Math.round(W/2-textW(str)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+i*11,textW(str)+16,9);drawText(g,(on?'> ':'  ')+str,x,98+i*11,this.erase===i?0xd8402a:on?0xffe2a8:0x6b67a0)})}
+  else{g.fillStyle(0x07050f,.86);g.fillRect(0,0,W,H);drawText(g,'CHOOSE YOUR ORIGIN',Math.round(W/2-textW('CHOOSE YOUR ORIGIN',2)/2),12,0xffb04a,2);
+   CLASS_ORDER.forEach((c,i)=>{const on=this.csel===i;drawText(g,(on?'> ':'  ')+CLASSES[c].name,14,50+i*10,on?0xffe2a8:0x8a86c0);drawText(g,'LV '+CLASSES[c].lvl,84,50+i*10,on?0xffe2a8:0x5d5990)});
+   const c=CLASS_ORDER[this.csel],CL=CLASSES[c],st=RPG.classStats(c),d=RPG.derive(st,{main:CL.main,off:CL.off,armor:CL.armor});
+   STATS.forEach((k,i)=>{drawText(g,STAT_NAMES[k],118,50+i*9,0x8a86c0);drawText(g,String(st[k]),180,50+i*9,0xd8d0ee)});
+   [['R',WEAPONS[CL.main].name],['L',CL.off?WEAPONS[CL.off].name:'-'],['A',ARMORS[CL.armor].name],['HP '+d.hp+'  ST '+d.st+'  FP '+d.fp,''],['ROLL '+d.roll.kind,'']].forEach(([a,b],i)=>drawText(g,a+(b?'  '+b:''),198,50+i*10,i<3?0xd8d0ee:0x9fd8ff));
+   drawText(g,CL.desc,Math.round(W/2-textW(CL.desc)/2),148,0xd8d0ee);heroStyle(WEAPONS[CL.main],false,ARMORS[CL.armor]);drawHero(g,262,122,1,'idle',Math.floor(this.t*2)%2,this.t);heroStyle(null,false,null);
+   drawText(g,'ENTER BEGIN   ESC BACK',Math.round(W/2-textW('ENTER BEGIN   ESC BACK')/2),160,0x6b67a0)}
   drawText(g,'ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK',Math.round(W/2-textW('ARROWS MOVE  Z JUMP  X ATTACK  C ROLL  A PARRY  Q FLASK')/2),164,0x5d5990,1,null);
   drawText(g,'V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND',Math.round(W/2-textW('V FROST  S STORM  D DOME  UP REST  ESC PAUSE  M SOUND')/2),171,0x5d5990,1,null)}}
 // ===================================================================
@@ -304,7 +337,7 @@ const ELOOK={acolyte:{c:0x8a96b8,s:0x3a4466,rim:0xd8f2ff,eye:0x9fd8ff},sentinel:
  husk:{c:0x3a2622,s:0x1a0d0a,rim:0xff7a1a,eye:0xffd04a},cinderknight:{c:0x4a2c26,s:0x22120e,rim:0xffa040,eye:0xfff0a0,sh:0xd25a1a},
  chorister:{c:0xb8c4e0,l:0xffffff,glow:0x9fa8ff,shot:'note'},wisp:{c:0xa02a08,l:0xffd04a,glow:0xff7a1a,shot:'fire'},magmaw:{c:0xffd04a,d:0x6a1408,rim:0xfff0a0}};
 const TBTN=[{k:'l',x:22,y:152,r:13,lab:'<'},{k:'r',x:56,y:152,r:13,lab:'>'},{k:'up',x:39,y:127,r:10,lab:'^'},{k:'dn',x:39,y:173,r:7,lab:'V'},
- {k:'jump',x:298,y:148,r:13,lab:'JUMP'},{k:'atk',x:270,y:162,r:12,lab:'ATK'},{k:'roll',x:270,y:135,r:11,lab:'ROLL'},{k:'parry',x:244,y:162,r:10,lab:'PRY'},
+ {k:'jump',x:298,y:148,r:13,lab:'JUMP'},{k:'atk',x:270,y:162,r:12,lab:'ATK'},{k:'roll',x:270,y:135,r:11,lab:'ROLL'},{k:'parry',x:244,y:162,r:10,lab:'PRY'},{k:'hvy',x:244,y:138,r:9,lab:'HVY'},
  {k:'flask',x:302,y:34,r:9,lab:'EST'},{k:'ice',x:280,y:34,r:9,lab:'ICE'},{k:'bolt',x:258,y:34,r:9,lab:'BLT'},{k:'dome',x:236,y:34,r:9,lab:'DOM'},{k:'pause',x:160,y:10,r:7,lab:'II'}];
 class Stage extends Phaser.Scene{constructor(){super('stage')}
  init(d){this.fresh=d.fresh}
@@ -314,6 +347,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const sid=sv.stage,D=STAGE_DEFS[sid];this.sid=sid;this.def=D;Object.assign(C,BASEPAL,D.pal||{});WORLD=D.world;ARENA_L=D.arena?D.arena[0]:2980;ARENA_R=D.arena?D.arena[1]:3340;
   const tx=sid==='ramparts'?'':'_'+sid;genTextures(this,tx,D.pal);this.lv=LEVELS[sid]||(LEVELS[sid]=new Level(D));this.physics.world.setBounds(0,D.top,WORLD,D.bottom-D.top);
   sv.freed=sv.freed||[];sv.found=sv.found||[];sv.chDone=sv.chDone||[];sv.broken=sv.broken||[];
+  // milestone D: character (class, stats, equipment, inventory)
+  {const cls=CLASSES[sv.cls]?sv.cls:(CLASSES[Q.get('class')]?Q.get('class'):'knight'),CL=CLASSES[cls];sv.cls=cls;sv.stats=sv.stats||RPG.classStats(cls);
+   sv.eq=sv.eq||{main:CL.main,off:CL.off,armor:CL.armor};sv.inv=sv.inv||[CL.main,CL.off,CL.armor,...(CL.extra||[])].filter(Boolean);sv.picked=sv.picked||[]}
   this.bgf=makeBG(this,tx);
   if(!this.textures.exists('lvl_'+sid))this.textures.addCanvas('lvl_'+sid,this.lv.paint());this.add.image(0,D.top,'lvl_'+sid).setOrigin(0).setDepth(1);
   this.gs=this.add.graphics().setDepth(0);
@@ -355,14 +391,15 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.pb=this.physics.add.image(sx,GY-12,'px').setVisible(false);this.pb.body.setSize(6,14);this.pb.setCollideWorldBounds(true);this.pb.body.setMaxVelocityY(330);
   this.physics.add.collider(this.pb,this.solids);this.physics.add.collider(this.pb,this.oneways,null,()=>!(this.player.dropT>0));
   this.player={x:sx,y:GY,f:1,hp:100,hpMax:100,fp:80,fpMax:80,st:100,stMax:100,stDelay:0,stFlash:0,state:'idle',t:0,inv:0,run:0,coy:0,buf:0,atkBuf:0,flash:0,dead:false,flasks:TUNE.flaskN,healLeft:0,combo:0,land:0,dropT:0,wall:0,wallC:0,wallLock:0,spikeT:0,climbCd:0,safe:{x:sx,y:GY}};
-  this.souls=sv.souls||0;this.stain=sv.stain||null;this.soulPop=null;
+  this.souls=sv.souls||0;this.stain=sv.stain||null;this.soulPop=null;this.applyBuild(true);this.arrows=[];this.menu=null;
+  this.items=(D.items||[]).filter(it=>!sv.picked.includes(it.id)).map(it=>({...it,bob:rnd(0,6)}));
   this.enemies=[];
   D.enemies.forEach(([k,x,y])=>this.spawnEnemy(k,x,y));
   this.shots=[];this.spells=[];this.bolts=[];this.novas=[];this.flames=[];
   this.boss=null;this.bossState=sv.bossDown?'dead':'sleep';this.cine=null;this.bars=0;this.victory=null;this.paused=false;this.flashF=0;
   this.cam=this.cameras.main;this.cam.setBounds(0,D.top,WORLD,D.bottom-D.top);this.camY=clamp(GY-156,D.top,D.bottom-H);this.camTY=this.camY;this.cam.scrollY=this.camY;this.cam.startFollow(this.pb,true,.12,0,0,0);this.camOff=0;
-  this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,SPACE,SHIFT,ENTER');
-  this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){if(e.key==='ArrowUp'||e.key==='ArrowDown')V.sel^=1;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
+  this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,SPACE,SHIFT,ENTER');
+  this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){if(e.key==='ArrowUp'||e.key==='ArrowDown')V.sel^=1;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
   this.touch=Q.has('touch')||!!(this.sys.game.device.input.touch);this.tPrev={};this.tTap={};
   if(this.touch)this.input.addPointer(4);
   this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
@@ -370,12 +407,28 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.cam.fadeIn(500,7,5,15);
   if(DEMO&&Q.has('boss')){this.pb.x=ARENA_L-60}
   this.say(this.ng&&sid==='ramparts'?'JOURNEY '+(this.ng+1)+' - THE RAMPARTS STIR':sv.bonfire?'RESTED AT '+D.bonfireName:D.name,2.5)}
+ // ---------------- milestone D: build, moves, menus ----------------
+ applyBuild(full){const P=this.player,sv=this.sv,d=RPG.derive(sv.stats,sv.eq);this.build=d;this.wp=WEAPONS[sv.eq.main]||WEAPONS.dagger;this.spellMul=d.spell||0;this.lvl=RPG.level(sv.cls,sv.stats);
+  P.hpMax=d.hp;P.stMax=d.st;P.fpMax=d.fp;if(full){P.hp=d.hp;P.st=d.st;P.fp=d.fp}else{P.hp=Math.min(P.hp,P.hpMax);P.st=Math.min(P.st,P.stMax);P.fp=Math.min(P.fp,P.fpMax)}P.poiseHP=d.poise}
+ rb(){const r=this.build.roll;return r.kind==='MEDIUM'?{kind:r.kind,t:TUNE.rollT,v:TUNE.rollV,i0:TUNE.iF0,i1:TUNE.iF1,cost:TUNE.rollCost}:r}
+ move(){const w=this.wp,P=this.player;const m=P.heavy?w.heavy:w.light;if(w===WEAPONS.longsword&&!P.heavy)return{...m,t:TUNE.atkT,h0:TUNE.atkHit0,h1:TUNE.atkHit1,cost:TUNE.atkCost};return m}
+ startAtk(hv,combo,on){const P=this.player,b=this.pb;P.state='atk';P.t=0;P.combo=combo;P.heavy=hv;const m=this.move();this.spend(m.cost);P.hitDone=false;this.sfx(this.wp.type==='bow'?'roll':'slash',hv?.4:.3);
+  if(on)b.setVelocityX(P.f*(m.lunge||0));if(m.hop&&on)b.setVelocityY(m.hop);if(hv)this.fx.dust(P.x,P.y,4,-P.f);this.stats.heavies=(this.stats.heavies||0)+(hv?1:0)}
+ canCast(k){const P=this.player;if(!this.build.cat){this.pop('NO CATALYST',P.x,P.y-24,0xd8402a);return false}
+  if(this.sv.stats.int<SPELLS[k].int){this.pop('NEED INT '+SPELLS[k].int,P.x,P.y-24,0xd8402a);return false}
+  if(!RPG.meets(this.build.cat,this.sv.stats)){this.pop('CATALYST TOO HEAVY FOR MIND',P.x,P.y-24,0xd8402a);return false}return true}
+ shootArrow(m){const P=this.player;P.hitDone=true;const ar=this.build.ar*m.mul;this.arrows.push({x:P.x+P.f*8,y:P.y-10,vx:P.f*m.arrow,t:0,dmg:ar,pierce:!!m.pierce,hit:[]});this.sfx('shot',.3);this.fx.spark(P.x+P.f*8,P.y-10,4,0xffe2a8,40)}
+ updateArrows(dt){for(let i=this.arrows.length-1;i>=0;i--){const a=this.arrows[i];a.t+=dt;a.x+=a.vx*dt;a.vy=(a.vy||0)+40*dt;a.y+=a.vy*dt;let gone=a.t>1.4||this.lv.kAt(a.x,a.y)===K_SOLID;
+   for(const e of this.enemies){if(gone||e.dead||a.hit.includes(e))continue;const bb=e.b.body;if(Math.abs(bb.center.x-a.x)<bb.width/2+2&&Math.abs(bb.center.y-a.y)<bb.height/2+2){a.hit.push(e);this.damageEnemy(e,e.state==='stag'?a.dmg*TUNE.ripMul:a.dmg,Math.sign(a.vx));if(!a.pierce)gone=true}}
+   const B=this.boss;if(!gone&&B&&this.bossState==='fight'&&!a.hit.includes(B)&&Math.abs(B.x-a.x)<12&&a.y>B.y-44&&a.y<B.y){a.hit.push(B);this.damageBoss(a.dmg*1.5);if(!a.pierce)gone=true}
+   for(const c of this.cages)if(!gone&&!c.freed&&Math.abs(c.x-a.x)<8&&Math.abs(c.y-8-a.y)<10){gone=true;c.locked?this.pop('SEALED',c.x,c.y-22,0x9fb8e8):this.freeCage(c)}
+   if(gone){this.fx.spark(a.x,a.y,5,0xffe2a8,60);this.arrows.splice(i,1)}}}
  say(s,d=2){this.msg={s,t:d}}
  pop(s,x,y,c=0xffe2a8){this.pops.push({s,x,y,c,t:0})}
  sfx(k,v=.35){try{this.sound.play(k,{volume:v})}catch(e){}}
  light(x,y,r,c,a){this.lights.push({x,y,r,c,a})}
  togglePause(){if(this.victory||this.player.dead)return;this.paused=!this.paused;this.paused?this.physics.pause():this.physics.resume()}
- gainSouls(n){this.souls+=n;this.soulPop={n:(this.soulPop&&this.soulPop.t>0?this.soulPop.n:0)+n,t:1.4}}
+ gainSouls(n){n=Math.round(n*(this.build?this.build.soulMul:1));this.souls+=n;this.soulPop={n:(this.soulPop&&this.soulPop.t>0?this.soulPop.n:0)+n,t:1.4}}
  spawnEnemy(k,x,gy=GY){const base=EBASE[k]||k;const b=this.physics.add.image(x,gy-20,'px').setVisible(false);const S=ESIZE[base];b.body.setSize(S[0],S[1]);b.setCollideWorldBounds(true);
   if(base==='wraith'){b.body.setAllowGravity(false);b.y=gy-40}else{this.physics.add.collider(b,this.solids);this.physics.add.collider(b,this.oneways)}
   const e={k,base,b,x0:x,hp:EHP[k]*this.ngMul,state:'idle',t:rnd(0,1),f:-1,flash:0,dead:false,cd:rnd(1,2.5),souls:ESOULS[k]*(1+this.ng),guard:3,combo:0,gy};this.enemies.push(e);return e}
@@ -389,7 +442,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const T=this.touchState(),sh=K.SHIFT.isDown,xP=J(K.X),upP=J(K.UP)|J(K.E);
   return{l:K.LEFT.isDown||T.l,r:K.RIGHT.isDown||T.r,up:K.UP.isDown||T.up,dn:K.DOWN.isDown||T.dn,jump:K.Z.isDown||K.SPACE.isDown||T.jump,jumpP:J(K.Z)|J(K.SPACE)|T.jumpP,
    atkP:(xP&&!sh)||T.atkP,parryP:J(K.A)||(xP&&sh)||T.parryP,rollP:J(K.C)||T.rollP,iceP:J(K.V)||T.iceP,boltP:J(K.S)||T.boltP,domeP:J(K.D)||T.domeP,
-   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP}}
+   flaskP:J(K.Q)|J(K.F)|T.flaskP,restP:upP||T.upP,heavyP:J(K.W)||T.hvyP}}
  demoInput(){const P=this.player,A=this.ai,o={};A.t+=this.dt;A.roll-=this.dt;A.bolt-=this.dt;
   let near=null,nd=1e9;for(const e of this.enemies)if(!e.dead){const d=e.b.x-P.x;if(d>-20&&d<nd){nd=d;near=e}}
   const B=this.boss&&this.bossState==='fight'?this.boss:null;
@@ -418,9 +471,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(this.victory){this.victory.t+=dt;this.victoryInput();this.fx.update(dt);this.render(dt);return}
   this.t+=dt;if(!this.cine)this.playT+=dt;
   if(this.hs>0){this.hs-=dt;if(this.hs<=0)this.physics.resume();this.render(0);return}
-  const P=this.player,b=this.pb,inp=this.cine||P.dead?{}:this.readInput();this.inp=inp;
+  const P=this.player,b=this.pb;let inp=this.cine||P.dead?{}:this.readInput();if(this.menu){this.menu.t+=dt;if(this.menu.mode==='main'&&(inp.l||inp.r)&&this.menu.t>.2)this.menu=null;else{this.menuInput(inp);inp={}}}this.inp=inp;
   P.x=b.x;P.y=b.body.bottom;
-  this.updatePlayer(dt,inp);this.updateLevel(dt);this.updateEnemies(dt);this.updateBoss(dt);this.updateSpells(dt);this.updateCine(dt);
+  this.updatePlayer(dt,inp);this.updateArrows(dt);this.updatePickups();this.updateLevel(dt);this.updateEnemies(dt);this.updateBoss(dt);this.updateSpells(dt);this.updateCine(dt);
   // bloodstain: recover souls (Tester r1 P1 #2)
   const S=this.stain;if(S&&!P.dead){if(Math.random()<.5)this.fx.add({k:'soul',x:S.x+rnd(-3,3),y:(S.y||GY)-rnd(0,4),vx:rnd(-4,4),vy:rnd(-24,-10),l:.31,m:.9});
    if(Math.abs(P.x-S.x)<10&&Math.abs(P.y-(S.y||GY))<24){this.gainSouls(S.souls);this.fx.soul(S.x,(S.y||GY)-6,20);this.sfx('souls',.5);this.say('SOULS RETRIEVED',2);this.stain=null;this.sv.stain=null;this.sv.souls=this.souls;Save.write(this.sv)}}
@@ -479,6 +532,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
       for(const c of this.cages)if(c.lock===ch.id){c.locked=false;this.fx.spark(c.x,c.y-8,16,C.f1,120)}this.say('TRIAL CLEARED - THE SEAL BREAKS',2.5);this.sfx('bonfire',.5)}}}}}
  // per-stage atmosphere: stained-glass light shafts (cathedral), lava glow (cinderdeep)
  drawStageFX(g,ga){const D=this.def,t=this.t,cX=this.cam.scrollX,cY=this.cam.scrollY;
+  // distinct lord arenas: cathedral rose window + choir balconies, cinder lava falls
+  if(cX>ARENA_L-W){if(D.theme==='cathedral'){const rx=3160,ry=40;for(let a=0;a<48;a++){const an=a/48*6.283;px(ga,rx+Math.cos(an)*34,ry+Math.sin(an)*34,0x9fa8ff,.5)}for(let k=0;k<8;k++){const an=k/8*6.283+t*.05;line(ga,rx,ry,rx+Math.cos(an)*32,ry+Math.sin(an)*32,[0x9fd8ff,0xb8a8ff,0xd8f2ff][k%3],.18)}glow(ga,rx,ry,30,0x9fa8ff,.08);this.light(rx,ry,70,0x9fa8ff,.4)}
+   if(D.theme==='cinderdeep'){for(const lx of[3000,3320]){for(let y=Math.max(cY,-60);y<GY;y+=2){const w=3+Math.round(Math.sin(y*.2+t*6));ga.fillStyle((y+Math.floor(t*40))%6<3?C.f1:C.f2,.55);ga.fillRect(lx-w,y,w*2,2)}glow(ga,lx,GY-4,14,C.f2,.3);this.light(lx,GY-20,60,C.f2,.7);if(Math.random()<.5)this.fx.fire(lx,GY-2,2,4,1.4)}}}
   if(D.theme==='cathedral'){const cols=[0x9fd8ff,0xb8a8ff,0xd8f2ff];
    for(let si=0;si<(D.shafts||[]).length;si++){const sx=D.shafts[si];if(sx<cX-120||sx>cX+W+60)continue;const top=Math.max(cY,-200),c=cols[si%3],pulse=.8+.2*Math.sin(t*.7+si);
     for(let y=top;y<GY;y+=2){const k=(y-top)/(GY-top),x0=Math.round(sx+(y-top)*.35),w=Math.round(10+k*14);if(this.lv.kAt(x0+w/2,y)===K_SOLID)continue;ga.fillStyle(c,.045*pulse*(1-k*.4));ga.fillRect(x0,y,w,2);if((y>>1)%7===0)px(ga,x0+((y*13+Math.floor(t*8))%w),y,0xffffff,.25)}
@@ -502,12 +558,13 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  spend(n){const P=this.player;P.st-=n;if(P.st<=0){P.st=0;P.stDelay=TUNE.exhaustDelay;P.stFlash=.6}else P.stDelay=TUNE.regenDelay}
  updatePlayer(dt,inp){const P=this.player,b=this.pb,body=b.body,on=body.blocked.down;P.t+=dt;P.inv-=dt;P.flash-=dt;P.stDelay-=dt;P.stFlash-=dt;P.land-=dt;
   if(P.dead){b.setVelocityX(0);P.deadT+=dt;if(P.deadT>2.6)this.respawn();return}
+  P.poiseT=(P.poiseT||0)-dt;if(P.poiseT<=0)P.poiseHP=this.build.poise;
   if(P.stDelay<=0)P.st=Math.min(P.stMax,P.st+TUNE.regen*dt);P.fp=Math.min(P.fpMax,P.fp+2*dt);
   P.coy=on?.1:P.coy-dt;P.buf=inp.jumpP?.12:P.buf-dt;P.atkBuf=inp.atkP?.2:P.atkBuf-dt;
   const dir=(inp.r?1:0)-(inp.l?1:0);
   if(this.explore(dt,inp,dir,on)){P.wasOn=on;P.lastVy=body.velocity.y;if(P.hp<=0&&!P.dead)this.die();return}
   const busy=['roll','rollrec','atk','cast','hurt','rest','drink','parry'].includes(P.state);
-  if(!busy){if(dir&&P.wallLock<=0)P.f=dir;const tv=dir*100,acc=on?(dir?900:1300):600;const vx=body.velocity.x;if(P.wallLock<=0)b.setVelocityX(vx+clamp(tv-vx,-acc*dt,acc*dt));
+  if(!busy){if(dir&&P.wallLock<=0)P.f=dir;const tv=dir*(this.build.roll.kind==='OVERLOADED'?55:100),acc=on?(dir?900:1300):600;const vx=body.velocity.x;if(P.wallLock<=0)b.setVelocityX(vx+clamp(tv-vx,-acc*dt,acc*dt));
    if(P.buf>0&&on&&inp.dn&&this.onOneway()){P.dropT=.25;P.buf=0;P.coy=0}
    if(P.buf>0&&P.coy>0){b.setVelocityY(-280);P.buf=0;P.coy=0;this.fx.dust(P.x,P.y,5);this.sfx('jump',.25)}
    if(!inp.jump&&body.velocity.y<-80)b.setVelocityY(body.velocity.y*.55);
@@ -517,20 +574,24 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(!P.wasOn&&on&&P.lastVy>160){this.fx.dust(P.x,P.y,8);P.land=.12}
    if(!on){const wl=body.blocked.left,wr=body.blocked.right;if(wl||wr){P.wall=wl?-1:1;P.wallC=.12;if((wl&&dir<0)||(wr&&dir>0)){if(body.velocity.y>40)b.setVelocityY(40);P.state='wall';P.f=P.wall;if(Math.random()<.3)this.fx.dust(P.x+P.wall*3,P.y-6,1)}}
     if(P.buf>0&&P.wallC>0&&P.coy<=0){b.setVelocity(-P.wall*140,-265);P.f=-P.wall;P.wallLock=.16;P.buf=0;P.wallC=0;this.stats.wallJumps=(this.stats.wallJumps||0)+1;this.fx.dust(P.x+P.wall*3,P.y-6,6,-P.wall);this.sfx('jump',.25)}}
-   if(inp.rollP&&on){if(this.canAct()){P.state='roll';P.t=0;this.spend(TUNE.rollCost);b.setVelocityX(P.f*TUNE.rollV);this.fx.dust(P.x,P.y,6,-P.f);this.sfx('roll',.3)}}
-   else if(P.atkBuf>0){if(this.canAct()){P.state='atk';P.t=0;P.combo=0;P.atkBuf=0;this.spend(TUNE.atkCost);P.hitDone=false;this.sfx('slash',.3);if(on)b.setVelocityX(P.f*30)}}
+   if(inp.rollP&&on){const rb=this.rb();if(rb.kind==='OVERLOADED'){this.pop('TOO HEAVY TO ROLL',P.x,P.y-24,0xd8402a)}else if(this.canAct()){P.state='roll';P.t=0;this.spend(rb.cost);b.setVelocityX(P.f*rb.v);this.fx.dust(P.x,P.y,rb.kind==='HEAVY'?10:6,-P.f);this.sfx('roll',.3);if(rb.kind==='HEAVY')this.cam.shake(60,.004)}}
+   else if(P.atkBuf>0||inp.heavyP){const hv=!!inp.heavyP&&!(P.atkBuf>0);if(this.canAct())this.startAtk(hv,0,on);P.atkBuf=0}
    else if(inp.parryP){if(this.canAct()){P.state='parry';P.t=0;this.spend(TUNE.parryCost);b.setVelocityX(0);this.sfx('roll',.15)}}
-   else if(inp.flaskP){if(P.flasks>0){P.state='drink';P.t=0;P.flasks--;P.healLeft=TUNE.flaskHeal;this.stats.flasks++;b.setVelocityX(body.velocity.x*.3);this.sfx('bonfire',.25)}else{P.flaskFlash=.6;this.pop('NO FLASKS',P.x,P.y-24,0xd8402a)}}
+   else if((inp.iceP||inp.boltP||inp.domeP)&&!this.canCast(inp.iceP?'ice':inp.boltP?'bolt':'dome')){}
+   else if(inp.flaskP){if(P.flasks>0){P.state='drink';P.t=0;P.flasks--;P.healLeft=this.build.heal;this.stats.flasks++;b.setVelocityX(body.velocity.x*.3);this.sfx('bonfire',.25)}else{P.flaskFlash=.6;this.pop('NO FLASKS',P.x,P.y-24,0xd8402a)}}
    else if(inp.iceP&&P.fp>=15){P.state='cast';P.spell='ice';P.t=0;P.fp-=15;b.setVelocityX(0);this.sfx('charge',.25)}
    else if(inp.boltP&&P.fp>=20){P.state='cast';P.spell='bolt';P.t=0;P.fp-=20;b.setVelocityX(0);this.sfx('charge',.25)}
    else if(inp.domeP&&P.fp>=TUNE.domeCost){P.state='cast';P.spell='dome';P.t=0;P.fp-=TUNE.domeCost;b.setVelocityX(0);this.sfx('charge',.3)}
    else if(inp.restP&&on&&Math.abs(P.x-this.bonfire.x)<TUNE.restR){P.state='rest';P.t=0;b.setVelocityX(0);this.rest()}}
   else if(P.state==='roll'){if(Math.random()<.4)this.fx.dust(P.x,P.y,1,-P.f);if(Math.random()<.6)this.fx.ember(P.x-P.f*3,P.y-4,1,.4);
-   if(P.t>TUNE.rollT){P.state='rollrec';P.t=0;b.setVelocityX(P.f*40)}}
+   if(P.t>this.rb().t){P.state='rollrec';P.t=0;b.setVelocityX(P.f*40)}}
   else if(P.state==='rollrec'){b.setVelocityX(body.velocity.x*.8);if(P.t>TUNE.rollRec)P.state='idle'}
-  else if(P.state==='atk'){b.setVelocityX(body.velocity.x*.85);if(P.t>TUNE.atkHit0&&P.t<TUNE.atkHit1&&!P.hitDone)this.meleeHit();
-   if(P.t>.2&&P.atkBuf>0&&P.combo<1&&this.canAct()){P.combo=1;P.t=0;P.atkBuf=0;this.spend(TUNE.atkCost);P.hitDone=false;this.sfx('slash',.3);if(dir)P.f=dir}
-   else if(P.t>TUNE.atkT)P.state='idle'}
+  else if(P.state==='atk'){const m=this.move();if(m.lunge>100&&P.t<m.h1)b.setVelocityX(P.f*m.lunge*(1-P.t/m.h1*.5));else b.setVelocityX(body.velocity.x*.85);
+   if(P.t>m.h0&&P.t<m.h1+.02&&!P.hitDone){if(m.arrow)this.shootArrow(m);else this.meleeHit(m)}
+   if(m.shock&&P.t>m.h0&&!P.shockDone&&on){P.shockDone=true;this.cam.shake(220,.016);this.fx.dust(P.x-14,P.y,10,-1);this.fx.dust(P.x+14,P.y,10,1);this.fx.spark(P.x,P.y-2,14,C.f1,140)}
+   if(P.t<.05)P.shockDone=false;
+   if(!P.heavy&&P.t>Math.min(.2,m.t*.6)&&P.atkBuf>0&&P.combo<(m.n||1)-1&&this.canAct()){this.startAtk(false,P.combo+1,on);P.atkBuf=0;if(dir)P.f=dir}
+   else if(P.t>m.t)P.state='idle'}
   else if(P.state==='parry'){if(P.t<TUNE.parryWin&&Math.random()<.5)this.fx.star(P.x+P.f*8,P.y-12,C.f0);if(P.t>TUNE.parryT)P.state='idle'}
   else if(P.state==='drink'){b.setVelocityX(body.velocity.x*.8);const h=Math.min(P.healLeft,TUNE.flaskHeal/TUNE.flaskT*dt);P.hp=Math.min(P.hpMax,P.hp+h);P.healLeft-=h;
    if(Math.random()<.5)this.fx.fire(P.x+rnd(-4,4),P.y-rnd(2,14),1,1,.5);if(P.t>TUNE.flaskT){P.state='idle';P.healLeft=0}}
@@ -543,24 +604,27 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  hurtPlayer(n,src,att){const P=this.player;if(P.dead||this.cine||this.victory)return false;
   if(att&&P.state==='parry'&&P.t<TUNE.parryWin&&(Math.sign(src-P.x)||P.f)===P.f){this.parried(att);return false}
   if(P.inv>0)return false;
-  if(P.state==='roll'&&P.t>=TUNE.iF0&&P.t<TUNE.iF1){this.stats.dodged++;return false}
-  P.hp-=Math.round(n*(1+.3*this.ng));P.inv=.8;P.flash=.12;P.state='hurt';P.t=0;P.healLeft=0;
+  {const rb=this.rb();if(P.state==='roll'&&P.t>=rb.i0&&P.t<rb.i1){this.stats.dodged++;return false}}
+  P.hp-=Math.round(n*(1+.3*this.ng)*(1-this.build.abs));P.inv=.8;P.flash=.12;P.healLeft=0;P.poiseT=2.5;
+  {const hyper=P.state==='atk'&&P.heavy&&(this.move().poise||0)>=2,pz=P.poiseHP*(hyper?2:1);if(pz>n*.5&&P.hp>0){P.poiseHP-=n*.5;this.stats.poised=(this.stats.poised||0)+1;this.pop(hyper?'HYPER ARMOR':'POISE',P.x,P.y-24,0x9fb8e8);this.cam.shake(90,.008);this.fx.spark(P.x,P.y-8,8,0xd8d0ee,90);this.sfx('hit',.35);return true}}
+  P.poiseHP=this.build.poise;P.state='hurt';P.t=0;
   const d=Math.sign(P.x-src)||1;this.pb.setVelocity(d*120,-140);this.cam.shake(120,.012);this.fx.spark(P.x,P.y-8,10,C.f2,110);this.sfx('hit',.4);this.hitstop(.06);return true}
  parried(att){const P=this.player;this.stats.parries++;const B=att==='boss'?this.boss:null;
   if(B){B.state='stag';B.t=0}else{att.state='stag';att.t=0;att.b.setVelocityX(0)}
   const x=P.x+P.f*9,y=P.y-11;this.fx.spark(x,y,18,0xffffff,150);this.fx.spark(x,y,10,C.f1,110);this.novas.push({x,y,t:0,m:.3,parry:1});this.flashF=2;
   this.sfx('parry',.6);this.hitstop(.1);this.cam.shake(120,.01);this.pop('PARRY',x,y-10);P.inv=.3;P.pflash=4;P.state='idle';P.t=0}// successful parry cancels recovery so the riposte can follow
  hitstop(s){this.hs=s;this.physics.pause()}
- meleeHit(){const P=this.player;const hx=P.x+P.f*12,hy=P.y-8;let any=false,rip=false;
-  const hit=(x,y,w,h)=>Math.abs(x-hx)<w/2+11&&Math.abs(y-hy)<h/2+9;
+ meleeHit(m){m=m||this.move();const P=this.player,ar=this.build.ar*(m.mul||1)*(P.heavy?1:[1,1,1.3][P.combo]||1),hw=(m.w||22)/2,hh=(m.h||18)/2,crit=this.wp.crit||1;const hx=P.x+P.f*(m.reach??12),hy=P.y-8;let any=false,rip=false;
+  const hit=(x,y,w,h)=>Math.abs(x-hx)<w/2+hw&&Math.abs(y-hy)<h/2+hh;
   for(const e of this.enemies){if(e.dead)continue;const bb=e.b.body;if(!hit(bb.center.x,bb.center.y,bb.width,bb.height))continue;any=true;
-   if(e.state==='stag'){this.damageEnemy(e,TUNE.ripMul,P.f);rip=true;if(!e.dead)e.state='chase'}
-   else if(e.base==='knight'&&(Math.sign(P.x-e.b.x)||1)===e.f){e.guard--;this.fx.spark(e.b.x+e.f*6,e.b.y-2,10,0xffffff,120);this.sfx('parry',.2);this.pop('BLOCK',e.b.x,e.b.y-16,0x9fb8e8);e.b.setVelocityX(-e.f*40);
+   const dirE=m.aoe?(Math.sign(e.b.x-P.x)||P.f):P.f;
+   if(e.state==='stag'){this.damageEnemy(e,TUNE.ripMul*ar*crit,dirE);rip=true;if(!e.dead)e.state='chase'}
+   else if(e.base==='knight'&&(Math.sign(P.x-e.b.x)||1)===e.f){e.guard-=P.heavy?3:1;this.fx.spark(e.b.x+e.f*6,e.b.y-2,10,0xffffff,120);this.sfx('parry',.2);this.pop('BLOCK',e.b.x,e.b.y-16,0x9fb8e8);e.b.setVelocityX(-e.f*40);
     if(e.guard<=0){e.state='stag';e.t=0;e.guard=3;this.pop('GUARD BROKEN',e.b.x,e.b.y-24)}}
-   else this.damageEnemy(e,1,P.f)}
-  for(const k of this.breakables){if(k.hp<=0)continue;const r=k.r;if(hx+11>r[0]&&hx-11<r[2]&&hy+9>r[1]&&hy-9<r[3]){any=true;this.hitBreakable(k)}}
-  for(const c of this.cages){if(c.freed)continue;if(Math.abs(c.x-hx)<14&&Math.abs(c.y-8-hy)<14){any=true;if(c.locked){this.pop('SEALED',c.x,c.y-22,0x9fb8e8);this.fx.spark(c.x,c.y-8,8,0x9fb8e8,90)}else this.freeCage(c)}}
-  const B=this.boss;if(B&&this.bossState==='fight'&&hit(B.x,B.y-16,18,32)){if(B.state==='stag'){this.damageBoss(1.5*TUNE.ripMul);rip=true;B.state='walk';B.cd=1}else this.damageBoss(1.5);any=true}
+   else{this.damageEnemy(e,ar,dirE);if(P.heavy&&(m.poise||0)>=2&&!e.dead&&e.base!=='wraith'){e.state='stag';e.t=0;this.pop('STAGGER',e.b.x,e.b.y-20,0xffb04a)}}}
+  for(const k of this.breakables){if(k.hp<=0)continue;const r=k.r;if(hx+hw>r[0]&&hx-hw<r[2]&&hy+hh>r[1]&&hy-hh<r[3]){any=true;this.hitBreakable(k);if(P.heavy&&k.hp>0)this.hitBreakable(k)}}
+  for(const c of this.cages){if(c.freed)continue;if(Math.abs(c.x-hx)<hw+3&&Math.abs(c.y-8-hy)<hh+5){any=true;if(c.locked){this.pop('SEALED',c.x,c.y-22,0x9fb8e8);this.fx.spark(c.x,c.y-8,8,0x9fb8e8,90)}else this.freeCage(c)}}
+  const B=this.boss;if(B&&this.bossState==='fight'&&hit(B.x,B.y-16,18,32)){if(B.state==='stag'){this.damageBoss(1.5*TUNE.ripMul*ar*crit);rip=true;B.state='walk';B.cd=1}else this.damageBoss(1.5*ar);any=true}
   if(rip){this.stats.ripostes++;this.pop('RIPOSTE',hx,hy-14,0xffb04a);this.flashF=2;this.fx.spark(hx,hy,24,C.f1,180,20)}
   if(any){P.hitDone=true;this.hitstop(rip?.14:.055);this.cam.shake(rip?200:70,rip?.016:.006)}}
  damageEnemy(e,n,dir){e.hp-=n;e.flash=.1;this.fx.spark(e.b.x,e.b.y,10,0xffd04a,120,20);this.sfx('hit',.3);if(e.base!=='wraith')e.b.setVelocity(dir*90,-60);else e.b.x+=dir*6;
@@ -576,7 +640,26 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  rest(){const P=this.player;P.hp=P.hpMax;P.fp=P.fpMax;P.st=P.stMax;P.flasks=TUNE.flaskN;const first=!this.bonfire.lit;this.bonfire.lit=true;this.fx.ember(this.bonfire.x,GY-8,40,2.2);this.fx.spark(this.bonfire.x,GY-6,16,C.f1,90,40);
   this.sfx('bonfire',.5);this.say(first?'BONFIRE LIT - '+this.def.bonfireName:'RESTED. FLASKS REFILLED',2.4);
   this.enemies.forEach(e=>{if(e.dead&&!e.temp&&Math.abs(e.x0-P.x)>200){e.dead=false;e.hp=EHP[e.k]*this.ngMul;e.state='idle';e.guard=3;e.b.body.enable=true;e.b.setPosition(e.x0,e.base==='wraith'?e.gy-40:e.gy-20)}});
-  Object.assign(this.sv,{bonfire:true,souls:this.souls,bossDown:this.bossState==='dead',time:this.playT});Save.write(this.sv)}
+  Object.assign(this.sv,{bonfire:true,souls:this.souls,bossDown:this.bossState==='dead',time:this.playT});Save.write(this.sv);
+  this.menu={mode:'main',sel:0,t:0,prev:{}}}
+ // ---------------- bonfire menu: LEVEL UP / EQUIPMENT (milestone D) ----------------
+ menuInput(inp){const M=this.menu,pv=M.prev,e=k=>inp[k]&&!pv[k];M.prev={up:inp.up,dn:inp.dn,l:inp.l,r:inp.r};
+  if(e('up'))this.menuKey('up');else if(e('dn'))this.menuKey('down');else if(e('l'))this.menuKey('left');else if(e('r'))this.menuKey('right');
+  else if(inp.jumpP||inp.atkP||inp.restP&&M.t>.3)this.menuKey('ok');else if(inp.rollP)this.menuKey('back')}
+ eqOpts(row){const inv=this.sv.inv;if(row===0)return inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='main');if(row===1)return[null,...inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='off')];return['none',...inv.filter(i=>ARMORS[i]&&i!=='none')]}
+ menuKey(k){const M=this.menu;if(!M)return;const sv=this.sv;this.sfx('roll',.12);
+  if(M.mode==='main'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;else if(k==='ok'){if(M.sel===0){M.mode='level';M.sel=0;M.pend={...sv.stats};M.spent=0}else if(M.sel===1){M.mode='equip';M.sel=0}else this.menu=null}else this.menu=null;return}
+  if(M.mode==='level'){const L=RPG.level(sv.cls,M.pend);
+   if(k==='up')M.sel=(M.sel+8)%9;else if(k==='down')M.sel=(M.sel+1)%9;
+   else if(k==='right'&&M.sel<8){const st=STATS[M.sel],c=RPG.cost(L);if(this.souls-M.spent>=c&&M.pend[st]<99){M.pend[st]++;M.spent+=c}else this.pop('NOT ENOUGH SOULS',this.player.x,this.player.y-30,0xd8402a)}
+   else if(k==='left'&&M.sel<8){const st=STATS[M.sel];if(M.pend[st]>sv.stats[st]){M.pend[st]--;M.spent-=RPG.cost(L-1)}}
+   else if(k==='ok'){if(M.spent>0){this.souls-=M.spent;sv.stats={...M.pend};sv.souls=this.souls;this.applyBuild(true);Save.write(sv);this.sfx('bonfire',.5);this.fx.ember(this.player.x,this.player.y-8,30,2);this.say('LEVEL '+this.lvl,1.8);this.stats.levelUps=(this.stats.levelUps||0)+1}M.mode='main';M.sel=0}
+   else if(k==='back'){M.mode='main';M.sel=0}return}
+  if(M.mode==='equip'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;
+   else if(k==='left'||k==='right'){const o=this.eqOpts(M.sel),key=['main','off','armor'][M.sel],i=o.indexOf(sv.eq[key]);sv.eq[key]=o[(i+(k==='right'?1:o.length-1))%o.length];this.applyBuild(false);Save.write(sv)}
+   else{M.mode='main';M.sel=1}}}
+ updatePickups(){const P=this.player;for(let i=this.items.length-1;i>=0;i--){const it=this.items[i];if(Math.abs(P.x-it.x)<10&&Math.abs(P.y-it.y)<20&&!P.dead){this.items.splice(i,1);
+   if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=(WEAPONS[it.item]||ARMORS[it.item]).name;this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('souls',.4);this.fx.spark(it.x,it.y-6,14,C.f1,90)}}}
  // ---------------- spells ----------------
  castIce(x,f,owner,gy=GY){const V=ICEP;for(let i=0;i<V.n;i++){const sx=Math.round(x+i*V.step*f);if(this.lv&&Math.abs(this.lv.floorAt(sx,gy-6)-gy)>4)break;this.spells.push({k:'spike',gy,x:sx,t:-i*.045,h:lerp(V.hMin,V.hMax,Math.abs(Math.sin(i*2.3+x))),lean:rnd(-.4,.4),owner,hit:false})}this.cam.shake(80,.004)}
  castDome(x,owner,harmless,gy=GY){this.novas.push({dome:1,owner,harmless,x,y:gy,R:TUNE.domeR,grow:.45,t:0,m:1.8});this.cam.shake(160,.008);this.fx.shard(x,gy,20,120)}
@@ -590,18 +673,18 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(let i=this.spells.length-1;i>=0;i--){const s=this.spells[i];const was=s.t;s.t+=dt;if(s.t<0)continue;
    if(was<0){this.fx.shard(s.x,s.gy,4,60);this.fx.star(s.x+rnd(-4,4),s.gy-rnd(4,16))}
    if(s.t<.5&&Math.random()<.15)this.fx.star(s.x+rnd(-5,5),s.gy-rnd(2,s.h));
-   if(!s.hit&&s.t>.03&&s.t<.3){if(s.owner==='p'){for(const e of this.enemies)if(!e.dead&&Math.abs(e.b.x-s.x)<9&&e.b.body.bottom>s.gy-s.h&&e.b.body.bottom<s.gy+8){this.damageEnemy(e,2,Math.sign(e.b.x-this.player.x));s.hit=true}
-     if(this.boss&&this.bossState==='fight'&&Math.abs(this.boss.x-s.x)<12&&!s.bhit){this.damageBoss(1.2);s.bhit=true}}
+   if(!s.hit&&s.t>.03&&s.t<.3){if(s.owner==='p'){for(const e of this.enemies)if(!e.dead&&Math.abs(e.b.x-s.x)<9&&e.b.body.bottom>s.gy-s.h&&e.b.body.bottom<s.gy+8){this.damageEnemy(e,2*this.spellMul,Math.sign(e.b.x-this.player.x));s.hit=true}
+     if(this.boss&&this.bossState==='fight'&&Math.abs(this.boss.x-s.x)<12&&!s.bhit){this.damageBoss(1.2*this.spellMul);s.bhit=true}}
     else if(Math.abs(this.player.x-s.x)<6)this.hurtPlayer(16,s.x)}
    if(s.t>.75){this.fx.shard(s.x,s.gy-s.h*.5,10,100);this.spells.splice(i,1)}}
   for(let i=this.bolts.length-1;i>=0;i--){const o=this.bolts[i];o.t+=dt;if(o.target&&o.target.e&&!o.target.e.dead)o.x=o.target.e.b.x;if(o.target&&o.target.boss&&this.boss)o.x=this.boss.x;
    if(!o.pts||Math.floor(o.t*14)!==o.fr){o.fr=Math.floor(o.t*14);o.pts=this.boltPath(o.x,o.gy,Math.round(this.cam.scrollY)-4)}
    if(!o.hit&&o.t>.06){o.hit=true;this.flashF=2;this.cam.shake(180,.014);this.fx.spark(o.x,o.gy-2,18,C.bolt,170,60);this.fx.spark(o.x,o.gy-2,8,0x5ad8ff,140,50);this.fx.spark(o.x,o.gy-2,6,C.f1,120,40);this.fx.dust(o.x,o.gy,8);this.novas.push({x:o.x,y:o.gy,t:0,m:.25,bolt:1});
-    if(o.target&&o.target.e)this.damageEnemy(o.target.e,3,this.player.f);if(o.target&&o.target.boss)this.damageBoss(3);this.hitstop(.05)}
+    if(o.target&&o.target.e)this.damageEnemy(o.target.e,3*this.spellMul,this.player.f);if(o.target&&o.target.boss)this.damageBoss(3*this.spellMul);this.hitstop(.05)}
    if(o.t>.5)this.bolts.splice(i,1)}
   for(let i=this.novas.length-1;i>=0;i--){const n=this.novas[i];n.t+=dt;
    if(n.dome){const r=n.R*ease(Math.min(1,n.t/n.grow));
-    if(!n.done&&n.t>n.grow*.9){n.done=true;if(!n.harmless){if(n.owner==='p'){for(const e of this.enemies)if(!e.dead&&Math.hypot(e.b.x-n.x,e.b.y-n.y)<n.R)this.damageEnemy(e,2,Math.sign(e.b.x-n.x)||1);if(this.boss&&Math.abs(this.boss.x-n.x)<n.R)this.damageBoss(3);for(const c of this.cages)if(!c.freed&&!c.locked&&Math.hypot(c.x-n.x,c.y-n.y)<n.R)this.freeCage(c)}
+    if(!n.done&&n.t>n.grow*.9){n.done=true;if(!n.harmless){if(n.owner==='p'){for(const e of this.enemies)if(!e.dead&&Math.hypot(e.b.x-n.x,e.b.y-n.y)<n.R)this.damageEnemy(e,2*this.spellMul,Math.sign(e.b.x-n.x)||1);if(this.boss&&Math.abs(this.boss.x-n.x)<n.R)this.damageBoss(3*this.spellMul);for(const c of this.cages)if(!c.freed&&!c.locked&&Math.hypot(c.x-n.x,c.y-n.y)<n.R)this.freeCage(c)}
       else if(Math.hypot(this.player.x-n.x,(this.player.y-6)-n.y)<n.R)this.hurtPlayer(22,n.x)}}
     if(n.t>n.grow&&!n.burst){n.burst=true;for(let a=0;a<60;a++){const an=Math.PI+a/60*Math.PI;this.fx.add({k:'shard',x:n.x+Math.cos(an)*r,y:n.y+Math.sin(an)*r,vx:Math.cos(an)*40,vy:Math.sin(an)*40,l:0,m:rnd(.4,.8)})}this.cam.shake(160,.01)}}
    if(n.t>n.m)this.novas.splice(i,1)}
@@ -764,7 +847,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  victoryTap(p){const V=this.victory;if(V.t<.8)return;if(p.y>=121&&p.y<132)V.sel=0;else if(p.y>=132&&p.y<143)V.sel=1;else return;this.victoryGo()}
  victoryGo(){const V=this.victory;if(V.gone)return;V.gone=1;this.cam.fadeOut(500,7,5,15);
   this.time.delayedCall(520,()=>{if(V.sel===0&&V.clear){Save.write({...this.sv,stage:this.def.next,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}
-   else if(V.sel===0){Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:this.sv.deaths,time:this.playT,ng:this.ng+1});this.scene.restart({fresh:false})}else this.scene.start('title')})}
+   else if(V.sel===0){const s=this.sv;Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:s.deaths,time:this.playT,ng:this.ng+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked});this.scene.restart({fresh:false})}else this.scene.start('title')})}
  // ---------------- render ----------------
  render(dt){const g=this.gn,ga=this.ga,cam=this.cam,P=this.player;g.clear();ga.clear();this.lights.length=0;this.bgf(cam.scrollX,cam.scrollY);this.mist.forEach((m,i)=>{m.tilePositionX=cam.scrollX*(.2+i*.05)+this.t*(4+i*3);m.y=Math.round(GY-34-i*36-cam.scrollY*(i?.4:1))});const t=this.t;
   for(const[x,by]of this.braziers){g.fillStyle(0x0d0a1c);g.fillRect(x-1,by-12,3,12);g.fillRect(x-4,by-14,9,2);g.fillRect(x-3,by-12,7,1);g.fillRect(x-3,by-1,7,1);
@@ -795,6 +878,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(const s of this.shots){if(s.delay>0){const k=1-s.delay/(s.d0||1),gy=this.lv.floorAt(s.x,s.y+4);for(let i=-4;i<=4;i+=2)px(ga,s.x+i,gy-1,s.c==='fire'?C.f2:C.ice1,.3+.6*k*(Math.floor(this.t*16)%2));continue}
    const c0=s.c==='fire'?C.f2:s.c==='note'?0xb8a8ff:C.ice3,c1=s.c==='fire'?C.f1:s.c==='note'?0xe8e0ff:C.ice1,big=s.r>6?1:0;glow(ga,s.x,s.y,6+big*3,c0,.22);ga.fillStyle(c1);ga.fillRect(Math.round(s.x)-1-big,Math.round(s.y)-1-big,3+big*2,3+big*2);px(ga,s.x,s.y,0xffffff);
    if(s.c==='note'){px(ga,s.x+1,s.y-2,c1);px(ga,s.x+1,s.y-3,c1);px(ga,s.x+2,s.y-3,c1)}this.light(s.x,s.y,22+big*8,c0,.5)}
+  for(const a of this.arrows){const x=Math.round(a.x),y=Math.round(a.y),d=Math.sign(a.vx);g.fillStyle(0x8a6a4a);g.fillRect(Math.min(x,x-d*6),y,6,1);px(g,x,y,0xd8d0ee);px(g,x-d*6,y-1,0xd8d0ee);px(g,x-d*6,y+1,0xd8d0ee);if(a.pierce){glow(ga,x,y,4,C.f1,.3);px(ga,x+d,y,0xffffff)}}
+  for(const it of this.items){const y=Math.round(it.y-4+Math.sin(this.t*3+it.bob)*1.5);g.fillStyle(0x2a2245);g.fillRect(it.x-4,it.y-2,9,2);glow(ga,it.x,y,7+Math.sin(this.t*6+it.bob),0xffe2a8,.2);sparkle(ga,it.x,y,1+(Math.floor(this.t*4+it.bob)%2),0xffe2a8);this.light(it.x,y,26,C.f1,.45)}
   for(const e of this.enemies)this.drawEnemy(g,ga,e);
   if(this.boss)this.drawBoss(g,ga,this.boss);
   this.drawPlayer(g,ga);
@@ -811,18 +896,22 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  drawPlayer(g,ga){const P=this.player,x=Math.round(P.x),y=Math.round(P.y),f=P.f,t=this.t;
   if(P.dead){const fr=Math.min(5,Math.floor(P.deadT/.22));if(P.deadT<2)drawHero(g,x,y,f,'death',fr,t,{alpha:fr>=5?Math.max(0,1-(P.deadT-1.1)):1});if(fr>=4&&Math.random()<.3)this.fx.ember(x+rnd(-5,5),y-2,1,.5);return}
   if(P.inv>0&&P.state!=='roll'&&Math.floor(t*30)%2)return;
-  glow(ga,x,y-8,14,C.f2,.05);this.light(x,y-8,26,C.f2,.22);
+  glow(ga,x,y-8,14,C.f2,.05);this.light(x,y-8,26,C.f2,.22);heroStyle(this.wp,P.heavy&&P.state==='atk',ARMORS[this.sv.eq.armor]);
   let st=P.state,fr=0;
   if(st==='run')fr=Math.floor(P.run)%6;
   else if(st==='idle')fr=Math.floor(t*2)%2;
-  else if(st==='atk')fr=P.t<TUNE.atkHit0?0:P.t<TUNE.atkHit1?1:P.t<.24?2:3;
-  else if(st==='roll')fr=Math.min(4,Math.floor(P.t/TUNE.rollT*5));
+  else if(st==='atk'){const m=this.move();fr=P.t<m.h0?0:P.t<m.h1?1:P.t<(m.h1+m.t)/2?2:3}
+  else if(st==='roll')fr=Math.min(4,Math.floor(P.t/this.rb().t*5));
   else if(st==='cast')fr=P.t<.1?0:P.t<.2?1:2;
   else if(st==='parry')fr=P.t<TUNE.parryWin?0:1;
   else if(st==='climb')fr=Math.floor(P.run)%2;
   if(P.land>0&&st==='idle')st='rollrec';
   const pf=P.pflash>0;if(pf)P.pflash--;drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});HERO.rim(ga,x,y,f,pf?0xffe2a8:C.f2,pf?.9:.32);if(pf)glow(ga,x,y-8,16,C.f1,.3);
-  if(P.state==='atk'&&P.t>=TUNE.atkHit0-.02&&P.t<TUNE.atkHit1+.08)drawSlash(ga,x+f*2,y-10,f,(P.t-TUNE.atkHit0+.02)/.18,SLASH,P.combo===1);
+  if(P.state==='atk'){const m=this.move();if(P.t>=m.h0-.02&&P.t<m.h1+.08){const k=(P.t-m.h0+.02)/(m.h1-m.h0+.1);
+    if(m.arc)drawSlash(ga,x+f*2,y-10-(m.spin?0:0),f,k,this.wp===WEAPONS.longsword&&!P.heavy?SLASH:m.arc,P.combo===1);
+    else if(m.stab){const L=(m.reach||12)+6,yy=y-9+(P.combo===1?-2:P.combo===2?1:0);for(let i=0;i<L;i++){const a=(1-Math.abs(i/L-k))*.8;if(a>0)px(ga,x+f*(4+i),yy,i>L-4?0xffffff:C.f1,a)}glow(ga,x+f*(4+L*k),yy,4,C.f2,.3)}
+    if(m.spin){glow(ga,x,y-9,18,C.f2,.12)}}
+   if(P.heavy&&P.t<m.h0){const k=P.t/m.h0;glow(ga,x+f*3,y-14,4+k*6,C.f1,.2+.3*k);if(Math.random()<.4)this.fx.ember(x+f*3,y-14,1,.5)}}
   if(P.state==='cast'){const hx=x+f*7,hy=y-18,c=P.spell==='bolt'?C.bolt:C.ice2;glow(ga,hx,hy,5+Math.sin(t*40),c,.35);px(ga,hx,hy,0xffffff);this.light(hx,hy,30,c,.6)}
   if(P.state==='drink'){glow(ga,x+f,y-18,6,C.f1,.35);this.light(x,y-14,34,C.f1,.6)}
   if(P.state==='parry'&&P.t<TUNE.parryWin){sparkle(ga,x+f*8,y-14,2,C.f0)}
@@ -884,7 +973,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    bar(6,P.hp,P.hpMax,0xd8402a,0x3a1020,70);bar(12,P.fp,P.fpMax,0x4a8cff,0x14204a,52);bar(18,P.st,P.stMax,0x58c060,0x14341c,60,P.stFlash>0&&Math.floor(t*16)%2===0);
    // flasks (code-drawn)
    for(let i=0;i<TUNE.flaskN;i++){const fx=6+i*8,fy=25,full=i<P.flasks;g.fillStyle(0x07050f);g.fillRect(fx-1,fy-1,7,9);g.fillStyle(0x8a84a8);g.fillRect(fx+2,fy,1,2);g.fillStyle(full?C.f2:0x2a2245);g.fillRect(fx,fy+2,5,5);g.fillStyle(full?C.f0:0x3a3060);g.fillRect(fx+1,fy+3,1,2);if(full)glow(ga,fx+2,fy+4,4,C.f2,.2)}
-   {const nF=this.cages.filter(c=>c.freed).length,str=nF+'/'+this.cages.length,ex=34,ey=26;g.fillStyle(0x07050f);g.fillRect(ex-2,ey-2,textW(str)+11,10);g.fillStyle(C.f2);g.fillRect(ex,ey+1,3,4);g.fillStyle(C.f1);g.fillRect(ex+1,ey,1,4);px(g,ex+1,ey-1,C.f0);glow(ga,ex+1,ey+3,4,C.f2,.25);drawText(g,str,ex+6,ey,nF===this.cages.length?0xffe2a8:0xd8d0ee)}
+   {const nF=this.cages.filter(c=>c.freed).length,str=nF+'/'+this.cages.length,ex=34,ey=26;g.fillStyle(0x07050f);g.fillRect(ex-2,ey-2,textW(str)+11,10);g.fillStyle(C.f2);g.fillRect(ex,ey+1,3,4);g.fillStyle(C.f1);g.fillRect(ex+1,ey,1,4);px(g,ex+1,ey-1,C.f0);glow(ga,ex+1,ey+3,4,C.f2,.25);drawText(g,str,ex+6,ey,nF===this.cages.length?0xffe2a8:0xd8d0ee);const lv='LV '+this.lvl;drawText(g,lv,ex+textW(str)+14,ey,0x8a86c0)}
    for(const ch of this.chs)if(ch.active){const s2=ch.type==='timer'?ch.name+' '+Math.max(0,ch.t).toFixed(1):ch.name+' - WAVE '+(ch.wave+1)+'/'+ch.waves.length;drawText(g,s2,Math.round(W/2-textW(s2)/2),this.touch?22:8,ch.type==='timer'&&ch.t<3&&Math.floor(t*8)%2?0xd8402a:0xffe2a8)}
    if(P.flaskFlash>0){P.flaskFlash-=this.dt;if(Math.floor(t*16)%2)g.fillStyle(0xd8402a).fillRect(4,34,24,1)}
    const s=String(this.souls),sw=textW(s,2);g.fillStyle(0x9fd8ff);g.fillRect(W-sw-14,7,4,4);g.fillStyle(0xffffff);g.fillRect(W-sw-13,8,2,2);glow(ga,W-sw-12,9,5,C.ice3,.35);drawText(g,s,W-sw-6,5,0xd8d0ee,2);
@@ -895,12 +984,30 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(this.msg){this.msg.t-=this.paused?0:this.dt;const m=this.msg,a=clamp(m.t*2,0,1);const big=m.s==='EMBER EXTINGUISHED'||m.s===this.def.boss.slain;const sc=big?2:1;
    if(big){g.fillStyle(0x05040b,.6*a);g.fillRect(0,78,W,22)}
    drawText(g,m.s,Math.round(W/2-textW(m.s,sc)/2),big?83:40,big?(m.s===this.def.boss.slain?0xffe2a8:0xd8402a):0xd8d0ee,sc,0x05040b,a);if(m.t<=0)this.msg=null}
+  if(this.menu&&!this.victory)this.drawMenu(g,ga);
   if(this.paused)this.drawPause(g);
   if(this.victory)this.drawVictory(g,ga)}
+ drawMenu(g,ga){const M=this.menu,sv=this.sv,P=this.player;const box=(x,y,w,h)=>{g.fillStyle(0x07050f,.88);g.fillRect(x,y,w,h);g.fillStyle(0x7a5a24);g.fillRect(x,y,w,1);g.fillRect(x,y+h-1,w,1);g.fillRect(x,y,1,h);g.fillRect(x+w-1,y,1,h);g.fillStyle(0xd8b060);[[x,y],[x+w-1,y],[x,y+h-1],[x+w-1,y+h-1]].forEach(([a,b])=>g.fillRect(a,b,1,1))};
+  const row=(s,x,y,on,c)=>drawText(g,(on?'> ':'  ')+s,x,y,on?0xffe2a8:(c||0xb8b4d8));const CL=CLASSES[sv.cls];
+  if(M.mode==='main'){box(8,40,128,58);drawText(g,this.def.bonfireName,14,45,0xffb04a);drawText(g,CL.name+'  LEVEL '+this.lvl,14,54,0x8a86c0);
+   ['LEVEL UP','EQUIPMENT','LEAVE'].forEach((s,i)=>row(s,14,65+i*9,M.sel===i));drawText(g,'SOULS '+this.souls,14,92-1,0x9fd8ff);return}
+  if(M.mode==='level'){const st=M.pend,L=RPG.level(sv.cls,st),d=RPG.derive(st,sv.eq),d0=this.build;box(6,20,190,150);
+   drawText(g,'LEVEL UP  '+this.lvl+(L>this.lvl?' > '+L:''),12,25,0xffb04a);drawText(g,'SOULS '+(this.souls-M.spent)+'   NEXT '+RPG.cost(L),12,34,0x9fd8ff);
+   STATS.forEach((k,i)=>{const up=st[k]>sv.stats[k];row(STAT_NAMES[k],12,46+i*9,M.sel===i);drawText(g,String(st[k]),104,46+i*9,up?0x58e070:0xd8d0ee);if(M.sel===i)drawText(g,'< >',118,46+i*9,0x6b67a0)});
+   row('CONFIRM',12,46+8*9+3,M.sel===8,0xffe2a8);
+   const D=[['HP',d0.hp,d.hp],['FP',d0.fp,d.fp],['STAMINA',d0.st,d.st],['LOAD',d0.load,d.load],['ATTACK',(d0.ar*100)|0,(d.ar*100)|0],['SPELL',(d0.spell*100)|0,(d.spell*100)|0]];
+   D.forEach(([n,a,b],i)=>{drawText(g,n,140,46+i*9,0x8a86c0);drawText(g,String(b),176,46+i*9,b>a?0x58e070:0xd8d0ee)});return}
+  if(M.mode==='equip'){const d=this.build;box(6,20,240,130);drawText(g,'EQUIPMENT',12,25,0xffb04a);
+   const W0=WEAPONS[sv.eq.main],W1=WEAPONS[sv.eq.off],A=ARMORS[sv.eq.armor||'none'];
+   const L=[['R HAND',W0?W0.name:'-',W0?RPG.letters(W0)+'  REQ '+RPG.reqs(W0)+(RPG.meets(W0,sv.stats)?'':'  WEAK!'):''],['L HAND',W1?W1.name:'EMPTY',W1?'CATALYST  REQ '+RPG.reqs(W1):''],['ARMOR',A.name,'WEIGHT '+A.w+'  POISE '+A.poise+'  ABSORB '+Math.round(A.abs*100)+'%']];
+   L.forEach(([a,b,c],i)=>{row(a,12,38+i*22,M.sel===i);drawText(g,'< '+b+' >',60,38+i*22,M.sel===i?0xffe2a8:0xd8d0ee);drawText(g,c,60,46+i*22,0x8a86c0)});
+   const rc=d.roll.kind==='LIGHT'?0x58e070:d.roll.kind==='MEDIUM'?0xd8d0ee:d.roll.kind==='HEAVY'?0xffb04a:0xd8402a;
+   drawText(g,'LOAD '+d.w+' / '+d.load+'  ('+Math.round(d.ratio*100)+'%)',12,108,0xd8d0ee);drawText(g,'ROLL '+d.roll.kind,12,117,rc);drawText(g,'ATTACK '+Math.round(d.ar*100)+'   SPELL '+Math.round(d.spell*100)+'   POISE '+d.poise,12,126,0xd8d0ee);
+   drawText(g,'MOVESET: '+({sword:'2-HIT SLASH, OVERHEAD HEAVY',greatsword:'WIDE CLEAVE, LEAPING SLAM',dagger:'3-STAB FLURRY, LUNGE',spear:'LONG THRUST, CHARGE',axe:'CHOP, SPIN HEAVY',bow:'ARROW, CHARGED PIERCE',staff:'POKE, BASH, CASTS SPELLS'})[W0?W0.type:'dagger'],12,138,0x8a86c0)}}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
  drawPause(g){g.fillStyle(0x05040b,.82);g.fillRect(0,0,W,H);drawText(g,'PAUSED',Math.round(W/2-textW('PAUSED',2)/2),22,0xffe2a8,2);
-  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST AT BONFIRE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'ESC / P  RESUME'];
+  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST AT BONFIRE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'ESC / P  RESUME'];
   L.forEach((s,i)=>drawText(g,s,70,46+i*10,i===8?0x9fd8ff:0xd8d0ee))}
  drawVictory(g,ga){const V=this.victory,a=Math.min(1,V.t/.6);g.fillStyle(0x05040b,.78*a);g.fillRect(0,0,W,H);
   g.fillStyle(0x7a5a24,a);g.fillRect(60,30,200,1);g.fillRect(60,150,200,1);

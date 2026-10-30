@@ -70,3 +70,12 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
   - Magmaw behaves exactly like the imp.
   - Sound effects are reused.
   - The title screen always uses the stage 1 backdrop.
+
+## Milestone D — DS3-style RPG systems
+- rpg.js: 10 DS3 classes (exact DS3 start levels/stats), 8 stats (VIG/END/VIT/STR/DEX/INT/FTH/LCK), derived HP/ST/FP/load/poise/heal/soul bonus.
+- Bonfire menu: LEVEL UP (rising soul cost, DS3 curve /8), EQUIPMENT (R hand, L hand, armor), LEAVE.
+- Weapons: longsword, greatsword, dagger, spear, axe, bow + staff and wand (wand can be offhand). Requirements (halved AR if unmet), scaling letters S–E, distinct light movesets and heavy attacks (W key / HVY touch button): greatsword leaping slam, axe spin, spear charge, dagger 3-hit chain, bow charged piercing arrow.
+- Armor: none/robe/leather/herald/knight/iron with weight -> LIGHT/MEDIUM/HEAVY/OVERLOADED roll, poise + hyper armor, absorption, palettes.
+- INT spells scale with catalyst; 3 save slots on title (Delete twice erases), class select "CHOOSE YOUR ORIGIN".
+- Weapon/armor pickups placed in stages 1–3. Lord arenas made distinct (cathedral rose window + platforms, cinderdeep lava falls + platforms). Room layouts still share templates.
+- Tests: node test/milestoneD.mjs 15/15; A 17/17, B 26/26, C 35/35. Clip: node test/clipD.mjs /tmp/fD + ffmpeg concat -> clips/D.mp4. Before shots: test/shotsDbefore.mjs vs 80873be on :8172.
