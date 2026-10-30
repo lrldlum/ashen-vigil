@@ -16,10 +16,17 @@ const PAD=(()=>{
  const prev={},latch={},rep={};let seen=false,hintEl=null,toastEl=null,toastT=0;
  const KC={ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,Enter:13,Escape:27,t:84};
  const key=(k)=>{for(const type of['keydown','keyup']){const e=new KeyboardEvent(type,{key:k,bubbles:true,cancelable:true});Object.defineProperty(e,'keyCode',{get:()=>KC[k]});Object.defineProperty(e,'which',{get:()=>KC[k]});window.dispatchEvent(e)}PAD.synth.push(k)};
- const pads=()=>{try{return Array.from((navigator.getGamepads&&navigator.getGamepads())||[]).filter(Boolean)}catch(e){return[]}};
+ const pads=()=>{try{return Array.from((navigator.getGamepads&&navigator.getGamepads())||[]).filter(g=>g&&g.connected!==false)}catch(e){return[]}};
  const pressed=(g,i)=>{const b=g.buttons[i];return!!b&&(typeof b==='object'?(b.pressed||b.value>.5):b>.5)};
- const read=g=>{const ax=g.axes[0]||0,ay=g.axes[1]||0,o={};for(const k in B)o[k]=pressed(g,B[k]);
+ const read=g=>{const ax=g.axes[0]||0,ay=g.axes[1]||0,o={};
+  if(g.mapping==='standard'||g.buttons.length>=17){for(const k in B)o[k]=pressed(g,B[k])}
+  else{// non-standard Xbox layout: A0 B1 X2 Y3 LB4 RB5 View6 Start7 (Guide8) L3 9 R3 10, LT/RT on axes 2/5, d-pad on axes 6/7
+   const bt=i=>pressed(g,i),axv=i=>g.axes[i]||0;Object.assign(o,{A:bt(0),B:bt(1),X:bt(2),Y:bt(3),LB:bt(4),RB:bt(5),VIEW:bt(6),START:bt(7),L3:bt(9),R3:bt(10),
+    LT:g.axes.length>5?axv(2)>0:bt(6),RT:g.axes.length>5?axv(5)>0:bt(7),L:axv(6)<-.5,R:axv(6)>.5,UP:axv(7)<-.5,DN:axv(7)>.5})}
   o.l=o.L||ax<-DZ;o.r=o.R||ax>DZ;o.up=o.UP||ay<-.5;o.dn=o.DN||ay>.5;o.mUp=o.UP||ay<-.5;o.mDn=o.DN||ay>.5;o.mL=o.L||ax<-.5;o.mR=o.R||ax>.5;o.any=g.buttons.some((b,i)=>pressed(g,i))||Math.abs(ax)>DZ||Math.abs(ay)>DZ;return o};
+ // ONE local player: every connected pad drives it (Chrome often lists the same Xbox pad twice - XInput + DirectInput, or a
+ // Steam/virtual pad - and the first listed entry is not necessarily the one receiving input)
+ const merge=(list)=>{let m=null;for(const g of list){const s=read(g);if(!m){m=s;continue}for(const k in s)m[k]=m[k]||s[k]}return m};
  const ui=()=>{if(hintEl||!document.body)return;const css='position:fixed;left:50%;transform:translateX(-50%);font:12px monospace;color:#f0e6c8;background:rgba(10,8,20,.85);border:1px solid #6a5a8a;padding:3px 8px;pointer-events:none;z-index:50;';
   hintEl=document.createElement('div');hintEl.id='padHint';hintEl.style.cssText=css+'top:6px;opacity:.75;display:none';hintEl.textContent='Controller? Press any button';document.body.appendChild(hintEl);
   toastEl=document.createElement('div');toastEl.id='padToast';toastEl.style.cssText=css+'top:8px;display:none';document.body.appendChild(toastEl)};
@@ -35,7 +42,7 @@ const PAD=(()=>{
   for(const g of list){if(!slots.includes(g.index)){const s=read(g);if(s.any||g.connected)connect(g)}}
   for(const idx of slots.slice())if(!list.some(g=>g.index===idx))disconnect(idx);
   const md=mode();PAD.modeNow=md;
-  slots.forEach((idx,slot)=>{const g=list.find(g=>g.index===idx);if(!g)return;const s=read(g),p=prev[idx]||{},L=latch[slot]||(latch[slot]={});
+  slots.forEach((idx,slot)=>{const g=list.find(g=>g.index===idx);if(!g)return;const s=slot===0?merge(list):read(g),p=prev[idx]||{},L=latch[slot]||(latch[slot]={});
    for(const k of['A','B','X','Y','LB','RB','LT','RT','VIEW','START','L3','R3','up'])if(s[k]&&!p[k])L[k]=1;
    L.held=s;prev[idx]=s;
    if(slot!==0)return;// menus follow the first pad
