@@ -170,3 +170,22 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - **Co-op:** sigils are host-authoritative, including order resets (prog now mirrors un-rung bells as well as rung ones); drain state follows chDone; flames carry a water flag in snapshots; the tide follows the synced boss phase; guests swim locally.
 - **Tests:** test/I.mjs 30/30; all suites green (milestoneE lore count includes w1–w3). Clip clips/I.mp4, shots screenshots/I/{before,after}.
 - Test hardening: the G/H co-op chest checks allow for the guest auto-picking a drop it stands on, and the co-op lord kills in G/H/I clear a phase-change roar first (a roar ignores damage). Both were intermittent failures seen while re-running the suites.
+
+## Milestone J — The Ruined Rampart Keep
+- New stage `keep` (THE RUINED RAMPART KEEP), opened by the Keep Gate in the Ash Shrine (x 540), which stays barred until the Abbess falls (`?keepopen` for testing). Bonfire BREACH VIGIL.
+- Siege elements are drawn in code: crumbling walls and arrow slits, torn banners that blow with the wind, a ruined skyline, and the arena portcullis.
+  - **Wind on the battlements:** periodic gust zones (`def.wind`) push players, harder when airborne. Streaks and blowing debris show when a gust is active.
+  - **Ballistae:** four of them fire bolts at players in line. Wrecking all four (the collectible mechanic, a re-skin of the bells system with `bellKind:'ballista'`) silences them and unseals the `kp_balcage` cage.
+  - **Falling masonry:** telegraphed stones drop from the top of the screen near the crumbling sections.
+- Routes, secrets, chests and lore:
+  - high battlements reached by chain, and a low crypt;
+  - hidden chests ch_k2 and ch_k3; mimics ch_k4 and ch_k6;
+  - lore k1–k3, where k2 hints at the ballistae.
+- **The Ironclad Castellan** (`marshal`, 62 hp):
+  - war-horn cinematic and three phases;
+  - attacks: charge, slam shockwave, bolt volley from the arena walls, a gust that blows players away (phase 2+), perching on the broken wall, and a rubble rain (phase 3);
+  - in phase 3 a gale sweeps the arena in alternating directions.
+- **Signature weapon:** CASTELLAN'S HALBERD (axe). Its special 'bolt' is a piercing ballista bolt; isolated damage is within 0.7–1.3× FROSTBRAND.
+- Story ties: keeper lines (sealed, open, slain) and an ending line on both endings.
+- Co-op: the host is authoritative for ballistae (prog bells), chests, mimics, bolts and stones (snap shots), and the boss (the guest derives the gust from state). Wind is simulated locally per client.
+- Tests: `test/J.mjs` (27 checks). milestoneE's lore total now counts the keep.

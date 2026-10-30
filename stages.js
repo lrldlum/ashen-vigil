@@ -211,3 +211,27 @@ STAGE_DEFS.drowned=composeStage({pre:'dw',name:'THE DROWNED CRYPT',world:3360,to
 STAGE_DEFS.drowned.cages.push({id:'dw_sigilcage',x:1250,y:-60,lock:'dw_sigils'});
 STAGE_DEFS.drowned.lore=[{id:'w1',x:90,y:156},{id:'w2',x:1360,y:-60},{id:'w3',x:2940,y:156}];
 STAGE_DEFS.shrine.well={x:380};// the Drowned Well (between the keeper and the shrine's raised ledge)
+
+// ---------------------------------------------------------------------------
+// Milestone J: THE RUINED RAMPART KEEP — an optional stage through the Keep Gate in the Ash Shrine (opens once the Tidebound Abbess is still).
+// SIEGE: crumbling walls drop masonry (telegraphed), live BALLISTAE shoot bolts at anyone in their line, and WIND gusts sweep the battlements
+// (def.wind: zones with a direction and a gust period; airborne heroes get blown). Routes: HIGH battlements (chain at 1000, windy) or the LOW
+// undercroft. COLLECTIBLE: wreck all four ballistae to unseal the cage. Lord: THE IRONCLAD CASTELLAN (his gale sweeps the arena in phase 3).
+STAGE_DEFS.keep=composeStage({pre:'kp',name:'THE RUINED RAMPART KEEP',world:3360,top:-204,bottom:364,theme:'keep',side:1,
+  bonfire:1600,bonfireName:'BREACH VIGIL',next:'shrine',bellLock:'kp_ballistae',bellKind:'ballista',
+  pal:{sky0:'#0a0a12',sky1:'#10101a',sky2:'#181824',sky3:'#22222e',sky4:'#30303c',far:'#121218',farW:'#3a3a48',farW2:'#8a8aa0',near:'#0a0a10',nearW:'#34343e',
+   gTop:'#b8b0a0',g1:'#5a5650',g2:'#4a4642',gM:'#24221f',gD:'#34312c',b0:'#16151a',bM:'#08080a',bH:'#24232a',mist:'rgba(200,200,210,.10)',haze1:'rgba(30,30,40,.55)',haze2:'rgba(44,44,56,.6)',mist2:'rgba(170,170,190,.08)',pil:0x16151a,pilH:0x34343e},
+  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
+  wind:[{r:[1000,-200,1608,-52],dir:1,period:5},{r:[2210,-210,2720,-100],dir:-1,period:4}],
+  masonry:[700,1400,2050,2600],
+  items:[{id:'k_herald',x:1370,y:-104,item:'herald'},{id:'k_axe',x:620,y:300,item:'iron'}],
+  puddles:[[1700,22],[2240,16]],
+  bells:[{id:'bal1',x:1120,y:-60,f:1},{id:'bal2',x:1530,y:-60,f:-1},{id:'bal3',x:2300,y:-100,f:1},{id:'bal4',x:2000,y:156,f:-1}],
+  boss:{kind:'marshal',name:'THE IRONCLAD CASTELLAN',sub:'LORD OF THE RUINED KEEP',slain:'THE KEEP HAS FALLEN',hp:62,card:'THE KEEP HAS FALLEN AT LAST. THE KEEPER KEEPS ALONE.',
+   phases:['THE WALLS ANSWER THE HORN','THE WALLS COME DOWN'],reward:'halberd'},
+  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
+ [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'SIEGE TRIAL'],['tower',2150,'BREACH RUN',9],['slagfall',2830],['ledge',2896]],
+ {});
+STAGE_DEFS.keep.cages.push({id:'kp_balcage',x:1250,y:-60,lock:'kp_ballistae'});
+STAGE_DEFS.keep.lore=[{id:'k1',x:90,y:156},{id:'k2',x:1360,y:-60},{id:'k3',x:2940,y:156}];
+STAGE_DEFS.shrine.gate={x:540};// the Keep Gate (a barred postern in the shrine's east wall)
