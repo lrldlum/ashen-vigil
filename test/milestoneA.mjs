@@ -13,8 +13,8 @@ const frames=(pg,n)=>pg.evaluate(n=>new Promise(r=>{let k=0;const f=()=>++k>=n?r
 // --- roll + stamina
 let pg=await page('?play&mute');
 await ev(pg,()=>localStorage.clear());
-R.roll=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage');const st0=s.player.st;s.keys.C.isDown=true;s.keys.C._justDown=true;let fr=0,inv=0,x0=s.player.x,started=false;
- const f=()=>{const P=s.player;if(P.state==='roll'){started=true;fr++;if(P.t>=AV.TUNE.iF0&&P.t<AV.TUNE.iF1)inv++}else if(started){s.keys.C.isDown=false;return res({frames:fr,iframes:inv,pct:Math.round(inv/fr*100),dist:Math.round(Math.abs(P.x-x0)),cost:Math.round(st0-s.player.st)})}requestAnimationFrame(f)};requestAnimationFrame(f)}));
+R.roll=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage');const st0=s.player.st;s.keys.SHIFT.isDown=true;s.keys.SHIFT._justDown=true;let fr=0,inv=0,x0=s.player.x,started=false;
+ const f=()=>{const P=s.player;if(P.state==='roll'){started=true;fr++;if(P.t>=AV.TUNE.iF0&&P.t<AV.TUNE.iF1)inv++}else if(started){s.keys.SHIFT.isDown=false;return res({frames:fr,iframes:inv,pct:Math.round(inv/fr*100),dist:Math.round(Math.abs(P.x-x0)),cost:Math.round(st0-s.player.st)})}requestAnimationFrame(f)};requestAnimationFrame(f)}));
 ok('roll_iframes_<=60%',R.roll.pct<=60&&R.roll.pct>=45,R.roll);
 await pg.waitForTimeout(2500);
 R.stam=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage');let n=0,refused=0,k=0;const go=()=>{const P=s.player;if(k++>=10)return res({attacks:n,refused,st:Math.round(P.st),flashSeen:refused>0});
@@ -22,8 +22,8 @@ R.stam=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage');let
 ok('stamina_runs_dry_in_10_attacks',R.stam.refused>0,R.stam);
 // --- flask heal + interrupt
 await pg.waitForTimeout(3000);
-R.flask=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage'),P=s.player;P.hp=30;s.keys.Q._justDown=true;setTimeout(()=>{const a={hp:Math.round(P.hp),flasks:P.flasks};
-  P.hp=30;P.inv=0;s.keys.Q._justDown=true;setTimeout(()=>{s.hurtPlayer(5,P.x+10);setTimeout(()=>res({full:a,interrupted:{hp:Math.round(P.hp),flasks:P.flasks,state:P.state}}),700)},250)},800)}));
+R.flask=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage'),P=s.player;P.hp=30;s.keys.F._justDown=true;setTimeout(()=>{const a={hp:Math.round(P.hp),flasks:P.flasks};
+  P.hp=30;P.inv=0;s.keys.F._justDown=true;setTimeout(()=>{s.hurtPlayer(5,P.x+10);setTimeout(()=>res({full:a,interrupted:{hp:Math.round(P.hp),flasks:P.flasks,state:P.state}}),700)},250)},800)}));
 ok('flask_heals_40',R.flask.full.hp===70&&R.flask.full.flasks===2,R.flask.full);ok('flask_interruptible',R.flask.interrupted.hp<65&&R.flask.interrupted.flasks===1,R.flask.interrupted);
 await pg.screenshot({path:S+'10_flask.png'});
 // --- rest radius + refill
