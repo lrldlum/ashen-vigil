@@ -22,9 +22,10 @@ const CHESTS={
  cathedral:[{id:'ch_c1',x:860,y:156},{id:'ch_c2',x:1770,y:36,hidden:1},{id:'ch_c3',x:2340,y:300,hidden:1},{id:'ch_c4',x:2700,y:156,mimic:1}],
  cinderdeep:[{id:'ch_d1',x:620,y:156},{id:'ch_d2',x:970,y:36,hidden:1},{id:'ch_d3',x:260,y:300,hidden:1},{id:'ch_d4',x:2350,y:156,mimic:1}],
  belltower:[{id:'ch_b1',x:820,y:156},{id:'ch_b2',x:1400,y:-104,hidden:1},{id:'ch_b3',x:260,y:36,hidden:1},{id:'ch_b4',x:1180,y:-60,mimic:1},{id:'ch_b5',x:2500,y:156,mimic:1}],
- catacomb:[{id:'ch_f1',x:820,y:156},{id:'ch_f2',x:1400,y:-104,hidden:1},{id:'ch_f3',x:260,y:36,hidden:1},{id:'ch_f4',x:1180,y:-60,mimic:1},{id:'ch_f5',x:1312,y:232},{id:'ch_f6',x:2500,y:156,mimic:1}]};
+ catacomb:[{id:'ch_f1',x:820,y:156},{id:'ch_f2',x:1400,y:-104,hidden:1},{id:'ch_f3',x:260,y:36,hidden:1},{id:'ch_f4',x:1180,y:-60,mimic:1},{id:'ch_f5',x:1312,y:232},{id:'ch_f6',x:2500,y:156,mimic:1}],
+ drowned:[{id:'ch_w1',x:820,y:156},{id:'ch_w2',x:1400,y:-104,hidden:1},{id:'ch_w3',x:260,y:36,hidden:1},{id:'ch_w4',x:1180,y:-60,mimic:1},{id:'ch_w5',x:2500,y:196,sunk:1},{id:'ch_w6',x:2700,y:156,mimic:1}]};
 // lord signature weapons: guaranteed drop, unique special on the HEAVY attack (costs FP), story description in DESC
-const SIGNATURE={warden:'frostbrand',cantor:'requiemspear',king:'crownbreaker',toller:'clapper',smith:'ashmaul'};
+const SIGNATURE={warden:'frostbrand',cantor:'requiemspear',king:'crownbreaker',toller:'clapper',smith:'ashmaul',abbess:'tidecrook'};
 const SIG_WEAPONS={
  frostbrand:{name:'FROSTBRAND',type:'sword',hand:'main',base:1.25,req:{str:11,dex:12},sc:{str:'C',dex:'B'},w:4,swL:10,special:'frost',spFp:8,
   light:{t:.34,h0:.08,h1:.16,reach:12,w:22,h:18,mul:1,cost:18,lunge:30,n:2,arc:{r:16,th:3,sweep:200,trail:1}},
@@ -41,7 +42,11 @@ const SIG_WEAPONS={
  // milestone H: the Ashwrought Smith's forge maul — slow, huge poise, the heavy brings down the anvil: three molten pillars erupt ahead
  ashmaul:{name:'ASHWROUGHT MAUL',type:'greatsword',hand:'main',base:1.9,req:{str:17,dex:7},sc:{str:'A',dex:'E'},w:9,swL:12,special:'forge',spFp:10,
   light:{t:.68,h0:.26,h1:.36,reach:14,w:30,h:26,mul:1,cost:31,lunge:36,n:2,poise:2,arc:{r:21,th:5,sweep:210,trail:1}},
-  heavy:{t:.9,h0:.46,h1:.56,reach:8,w:48,h:24,mul:2.1,cost:40,lunge:50,hop:-160,aoe:1,poise:3,shock:1,arc:{r:23,th:5,sweep:160,trail:1}}}};
+  heavy:{t:.9,h0:.46,h1:.56,reach:8,w:48,h:24,mul:2.1,cost:40,lunge:50,hop:-160,aoe:1,poise:3,shock:1,arc:{r:23,th:5,sweep:160,trail:1}}},
+ // milestone I: the Tidebound Abbess's crook — a long reaching hook; the heavy calls a tide-crest that rolls forward through everything it meets
+ tidecrook:{name:"ABBESS'S TIDE-CROOK",type:'spear',hand:'main',base:1.15,req:{str:9,dex:12,fth:8},sc:{str:'D',dex:'C'},w:4,swL:16,special:'tide',spFp:10,
+  light:{t:.36,h0:.1,h1:.2,reach:22,w:28,h:10,mul:1,cost:16,lunge:50,n:2,stab:1},
+  heavy:{t:.66,h0:.22,h1:.34,reach:18,w:42,h:14,mul:1.8,cost:28,lunge:60,poise:2,arc:{r:20,th:4,sweep:190,trail:1}}}};
 const LOOT_DESC={
  ember:['A WARM EMBER, STILL BEATING. PRESSED TO THE','CHEST IT MENDS WHAT THE COLD HAS TAKEN.'],
  bluesap:['SAP OF THE BLUE TREE THAT GREW IN THE COURT','GARDEN. SORCERERS DRANK IT TO HEAR THE FROST.'],
@@ -53,6 +58,7 @@ const LOOT_DESC={
  crownbreaker:['FORGED FROM THE CINDER KING\'S OWN CROWN BY','THE LAST OF THE FORGE-FOLK. HEAVY ATTACK','SPLITS THE GROUND IN A LINE OF CINDERS.'],
  clapper:['THE TONGUE OF THE GREAT BELL, PRISED FROM THE','RIMEBOUND TOLLER. HEAVY ATTACK TOLLS A','SHOCKWAVE THAT STUNS ALL WHO HEAR IT.'],
  ashmaul:['THE ASHWROUGHT SMITH\'S MAUL. IT CAST THE','GREAT BELL AND THE CINDER KING\'S CROWN. HEAVY','ATTACK BRINGS DOWN THE ANVIL: MOLTEN PILLARS RISE.'],
+ tidecrook:['THE TIDEBOUND ABBESS\'S CROOK. SHE HOOKED','HER SISTERS UNDER WITH IT, ONE BY ONE. HEAVY','ATTACK CALLS A TIDE-CREST THAT ROLLS AHEAD.'],
  chest:['A RINGER\'S STRONGBOX. MOST HOLD WHAT THE DEAD','LEFT BEHIND. SOME HAVE GROWN TEETH.']};
 if(typeof module!=='undefined')module.exports={CONSUMABLES,DROP_TABLES,ETABLE,GEAR_POOL,rollTable,CHESTS,SIGNATURE,SIG_WEAPONS,LOOT_DESC};
 // in the browser: signature weapons join the armoury, loot lore joins the description book

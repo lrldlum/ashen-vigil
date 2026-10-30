@@ -48,7 +48,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  snap(S,full){const m={t:'s',sid:S.sid,bs:S.bossState,
   e:S.enemies.map(e=>[e.k,Math.round(e.b.x),Math.round(e.b.y),e.f,e.state,+e.hp.toFixed(2),e.dead?1:0,+e.t.toFixed(2),e.combo?1:0,e.mst||0,e.flash>0?1:0]),
   sh:S.shots.map(s=>[Math.round(s.x),Math.round(s.y),Math.round(s.vx),Math.round(s.vy),s.c||0,s.dmg||12,s.g||0,s.delay||0]),
-  cx:(S.chests||[]).map(c=>[c.st,Math.round(c.hx),+(c.jy||0).toFixed(1),c.f]),fl:S.flames.map(f=>[Math.round(f.x),f.dir,f.ice?1:0]),g:S.chs.map(c=>c.gateObjs.map(g=>g.closed?1:0)),ch:S.chs.map(c=>[c.active?1:0,+(c.t||0).toFixed(1),c.wave||0])};
+  cx:(S.chests||[]).map(c=>[c.st,Math.round(c.hx),+(c.jy||0).toFixed(1),c.f]),fl:S.flames.map(f=>[Math.round(f.x),f.dir,f.ice?1:f.water?2:0]),g:S.chs.map(c=>c.gateObjs.map(g=>g.closed?1:0)),ch:S.chs.map(c=>[c.active?1:0,+(c.t||0).toFixed(1),c.wave||0])};
   const B=S.boss;if(B){const o={};for(const k of['kind','x','y','f','hp','hpMax','state','t','phase','rise','eyes','next','wt','step','hov','flash','cd'])o[k]=typeof B[k]==='number'?+B[k].toFixed(2):B[k];m.b=o}
   if(full)m.prog=this.prog(S);return m},
  recv(d){const S=this.scene,live=S&&S.sys&&S.sys.isActive()&&S.player;
@@ -92,12 +92,13 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   S.items=S.items.filter(it=>!p.picked.includes(it.id));
   if(p.bonfire)S.bonfire.lit=true;if(p.bossDown&&S.bossState!=='dead'){S.bossState='dead';S.boss=null}
   // milestone G: bells + chests
-  for(const b of S.bells||[])if((p.bells||[]).includes(b.id)&&!b.rung)S.ringBell(b,1);
+  for(const b of S.bells||[])if((p.bells||[]).includes(b.id)&&!b.rung){b.rung=true;b.sw=1;if(!sv.bells.includes(b.id))sv.bells.push(b.id)}// mirror (order puzzles: host already validated)
+  for(const b of S.bells||[])if(b.rung&&!(p.bells||[]).includes(b.id)){b.rung=false;sv.bells=sv.bells.filter(i=>i!==b.id)}
   for(const c of S.chests||[])if((p.chests||[]).includes(c.id)&&c.st==='shut')S.openChest(c,1);
   sv.freed=[...p.freed];sv.found=[...p.found];sv.chDone=[...p.chDone];sv.broken=[...p.broken];sv.bonfire=p.bonfire||sv.bonfire},
  applySnap(S,d){if(d.prog)this.applyProg(S,d.prog);
   if(d.cx)d.cx.forEach(([st,hx,jy,f],i)=>{const c=S.chests[i];if(!c)return;if(st==='dead'&&c.st!=='dead'){S.fx.soul(c.hx,c.y-6,14)}if(st!=='shut'&&c.st==='shut'){c.open=true;if(!S.sv.chests.includes(c.id))S.sv.chests.push(c.id)}c.st=st;c.hx=hx;c.jy=jy;c.f=f});
-  if(d.fl)S.flames=d.fl.map(([x,dir,ice])=>({x,dir,ice,t:0}));
+  if(d.fl)S.flames=d.fl.map(([x,dir,k])=>({x,dir,ice:k===1?1:0,water:k===2?1:0,t:0}));
   d.e.forEach((s,i)=>{let e=S.enemies[i];const[k,x,y,f,st,hp,dead,t,combo,mst,fl]=s;
    if(!e||e.k!==k){if(e){e.dead=true;try{e.b.body.enable=false}catch(_){}}e=S.spawnEnemy(k,x,y+10);e.temp=1;S.enemies[i]=e;e.b.body.moves=false}
    e.b.body.moves=false;e.nx=x;e.ny=y;if(Math.abs(e.b.x-x)>40||Math.abs(e.b.y-y)>40)e.b.setPosition(x,y);e.f=f;e.state=st;e.hp=hp;e.t=t;e.combo=combo;e.mst=mst||undefined;if(fl)e.flash=.1;

@@ -186,3 +186,28 @@ STAGE_DEFS.catacomb=composeStage({pre:'cf',name:'THE BURNING CATACOMB FORGE',wor
 STAGE_DEFS.catacomb.cages.push({id:'cf_anvilcage',x:1250,y:-60,lock:'cf_anvils'});
 STAGE_DEFS.catacomb.lore=[{id:'f1',x:90,y:156},{id:'f2',x:1360,y:-60},{id:'f3',x:2940,y:156}];
 STAGE_DEFS.shrine.descent={x:470};// the Ember Descent (a grate in the shrine floor, right of the keeper)
+
+// ---------------------------------------------------------------------------
+// Milestone I: THE DROWNED CRYPT — an optional stage down the Drowned Well in the Ash Shrine (opens once the Ashwrought Smith's forge is cold).
+// WATER (def.water rects, drawn + simulated in code): swim with jump/up, dive with down, breath runs out underwater. Routes: the HIGH gantry
+// (chain at 1000) or the LOW flooded crypt + flooded nave (swim). PUZZLE: four SISTER SIGILS must be struck in the order the lore stones tell
+// (gantry, crypt, nave, court); a wrong strike resets them. Solving it unseals the sigil cage and DRAINS the cistern, freeing the sunken chest.
+// Lord: THE TIDEBOUND ABBESS (her tide floods the arena in phase 3).
+TPL.cistern=(x,id)=>({carve:[[x,156,x+200,196]],plats:[[x+90,150,24]],enemies:[['wraith',x+100,120]]});
+STAGE_DEFS.drowned=composeStage({pre:'dw',name:'THE DROWNED CRYPT',world:3360,top:-204,bottom:364,theme:'drowned',side:1,
+  bonfire:1600,bonfireName:'TIDEMARK VIGIL',next:'shrine',bellLock:'dw_sigils',bellKind:'sigil',bellOrder:['sg_gantry','sg_crypt','sg_nave','sg_court'],
+  pal:{sky0:'#040a10',sky1:'#071018',sky2:'#0a1822',sky3:'#0e222e',sky4:'#14303c',far:'#08141c',farW:'#1a3a44',farW2:'#4a9aa0',near:'#050c12',nearW:'#1c3a44',
+   gTop:'#9ac8c0',g1:'#3e5a5c',g2:'#324c50',gM:'#16262a',gD:'#20363a',b0:'#0a1820',bM:'#04090c',bH:'#14282e',mist:'rgba(150,220,210,.10)',haze1:'rgba(14,34,40,.55)',haze2:'rgba(20,48,56,.6)',mist2:'rgba(120,200,190,.08)',pil:0x0a1820,pilH:0x24444a},
+  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
+  water:[{r:[300,184,772,300]},{r:[1100,200,1500,300]},{r:[2400,164,2600,196],drain:'dw_sigils'},{r:[2984,151,3336,156],arena:1}],
+  items:[{id:'i_wspear',x:1370,y:-104,item:'spear'},{id:'i_wrobe',x:620,y:300,item:'robe'}],
+  puddles:[[120,18],[1700,22],[2240,16]],
+  bells:[{id:'sg_court',x:250,y:36},{id:'sg_crypt',x:520,y:300},{id:'sg_gantry',x:1300,y:-60},{id:'sg_nave',x:1240,y:300}],
+  boss:{kind:'abbess',name:'THE TIDEBOUND ABBESS',sub:'LADY OF THE DROWNED CRYPT',slain:'THE TIDE GOES OUT',hp:60,card:'THE TIDE HAS GONE OUT. THE KEEPER IS THE LAST NOVICE.',
+   phases:['THE SISTERS SING BENEATH','THE TIDE RISES'],reward:'tidecrook'},
+  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2700],['hollow',2760],['wraith',2860]]},
+ [['pillarRoom',160],['crypt',300],['gantry',1000],['nave',1100],['ossuary',1720,'TIDE TRIAL'],['tower',2150,'SLUICE RUN',9],['cistern',2400],['icefall',2830],['ledge',2896]],
+ {hollow:'acolyte',knight:'sentinel',wraith:'chorister'});
+STAGE_DEFS.drowned.cages.push({id:'dw_sigilcage',x:1250,y:-60,lock:'dw_sigils'});
+STAGE_DEFS.drowned.lore=[{id:'w1',x:90,y:156},{id:'w2',x:1360,y:-60},{id:'w3',x:2940,y:156}];
+STAGE_DEFS.shrine.well={x:380};// the Drowned Well (between the keeper and the shrine's raised ledge)
