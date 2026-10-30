@@ -277,3 +277,27 @@ STAGE_DEFS.cloister=composeStage({pre:'cl',name:'THE BLIGHTED CLOISTER',world:33
 STAGE_DEFS.cloister.cages.push({id:'cl_reliquary',x:1250,y:-60,lock:'cl_blooms'});
 STAGE_DEFS.cloister.lore=[{id:'g1',x:90,y:156},{id:'g2',x:1360,y:-60},{id:'g3',x:2940,y:156}];
 STAGE_DEFS.shrine.arch={x:250};// the Overgrown Arch (a vine-choked trellis door between the bonfire and the keeper)
+// ---------------- milestone M: THE HOLLOW THRONE — the ashen finale sanctum. Its halls remember every lord: a gale gallery, a weightless nave,
+// a rotting bed and thorn brakes; six relic altars each want one lord's signature weapon (collectible) to open the hollow vault; lord: the Hollow Heir
+STAGE_DEFS.throne=composeStage({pre:'th',name:'THE HOLLOW THRONE',world:3360,top:-204,bottom:364,theme:'throne',side:1,finale:1,
+  bonfire:1600,bonfireName:'LAST VIGIL',next:'shrine',bellLock:'th_relics',bellKind:'relic',
+  pal:{sky0:'#0a0806',sky1:'#120e0a',sky2:'#1a1410',sky3:'#241c16',sky4:'#32281e',far:'#120e0a',farW:'#3a3026',farW2:'#d8b890',near:'#080604',nearW:'#30281e',
+   gTop:'#a89880',g1:'#5a5046',g2:'#4a423a',gM:'#221e1a',gD:'#322c26',b0:'#16120e',bM:'#080604',bH:'#26201a',mist:'rgba(200,180,150,.10)',haze1:'rgba(40,30,20,.55)',haze2:'rgba(56,44,30,.6)',mist2:'rgba(230,210,180,.08)',pil:0x16120e,pilH:0x30281e},
+  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
+  wind:[{r:[1000,-200,1608,-52],dir:1,period:5}],
+  lowg:[{r:[2210,-210,2720,-100],period:5,off:2}],
+  spores:[{r:[560,90,760,160],period:5}],
+  thorns:[[1800,1832,156]],
+  items:[{id:'t_herald',x:1370,y:-104,item:'herald'},{id:'t_ring',x:620,y:300,item:'iron'}],
+  puddles:[[1700,22],[2240,16]],
+  bells:[{id:'rl_toller',x:900,y:156,lord:'toller',w:'clapper'},{id:'rl_smith',x:1120,y:-60,lord:'smith',w:'ashmaul'},{id:'rl_abbess',x:1530,y:-60,lord:'abbess',w:'tidecrook'},
+   {id:'rl_marshal',x:2000,y:156,lord:'marshal',w:'halberd'},{id:'rl_astronomer',x:2300,y:-100,lord:'astronomer',w:'starlance'},{id:'rl_prioress',x:2500,y:156,lord:'prioress',w:'thornbrand'}],
+  boss:{kind:'heir',name:'THE HOLLOW HEIR',sub:'WHO WEARS THE EMPTY CROWN',slain:'THE THRONE STANDS EMPTY',hp:72,card:'THE HEIR IS ASH. THE THRONE WAITS FOR NO ONE, OR FOR YOU.',
+   phases:['THE LORDS ANSWER THEIR HEIR','EVERY LORD AT ONCE'],reward:'hollowbrand'},
+  enemies:[['hollow',380],['wraith',700],['knight',960],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
+ [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'ECHO TRIAL'],['tower',2150,'LAST RUN',9],['slagfall',2830],['ledge',2896]],
+ {});
+STAGE_DEFS.throne.cages.push({id:'th_vault',x:1250,y:-60,lock:'th_relics'});
+STAGE_DEFS.throne.lore=[{id:'h1',x:90,y:156},{id:'h2',x:1360,y:-60},{id:'h3',x:2940,y:156}];
+STAGE_DEFS.shrine.sanctum={x:425};// the Hollow Door (an ash-sealed door that opens once the six lords are beaten)
+const THRONE_LORDS=['toller','smith','abbess','marshal','astronomer','prioress'];

@@ -26,9 +26,10 @@ const CHESTS={
  drowned:[{id:'ch_w1',x:820,y:156},{id:'ch_w2',x:1400,y:-104,hidden:1},{id:'ch_w3',x:260,y:36,hidden:1},{id:'ch_w4',x:1180,y:-60,mimic:1},{id:'ch_w5',x:2500,y:196,sunk:1},{id:'ch_w6',x:2700,y:156,mimic:1}],
  keep:[{id:'ch_k1',x:820,y:156},{id:'ch_k2',x:1400,y:-104,hidden:1},{id:'ch_k3',x:260,y:36,hidden:1},{id:'ch_k4',x:1180,y:-60,mimic:1},{id:'ch_k5',x:600,y:300},{id:'ch_k6',x:2700,y:156,mimic:1}],
  spire:[{id:'ch_s1',x:820,y:156},{id:'ch_s2',x:1400,y:-104,hidden:1},{id:'ch_s3',x:260,y:36,hidden:1},{id:'ch_s4',x:1180,y:-60,mimic:1},{id:'ch_s5',x:600,y:300},{id:'ch_s6',x:2700,y:156,mimic:1}],
- cloister:[{id:'ch_c1',x:820,y:156},{id:'ch_c2',x:1400,y:-104,hidden:1},{id:'ch_c3',x:260,y:36,hidden:1},{id:'ch_c4',x:1180,y:-60,mimic:1},{id:'ch_c5',x:600,y:300},{id:'ch_c6',x:2700,y:156,mimic:1}]};
+ cloister:[{id:'ch_c1',x:820,y:156},{id:'ch_c2',x:1400,y:-104,hidden:1},{id:'ch_c3',x:260,y:36,hidden:1},{id:'ch_c4',x:1180,y:-60,mimic:1},{id:'ch_c5',x:600,y:300},{id:'ch_c6',x:2700,y:156,mimic:1}],
+ throne:[{id:'ch_t1',x:820,y:156},{id:'ch_t2',x:1400,y:-104,hidden:1},{id:'ch_t3',x:260,y:36,hidden:1},{id:'ch_t4',x:1180,y:-60,mimic:1},{id:'ch_t5',x:600,y:300},{id:'ch_t6',x:2700,y:156,mimic:1}]};
 // lord signature weapons: guaranteed drop, unique special on the HEAVY attack (costs FP), story description in DESC
-const SIGNATURE={warden:'frostbrand',cantor:'requiemspear',king:'crownbreaker',toller:'clapper',smith:'ashmaul',abbess:'tidecrook',marshal:'halberd',astronomer:'starlance',prioress:'thornbrand'};
+const SIGNATURE={warden:'frostbrand',cantor:'requiemspear',king:'crownbreaker',toller:'clapper',smith:'ashmaul',abbess:'tidecrook',marshal:'halberd',astronomer:'starlance',prioress:'thornbrand',heir:'hollowbrand'};
 const SIG_WEAPONS={
  frostbrand:{name:'FROSTBRAND',type:'sword',hand:'main',base:1.25,req:{str:11,dex:12},sc:{str:'C',dex:'B'},w:4,swL:10,special:'frost',spFp:8,
   light:{t:.34,h0:.08,h1:.16,reach:12,w:22,h:18,mul:1,cost:18,lunge:30,n:2,arc:{r:16,th:3,sweep:200,trail:1}},
@@ -61,7 +62,11 @@ const SIG_WEAPONS={
  // milestone L: the Thorned Prioress's thornbrand — the heavy drives a bramble of thorns up out of the ground ahead
  thornbrand:{name:'PRIORESS\'S THORNBRAND',type:'sword',hand:'main',base:1.3,req:{str:11,dex:12},sc:{str:'C',dex:'B'},w:4,swL:11,special:'bramble',spFp:9,
   light:{t:.36,h0:.09,h1:.17,reach:12,w:22,h:18,mul:1,cost:18,lunge:30,n:2,arc:{r:16,th:3,sweep:200,trail:1}},
-  heavy:{t:.68,h0:.30,h1:.40,reach:14,w:24,h:22,mul:2,cost:30,lunge:50,poise:2,arc:{r:18,th:4,sweep:170,trail:1}}}};
+  heavy:{t:.68,h0:.30,h1:.40,reach:14,w:24,h:22,mul:2,cost:30,lunge:50,poise:2,arc:{r:18,th:4,sweep:170,trail:1}}},
+ // milestone M: the Hollow Heir's brand — the heavy echoes every lord at once: a starlight ring and a piercing bolt from the same swing
+ hollowbrand:{name:'HEIR\'S HOLLOWBRAND',type:'greatsword',hand:'main',base:1.8,req:{str:14,dex:10},sc:{str:'B',dex:'D'},w:8,swL:13,special:'echo',spFp:11,
+  light:{t:.6,h0:.22,h1:.32,reach:16,w:30,h:24,mul:1,cost:28,lunge:40,n:2,poise:2,arc:{r:22,th:5,sweep:220,trail:1}},
+  heavy:{t:.86,h0:.42,h1:.52,reach:10,w:48,h:24,mul:2.1,cost:38,lunge:60,poise:3,arc:{r:24,th:5,sweep:160,trail:1}}}};
 const LOOT_DESC={
  ember:['A WARM EMBER, STILL BEATING. PRESSED TO THE','CHEST IT MENDS WHAT THE COLD HAS TAKEN.'],
  bluesap:['SAP OF THE BLUE TREE THAT GREW IN THE COURT','GARDEN. SORCERERS DRANK IT TO HEAR THE FROST.'],
@@ -74,6 +79,7 @@ const LOOT_DESC={
  clapper:['THE TONGUE OF THE GREAT BELL, PRISED FROM THE','RIMEBOUND TOLLER. HEAVY ATTACK TOLLS A','SHOCKWAVE THAT STUNS ALL WHO HEAR IT.'],
  ashmaul:['THE ASHWROUGHT SMITH\'S MAUL. IT CAST THE','GREAT BELL AND THE CINDER KING\'S CROWN. HEAVY','ATTACK BRINGS DOWN THE ANVIL: MOLTEN PILLARS RISE.'],
  tidecrook:['THE TIDEBOUND ABBESS\'S CROOK. SHE HOOKED','HER SISTERS UNDER WITH IT, ONE BY ONE. HEAVY','ATTACK CALLS A TIDE-CREST THAT ROLLS AHEAD.'],
+ hollowbrand:['THE HOLLOW HEIR\'S BRAND, ASH-GREY AND HUNGRY.','IT REMEMBERS EVERY LORD. HEAVY ATTACK ECHOES','THEM ALL: A RING OF STARS AND A PIERCING BOLT.'],
  thornbrand:['THE THORNED PRIORESS\'S BLADE, ITS GUARD','GROWN OVER WITH LIVING BRIAR. HEAVY ATTACK','DRIVES A BRAMBLE OF THORNS UP AHEAD OF YOU.'],
  starlance:['THE STARBOUND ASTRONOMER\'S LANCE, TIPPED','WITH A SHARD OF A FALLEN STAR. HEAVY ATTACK','BURSTS INTO A NOVA OF STARLIGHT AROUND YOU.'],
  halberd:['THE IRONCLAD CASTELLAN\'S HALBERD, ITS HAFT','NOTCHED FOR EVERY SIEGE HE HELD. HEAVY ATTACK','LOOSES A BALLISTA BOLT THAT PIERCES ITS LINE.'],

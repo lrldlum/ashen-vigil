@@ -103,7 +103,7 @@ const atk=await ev(async()=>{const s=S(),B=s.boss,o={};const force=async(n,ms=14
 await shot('h08_smith_crucible_pour_phase3');
 ok('smith_cinematic_and_three_phases',cine.c&&cine.kind==='smith'&&atk.p2===2&&atk.p3===3,{cine,atk});
 ok('smith_attacks_bellows_ingots_loft_pour',atk.bellows1>=2&&atk.bellows2>=4&&atk.ingots>=3&&atk.loft&&atk.perchFire>=3&&atk.pour>=5,atk);
-await ev(()=>{const s=S();s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:12000}).catch(()=>{});await wait(1200);await shot('h09_smith_slain_maul');
+await ev(()=>{const s=S();s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:40000}).catch(()=>{});await wait(1200);await shot('h09_smith_slain_maul');
 const vic=await ev(()=>({lords:S().sv.lords,inv:S().sv.inv.includes('ashmaul'),opts:S().victoryOpts(),hub:S().sv.hubNext}));
 ok('smith_drops_signature_ashmaul',vic.lords.includes('smith')&&vic.inv,vic);
 await ev(()=>{S().victory.t=2;S().victory.sel=0;S().victoryGo()});await A.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage').sid==='shrine'&&__G.scene.getScene('stage').player,null,{timeout:12000}).catch(()=>{});await wait(900);

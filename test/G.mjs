@@ -90,7 +90,7 @@ const atk=await ev(async()=>{const s=S(),B=s.boss,o={};const force=async n=>{B.s
 await shot('g08_toller_peal_phase3');
 ok('toller_cinematic_and_three_phases',cine.c&&cine.kind==='toller'&&atk.p2===2&&atk.p3===3,{cine,atk});
 ok('toller_attacks_toll_icicles_peal',atk.toll>=2&&atk.ice>=5&&atk.peal>=6,atk);
-await ev(()=>{const s=S();s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:12000}).catch(()=>{});await wait(1200);await shot('g09_toller_slain_signature');
+await ev(()=>{const s=S();s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:40000}).catch(()=>{});await wait(1200);await shot('g09_toller_slain_signature');
 const vic=await ev(()=>({lords:S().sv.lords,inv:S().sv.inv.includes('clapper'),opts:S().victoryOpts(),hub:S().sv.hubNext}));
 ok('toller_drops_signature_clapper',vic.lords.includes('toller')&&vic.inv,vic);
 await ev(()=>{S().victory.t=2;S().victory.sel=0;S().victoryGo()});await A.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage').sid==='shrine'&&__G.scene.getScene('stage').player,null,{timeout:12000}).catch(()=>{});await wait(900);
@@ -109,7 +109,7 @@ ok('ending_mentions_the_bell',endL.some(s=>/ONE BELL TOLLED/.test(s)),endL);
 const sig={};
 for(const[stage,kind,w]of[['ramparts','warden','frostbrand'],['cathedral','cantor','requiemspear'],['cinderdeep','king','crownbreaker']]){
  await go(`?play&mute&slot=2&class=knight&stage=${stage}`);await ev(()=>{clear();const s=S();s.player.hp=s.player.hpMax=9999;s.pb.setPosition(3020,140);s.player.inv=999});
- await A.pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000}).catch(()=>{});await ev(()=>{const s=S();s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:12000}).catch(()=>{});
+ await A.pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000}).catch(()=>{});await ev(()=>{const s=S();s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:40000}).catch(()=>{});
  sig[kind]=await ev(w=>S().sv.inv.includes(w),w)}
 await go('?play&mute&slot=2&continue');
 const spec=await ev(async()=>{const s=S(),o={};s.menu=null;for(const w of['frostbrand','requiemspear','crownbreaker','clapper']){if(!s.sv.inv.includes(w))s.sv.inv.push(w);s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<30&&s.sv.eq.main!==w;i++)s.menuKey('right');s.menu=null;

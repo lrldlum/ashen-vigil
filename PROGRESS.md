@@ -223,3 +223,21 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Story ties: keeper lines (sealed, open, slain), an ending line on both endings, and lore g3 tying her to the Astronomer.
 - Co-op: the host is authoritative for blooms, chests, mimics, thorn and spore shots, and the boss (the guest derives the phase-3 rot from boss state and the clock). Spore clouds and thorns run locally per client.
 - Tests: `test/L.mjs` (27 checks). milestoneE's lore total counts the cloister.
+
+## Milestone M — flake hardening + The Hollow Throne (finale)
+- **Flake hardening:**
+  - The victory-screen wait in G–L is now 40 s instead of 12 s. J's flake was the victory card arriving late on a busy box, followed by a null dereference.
+  - The real-heavy special checks in I–L now pin the dummy so the heavy's own lunge or knockback can't shove it out of the special's reach. That was I's 2.22 against 2.77. A miss is re-measured up to twice, and the condition itself is unchanged.
+- New finale stage `throne` (THE HOLLOW THRONE), reached by the Hollow Door in the Ash Shrine (x 425). Its six oath-seals burn out one per beaten lord, and it opens only when the Toller, Smith, Abbess, Castellan, Astronomer and Prioress are all beaten (`THRONE_LORDS`; `?throneopen` for testing). Bonfire LAST VIGIL. `def.finale`.
+- **Echo halls** reuse the earlier mechanics through their def keys: the Castellan's gale (`wind`), the Astronomer's weightless nave (`lowg`), the Prioress's rot bed (`spores`) and thorns. Drawn in code: ash colonnades with faded banners in each lord's colour, falling ash, and the hollow throne with six oath-flames.
+- **Collectible:** six relic altars (`bellKind:'relic'`, each with `lord` and `w`). An altar refuses (`stats.relicRefused`) until whoever strikes it carries that lord's signature weapon; in co-op the host checks its own inventory. All six open the `th_vault` cage. Lore h2 explains it.
+- Routes and secrets: high gallery by chain and a low crypt; hidden chests ch_t2/ch_t3; mimics ch_t4/ch_t6; lore h1–h3.
+- **The Hollow Heir** (`heir`, 72 hp):
+  - six-oath cinematic;
+  - phases echo the earlier lords: p1 is the Castellan's volley, the Prioress's lash and a charge; p2 adds the Astronomer's gravity well, the Abbess's tide wave, the Castellan's gust and brambles; p3 adds comets, rot and rubble, plus the Prioress's rot rolling across the arena;
+  - he perches on the throne loft.
+- **Signature weapon:** HEIR'S HOLLOWBRAND (greatsword). Its 'echo' special fires a starlight ring and a piercing bolt together; each target is hit once, so isolated damage is within 0.7–1.3× FROSTBRAND.
+- **New ending variant, USURP ('THE HOLLOW THRONE'):** the finale's victory offers CLAIM THE HOLLOW THRONE / RETURN TO THE ASH SHRINE / RETURN TO TITLE. Claiming plays the usurp ending, which is saved in `sv.endings` and synced to the guest. Rekindle and fade gain a throne line, and ending lines are filtered so variants without a line are fine.
+- Story ties: keeper lines (sealed, open, slain) and lore h3 on the Heir learning every lord's art.
+- Co-op: the host is authoritative for relics, chests, mimics, boss shots and the boss, and sends the ending to the guest. Echo-hall hazards run locally.
+- Tests: `test/M.mjs` (26 checks). milestoneE's lore total counts the throne.

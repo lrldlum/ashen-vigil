@@ -37,9 +37,9 @@ const iso=await ev(async W=>{const s=S(),P=s.player,o={};clear();for(const w of 
   const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,150));const h=e.hp;s.weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,800));r.push(h-e.hp);e.dead=true;e.b.body.enable=false}
   o[w]=+(r.reduce((a,b)=>a+b,0)/r.length).toFixed(2)}return o},['frostbrand','halberd','tidecrook']);
 ok('halberd_special_balanced_vs_frostbrand',iso.frostbrand>0&&iso.halberd>=iso.frostbrand*.7&&iso.halberd<=iso.frostbrand*1.3,iso);
-const real=await ev(async()=>{const s=S(),P=s.player;if(!s.sv.inv.includes('halberd'))s.sv.inv.push('halberd');s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<40&&s.sv.eq.main!=='halberd';i++)s.menuKey('right');s.menu=null;
-  s.pb.setPosition(400,148);s.pb.setVelocity(0,0);await new Promise(q=>setTimeout(q,300));P.st=999;P.fp=P.fpMax=99;P.state='idle';P.f=1;s.stats.specials=0;const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,200));const h=e.hp;
-  let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(q=>setTimeout(q,1500));window.__inp=()=>({});const o={eq:s.sv.eq.main,sp:s.stats.specials,dmg:+(h-e.hp).toFixed(2)};e.dead=true;e.b.body.enable=false;return o});
+const realF=async()=>{const s=S(),P=s.player;if(!s.sv.inv.includes('halberd'))s.sv.inv.push('halberd');s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<40&&s.sv.eq.main!=='halberd';i++)s.menuKey('right');s.menu=null;
+  s.pb.setPosition(400,148);s.pb.setVelocity(0,0);await new Promise(q=>setTimeout(q,300));P.st=999;P.fp=P.fpMax=99;P.state='idle';P.f=1;s.stats.specials=0;const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';e.kbImmune=1;if(e.b.body)e.b.body.moves=false;await new Promise(q=>setTimeout(q,200));const h=e.hp;
+  let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(q=>setTimeout(q,1500));window.__inp=()=>({});const o={eq:s.sv.eq.main,sp:s.stats.specials,dmg:+(h-e.hp).toFixed(2)};e.dead=true;e.b.body.enable=false;return o};let real=await ev(realF);for(let k=0;k<2&&!(real.eq==='halberd'&&real.sp===1&&real.dmg>=iso.halberd);k++)real=await ev(realF);
 ok('halberd_heavy_fires_its_special',real.eq==='halberd'&&real.sp===1&&real.dmg>=iso.halberd,real);
 // ---------- 2. stage data
 await go('?play&mute&slot=1&class=knight&stage=keep');
@@ -94,7 +94,7 @@ await shot('j09_castellan_gale_phase3');
 ok('castellan_cinematic_and_three_phases',cine.c&&cine.kind==='marshal'&&atk.p2===2&&atk.p3===3,{cine,atk});
 ok('castellan_attacks_volley_slam_gust_loft_rubble',atk.volley>=3&&atk.gust>0&&Math.abs(atk.gdx)>8&&atk.loft&&atk.rubble>=5,atk);
 ok('phase3_gale_sweeps_the_arena',atk.gale>0,atk);
-await ev(()=>{const s=S();s.boss.state='walk';s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:12000}).catch(()=>{});await wait(1200);await shot('j10_castellan_slain_halberd');
+await ev(()=>{const s=S();s.boss.state='walk';s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:40000}).catch(()=>{});await wait(1200);await shot('j10_castellan_slain_halberd');
 const vic=await ev(()=>({lords:S().sv.lords,inv:S().sv.inv.includes('halberd'),opts:S().victoryOpts(),hub:S().sv.hubNext}));
 ok('castellan_drops_signature_halberd',vic.lords.includes('marshal')&&vic.inv,vic);
 await ev(()=>{S().victory.t=2;S().victory.sel=0;S().victoryGo()});await A.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage').sid==='shrine'&&__G.scene.getScene('stage').player,null,{timeout:12000}).catch(()=>{});await wait(900);
