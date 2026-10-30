@@ -293,6 +293,7 @@ class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.
   const w=(i1-i0)*TS,h=(j1-j0)*TS,cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d'),img=ctx.createImageData(w,h),d=new Uint32Array(img.data.buffer);
   const col=c=>{c=typeof c==='string'?parseInt(c.slice(1),16):c;return((0xff<<24)|((c&0xff)<<16)|(c&0xff00)|((c>>16)&0xff))>>>0};
   const p={gTop:col(C.gTop),g1:col(C.g1),g2:col(C.g2),gM:col(C.gM),gD:col(C.gD),b0:col(C.b0||'#0d0a1e'),bM:col(C.bM||'#07050f'),bH:col(C.bH||'#14102c'),lv:!!C.lava,l0:col(0xfff0a0),l1:col(0xffa020),l2:col(0xe04a10),l3:col(0x8a1a08),ch:col(0x8b86a8),chD:col(0x4d4a7a),i1:col(C.ice1),i2:col(C.ice2),i3:col(C.ice3),i4:col(C.ice4),wh:col(0xffffff)};
+  const TM=typeof TILEMAT!=='undefined'&&TILEMAT[this.sid]||null;// tiles pass: per-zone material (colour only)
   const K=this.k,cols=this.cols,inR=(i,j)=>force&&i>=i0&&i<i1&&j>=j0&&j<j1;
   const sol=(i,j)=>{if(inR(i,j))return true;const q=this.idx(i,j);return q<0?false:K[q]===K_SOLID};
   for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++){const q=this.idx(i,j);if(q<0)continue;const v=force?K_SOLID:K[q],bk=this.back[q];let tj=j;if(v===K_SOLID)while(sol(i,tj-1)&&tj>j-40)tj--;
@@ -305,6 +306,9 @@ class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.
     else if(v===K_CHAIN){const cx=i*TS+3,seg=(Y>>2)&1,m=Y%4;if(seg===0&&(X===cx||X===cx+1)&&(m===0||m===3))c=p.ch;else if(seg===0&&(X===cx-1||X===cx+2)&&(m===1||m===2))c=p.chD;else if(seg===1&&X===cx&&true)c=m===0?p.chD:p.ch}
     else if(v===K_SPIKE&&p.lv){const w=Math.round(Math.sin((X*.7)+(Y>>3))*1.2),top=3+w;if(vv>=top)c=vv===top?p.l0:vv===top+1?p.l1:((X+vv)%5===0?p.l1:vv<6?p.l2:p.l3)}
     else if(v===K_SPIKE){const s=u%4,hh=[2,6,6,2][s];if(TS-1-vv<hh){c=vv===TS-1?p.i4:(TS-1-vv===hh-1?p.wh:(s<2?p.i2:p.i3))}}
+    if(TM&&c){if(v===K_SOLID){const dy=Y-tj*TS;c=TM.c[TM.solid({X,Y,dy,u,vv,i,j,lE,rE,bE})];if(dy>1&&((lE&&u===0)||(bE&&vv===TS-1&&!(this.sid==='belltower'))))c=TM.c[TM.dark]}
+     else if(v===K_ONEWAY){const ix=TM.one(X,Y,u,vv);c=(vv>5&&ix===0)?0:TM.c[ix]}
+     else if(bk&&!(v===K_CHAIN||v===K_SPIKE))c=TM.c[TM.back(X,Y)]}
     if(c)d[(Y-j0*TS)*w+(X-i0*TS)]=c}}
   ctx.putImageData(img,0,0);return cv}}
 // ===================================================================
@@ -417,7 +421,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const sv=(!this.fresh&&Save.load())||{bonfire:false,souls:0,bossDown:false};sv.stage=STAGE_DEFS[sv.stage]?sv.stage:(STAGE_DEFS[Q.get('stage')]?Q.get('stage'):'ramparts');sv.deaths=sv.deaths||0;sv.time=sv.time||0;sv.ng=sv.ng||0;this.sv=sv;
   this.ng=sv.ng;this.ngMul=1+.5*this.ng;this.playT=sv.time;
   const sid=sv.stage,D=STAGE_DEFS[sid];this.sid=sid;this.def=D;Object.assign(C,BASEPAL,D.pal||{});WORLD=D.world;ARENA_L=D.arena?D.arena[0]:2980;ARENA_R=D.arena?D.arena[1]:3340;
-  const tx=sid==='ramparts'?'':'_'+sid;genTextures(this,tx,D.pal,sid);this.lv=LEVELS[sid]||(LEVELS[sid]=new Level(D));this.physics.world.setBounds(0,D.top,WORLD,D.bottom-D.top);
+  const tx=sid==='ramparts'?'':'_'+sid;genTextures(this,tx,D.pal,sid);this.lv=LEVELS[sid]||(LEVELS[sid]=Object.assign(new Level(D),{sid}));this.physics.world.setBounds(0,D.top,WORLD,D.bottom-D.top);
   sv.freed=sv.freed||[];sv.found=sv.found||[];sv.chDone=sv.chDone||[];sv.broken=sv.broken||[];
   // milestone D: character (class, stats, equipment, inventory)
   {const cls=CLASSES[sv.cls]?sv.cls:(CLASSES[Q.get('class')]?Q.get('class'):'knight'),CL=CLASSES[cls];sv.cls=cls;sv.stats=sv.stats||RPG.classStats(cls);
