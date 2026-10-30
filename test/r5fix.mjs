@@ -24,8 +24,8 @@ const alpha=await T.ev(()=>{const g=__G.scene.getScene('title').gt;const c=g.com
 ok('class_overlay_opaque',m3.mode==='class',{m3,cmd:alpha});
 // 3. touch erase: hold a saved slot -> ERASE/KEEP; KEEP keeps, ERASE erases
 await T.pg.goto(B+'?mute');await wait(1500);const s0=await T.tl();
-await T.hold(160,100,900);const e1=await T.tl();await T.pg.screenshot({path:S+'touch_erase_prompt.png'});await T.tap(192,147);const e2=await T.tl();
-await T.hold(160,100,900);await T.tap(128,147);const e3=await T.tl();
+await T.hold(160,100,900);const e1=await T.tl();await T.pg.screenshot({path:S+'touch_erase_prompt.png'});await T.tap(192,155);const e2=await T.tl();
+await T.hold(160,100,900);await T.tap(128,155);const e3=await T.tl();
 ok('touch_erase_with_confirm',s0.saves[0]&&e1.erase===0&&e1.mode==='slots'&&e2.erase===-1&&e2.saves[0]&&e3.saves[0]===null&&e3.mode==='slots',{s0,e1,e2,e3});
 await T.ctx.close();
 // 4. desktop: real keyboard shop purchase (4th ware), flask buy doesn't refill, Blessed Weapon

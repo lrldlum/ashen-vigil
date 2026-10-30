@@ -273,7 +273,7 @@ class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.
 // ===================================================================
 class Boot extends Phaser.Scene{constructor(){super('boot')}
  preload(){['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry','menu','pickup','chime','crumble','clang','slam','lava','heal','thunder','buff','talk','fanfare'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
- create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(Q.get('ending'))return this.scene.start('ending',{kind:Q.get('ending')});if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
+ create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(Q.get('ending'))return this.scene.start('ending',{kind:Q.get('ending')});if(Q.get('join'))return this.scene.start('title');if(Q.has('host')){NET.startHost(Q.get('room')||undefined);return this.scene.start('stage',{fresh:!Q.has('continue')})}if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
 // shared parallax
 function makeBG(scene,sx=''){const L=[['sky',0],['far',.15],['near',.4]].map(([k,f])=>[scene.add.tileSprite(0,0,W,H,k+sx).setOrigin(0).setScrollFactor(0).setDepth(-10+f),f]);
  const fn=(cx,cy=0)=>L.forEach(([s,f])=>{s.tilePositionX=cx*f;s.y=f?clamp(Math.round(-cy*f*.6),-50,60):0});fn.L=L;return fn}
@@ -284,15 +284,30 @@ class Title extends Phaser.Scene{constructor(){super('title')}
   // milestone D: 3 save slots + class select
   this.saves=[0,1,2].map(i=>Save.load(i));this.mode='slots';this.sel=Save.slot;this.csel=0;this.erase=-1;
   const k=this.input.keyboard;k.on('keydown',e=>this.key(e.key));
+  if(Q.get('join')){this.mode='code';this.code=Q.get('join').toUpperCase().slice(0,4);this.time.delayedCall(300,()=>this.doJoin())}
   // r5: touch. Slots act on release; holding a slot 0.6 s opens the erase prompt with ERASE / KEEP buttons. Class rows tap-select, BEGIN confirms.
   this.lastTap=0;this.input.on('pointerdown',p=>{const now=this.time.now;if(now-this.lastTap<120)return;this.lastTap=now;
-   if(this.mode==='slots'){if(this.erase>=0){if(Math.abs(p.y-147)<8&&Math.abs(p.x-128)<26){Save.clear(this.erase);this.saves[this.erase]=null}this.erase=-1;this.held=null;this.eatUp=1;return}
-    const i=Math.floor((p.y-96)/11);this.held=i>=0&&i<3?{i,t0:now}:null}
+   if(this.mode==='coop'){const i=Math.floor((p.y-96)/11);if(i>=0&&i<3){if(this.csel===i)this.key('Enter');else this.csel=i}return}
+   if(this.mode==='code'){this.tapKeypad(p);return}
+   if(this.mode==='slots'){if(this.erase>=0){if(Math.abs(p.y-155)<8&&Math.abs(p.x-128)<26){Save.clear(this.erase);this.saves[this.erase]=null}this.erase=-1;this.held=null;this.eatUp=1;return}
+    const i=Math.floor((p.y-96)/11);this.held=i>=0&&i<4?{i,t0:now}:null}
    else{const i=Math.floor((p.y-50)/10);if(p.x<112&&i>=0&&i<10){this.csel=i;return}
     if(p.y>=159&&p.y<=178){if(p.x>=196&&p.x<=266)this.key('Enter');else if(p.x>=54&&p.x<=124)this.key('Escape')}}});
   this.input.on('pointerup',()=>{const h=this.held;this.held=null;if(this.eatUp){this.eatUp=0;return}if(this.mode!=='slots'||!h||h.long)return;if(this.sel===h.i)this.key('Enter');else{this.sel=h.i;this.erase=-1}})}
+ // milestone F: co-op entry (host with the highlighted slot, or join with a 4-character room code; keypad works by touch)
+ doJoin(){if(this.code.length<4||this.joining)return;this.joining=1;this.joinErr='';const sl=Save.load(Save.slot);let gs=null;try{gs=JSON.parse(localStorage.getItem(NET.GUEST_KEY))}catch(e){}
+  const qc=CLASSES[Q.get('class')]?Q.get('class'):null;if(!gs||qc){const c=qc||(sl&&CLASSES[sl.cls]?sl.cls:'knight'),CL=CLASSES[c];gs=qc||!sl?{cls:c,stats:RPG.classStats(c),eq:{main:CL.main,off:CL.off,armor:CL.armor},inv:[CL.main,CL.off,CL.armor,...(CL.extra||[])].filter(Boolean),souls:0}:{cls:sl.cls,stats:sl.stats,eq:sl.eq,inv:sl.inv,souls:0}}
+  NET.startJoin(this.code,(err,hello)=>{this.joining=0;if(err){this.joinErr=err;return}Save.write({...gs,stage:hello.sid,bonfire:!!hello.prog.bonfire,bossDown:!!hello.prog.bossDown,ng:hello.ng||0,stain:null});this.go(false)})}
+ keypad(){const o=[];CODE_CHARS.split('').forEach((c,i)=>o.push({c,x:64+(i%8)*24,y:92+Math.floor(i/8)*14}));o.push({c:'BACK',x:64,y:136},{c:'DEL',x:160,y:136},{c:'JOIN',x:208,y:136});return o}
+ tapKeypad(p){for(const b of this.keypad())if(Math.abs(p.x-b.x-4)<11&&Math.abs(p.y-b.y-2)<7){this.key(b.c==='DEL'?'Backspace':b.c==='JOIN'?'Enter':b.c==='BACK'?'Escape':b.c);return}}
  key(k){if(this.gone)return;const up=k==='ArrowUp',dn=k==='ArrowDown',ok=k==='Enter'||k===' '||k==='z'||k==='Z';this.eatUp=0;
-  if(this.mode==='slots'){if(up)this.sel=(this.sel+2)%3;if(dn)this.sel=(this.sel+1)%3;if(up||dn)this.erase=-1;
+  if(this.mode==='code'){if(k==='Escape'){if(!this.joining){NET.leave();this.mode='coop'}return}if(k==='Backspace'||k==='Delete'){this.code=this.code.slice(0,-1);return}if(k==='Enter'){this.doJoin();return}
+   const c=String(k).toUpperCase();if(c.length===1&&CODE_CHARS.includes(c)&&this.code.length<4){this.code+=c;this.joinErr=''}return}
+  if(this.mode==='coop'){if(up)this.csel=(this.csel+2)%3;if(dn)this.csel=(this.csel+1)%3;if(k==='Escape'){this.mode='slots';return}
+   if(ok){if(this.csel===0){if(!this.saves[Save.slot]){const c='knight',CL=CLASSES[c];Save.write({cls:c,stats:RPG.classStats(c),eq:{main:CL.main,off:CL.off,armor:CL.armor},inv:[CL.main,CL.off,CL.armor],bonfire:false,souls:0,bossDown:false,stage:'ramparts'})}NET.startHost();this.go(false)}
+    else if(this.csel===1){this.mode='code';this.code='';this.joinErr=''}else this.mode='slots'}return}
+  if(this.mode==='slots'){if(up)this.sel=(this.sel+3)%4;if(dn)this.sel=(this.sel+1)%4;if(up||dn)this.erase=-1;
+   if(this.sel===3){if(ok){this.mode='coop';this.csel=0}return}
    // r4 P1: erase only with Delete/Backspace, confirmed by a second Delete/Backspace; any other key cancels the prompt (X/attack never erases)
    const del=k==='Delete'||k==='Backspace';if(this.erase>=0&&!del){this.erase=-1;return}
    if(del&&this.saves[this.sel]){if(this.erase===this.sel){Save.clear(this.sel);this.saves[this.sel]=null;this.erase=-1}else this.erase=this.sel;return}
@@ -318,8 +333,15 @@ class Title extends Phaser.Scene{constructor(){super('title')}
   if(this.mode==='slots'){const fmt=v=>{v=Math.floor(v||0);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`};
    this.saves.forEach((s,i)=>{const on=this.sel===i;let str;if(!s)str='SLOT '+(i+1)+'   - NEW JOURNEY -';else{const c=CLASSES[s.cls]?s.cls:'knight';str='SLOT '+(i+1)+'  '+CLASSES[c].name+' LV '+RPG.level(c,s.stats||RPG.classStats(c))+'  '+((STAGE_DEFS[s.stage]||STAGE_DEFS.ramparts).name.replace('THE ','').split(' ')[0])+'  '+fmt(s.time)+(s.ng?'  NG+'+s.ng:'')}
     if(this.erase===i)str='ERASE SLOT '+(i+1)+'? DEL AGAIN = YES  ANY KEY = NO';const x=Math.round(W/2-textW(str)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+i*11,textW(str)+16,9);drawText(g,(on?'> ':'  ')+str,x,98+i*11,this.erase===i?0xd8402a:on?0xffe2a8:0x6b67a0)});
-   if(this.erase>=0){[['ERASE',128,0xd8402a],['KEEP',192,0xd8d0ee]].forEach(([s,cx,col])=>{g.fillStyle(0x1a1028,1);g.fillRect(cx-24,140,48,14);g.lineStyle(1,col,.8);g.strokeRect(cx-24,140,48,14);drawText(g,s,cx-Math.round(textW(s)/2),145,col)})}
-   else drawText(g,'HOLD A SLOT TO ERASE',Math.round(W/2-textW('HOLD A SLOT TO ERASE')/2),136,0x4a4678)}
+   {const on=this.sel===3,str='CO-OP  - HOST OR JOIN ONLINE -',x=Math.round(W/2-textW(str)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+33,textW(str)+16,9);drawText(g,(on?'> ':'  ')+str,x,98+33,on?0x9ff0dc:0x5d8a86)}
+   if(this.erase>=0){[['ERASE',128,0xd8402a],['KEEP',192,0xd8d0ee]].forEach(([s,cx,col])=>{g.fillStyle(0x1a1028,1);g.fillRect(cx-24,148,48,14);g.lineStyle(1,col,.8);g.strokeRect(cx-24,148,48,14);drawText(g,s,cx-Math.round(textW(s)/2),153,col)})}
+   else drawText(g,'HOLD A SLOT TO ERASE',Math.round(W/2-textW('HOLD A SLOT TO ERASE')/2),146,0x4a4678)}
+  else if(this.mode==='coop'){const L=['HOST A ROOM WITH SLOT '+(Save.slot+1),'JOIN A ROOM WITH A CODE','BACK'];L.forEach((s,i)=>{const on=this.csel===i,x=Math.round(W/2-textW(s)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+i*11,textW(s)+16,9);drawText(g,(on?'> ':'  ')+s,x,98+i*11,on?0x9ff0dc:0x6b67a0)});
+   drawText(g,'TWO PLAYERS. THE HOST\'S WORLD, THE HOST\'S LORDS.',Math.round(W/2-textW('TWO PLAYERS. THE HOST\'S WORLD, THE HOST\'S LORDS.')/2),136,0x8a86c0)}
+  else if(this.mode==='code'){g.fillStyle(0x07050f,1);g.fillRect(0,0,W,H);drawText(g,'JOIN A ROOM',Math.round(W/2-textW('JOIN A ROOM',2)/2),18,0x9ff0dc,2);
+   for(let i=0;i<4;i++){const ch=this.code[i]||'_';g.fillStyle(0x1a2a30);g.fillRect(118+i*22,46,16,20);drawText(g,ch,121+i*22,50,0xffe2a8,2)}
+   for(const b of this.keypad()){const big=b.c.length>1;g.fillStyle(0x1a2a30,.9);g.fillRect(b.x-6,b.y-3,big?textW(b.c)+12:20,12);drawText(g,b.c,b.x-(big?0:-2),b.y,big?0x9ff0dc:0xd8d0ee)}
+   const st=this.joinErr||(this.joining?NET.status||'CONNECTING':'TYPE OR TAP THE HOST\'S ROOM CODE');drawText(g,st,Math.round(W/2-textW(st)/2),74,this.joinErr?0xd8402a:0x8a86c0)}
   else{g.fillStyle(0x07050f,1);g.fillRect(0,0,W,H);[['BACK  ESC',89,0x8a86c0],['BEGIN  ENTER',231,0xffe2a8]].forEach(([s,cx,col])=>{g.fillStyle(0x1a1028,1);g.fillRect(cx-34,162,68,14);g.lineStyle(1,col,.7);g.strokeRect(cx-34,162,68,14);drawText(g,s,cx-Math.round(textW(s)/2),167,col)});drawText(g,'CHOOSE YOUR ORIGIN',Math.round(W/2-textW('CHOOSE YOUR ORIGIN',2)/2),12,0xffb04a,2);
    CLASS_ORDER.forEach((c,i)=>{const on=this.csel===i;drawText(g,(on?'> ':'  ')+CLASSES[c].name,14,50+i*10,on?0xffe2a8:0x8a86c0);drawText(g,'LV '+CLASSES[c].lvl,84,50+i*10,on?0xffe2a8:0x5d5990)});
    const c=CLASS_ORDER[this.csel],CL=CLASSES[c],st=RPG.classStats(c),d=RPG.derive(st,{main:CL.main,off:CL.off,armor:CL.armor});
@@ -422,7 +444,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.inp={};this.hs=0;this.msg=null;this.t=0;this.flashA=0;this.ai={t:0,roll:2.5,bolt:3};this.stats={dodged:0,parries:0,ripostes:0,flasks:0};
   this.cam.fadeIn(500,7,5,15);
   if(DEMO&&Q.has('boss')){this.pb.x=ARENA_L-60}
-  this.say(this.ng&&sid==='ramparts'?'JOURNEY '+(this.ng+1)+' - THE RAMPARTS STIR':sv.bonfire?'RESTED AT '+D.bonfireName:D.name,2.5)}
+  this.say(this.ng&&sid==='ramparts'?'JOURNEY '+(this.ng+1)+' - THE RAMPARTS STIR':sv.bonfire?'RESTED AT '+D.bonfireName:D.name,2.5);NET.onStage(this)}
  // ---------------- milestone D: build, moves, menus ----------------
  applyBuild(full){const P=this.player,sv=this.sv,d=RPG.derive(sv.stats,sv.eq);this.build=d;this.wp=WEAPONS[sv.eq.main]||WEAPONS.dagger;this.spellMul=d.spell||0;this.lvl=RPG.level(sv.cls,sv.stats);
   P.hpMax=d.hp;P.stMax=d.st;P.fpMax=d.fp;if(full){P.hp=d.hp;P.st=d.st;P.fp=d.fp}else{P.hp=Math.min(P.hp,P.hpMax);P.st=Math.min(P.st,P.stMax);P.fp=Math.min(P.fp,P.fpMax)}P.poiseHP=d.poise}
@@ -444,7 +466,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  sfx(k,v=.35){try{this.sound.play(k,{volume:v})}catch(e){}}
  light(x,y,r,c,a){this.lights.push({x,y,r,c,a})}
  togglePause(){if(this.victory||this.player.dead)return;this.paused=!this.paused;this.paused?this.physics.pause():this.physics.resume()}
- gainSouls(n){n=Math.round(n*(this.build?this.build.soulMul:1));this.souls+=n;this.soulPop={n:(this.soulPop&&this.soulPop.t>0?this.soulPop.n:0)+n,t:1.4}}
+ gainSouls(n,noShare){if(NET.host()&&!noShare)NET.send({t:'souls',n});n=Math.round(n*(this.build?this.build.soulMul:1));this.souls+=n;this.soulPop={n:(this.soulPop&&this.soulPop.t>0?this.soulPop.n:0)+n,t:1.4}}
  spawnEnemy(k,x,gy=GY){const base=EBASE[k]||k;const b=this.physics.add.image(x,gy-20,'px').setVisible(false);const S=ESIZE[base];b.body.setSize(S[0],S[1]);b.setCollideWorldBounds(true);
   if(base==='wraith'){b.body.setAllowGravity(false);b.y=gy-40}else{this.physics.add.collider(b,this.solids);this.physics.add.collider(b,this.oneways)}
   const e={k,base,b,x0:x,hp:EHP[k]*this.ngMul,state:'idle',t:rnd(0,1),f:-1,flash:0,dead:false,cd:rnd(1,2.5),souls:ESOULS[k]*(1+this.ng),guard:3,combo:0,gy};this.enemies.push(e);return e}
@@ -491,10 +513,10 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(this.loreView){this.loreView.t+=dt;if(this.loreView.t>.35&&(inp.restP||inp.atkP||inp.jumpP||inp.rollP||inp.l||inp.r))this.loreView=null;inp={}}
   else if(inp.restP&&this.pb.body.blocked.down&&this.interact())inp={...inp,restP:0};this.inp=inp;
   P.x=b.x;P.y=b.body.bottom;
-  this.updatePlayer(dt,inp);this.updateArrows(dt);this.updatePickups();this.updateLevel(dt);this.updateEnemies(dt);this.updateBoss(dt);this.updateSpells(dt);this.updateCine(dt);
+  this.updatePlayer(dt,inp);this.updateArrows(dt);this.updatePickups();this.updateLevel(dt);if(NET.guest())NET.guestSim(this,dt);else{this.updateEnemies(dt);this._inE=0;this.updateBoss(dt)}NET.tick(this,dt);this.updateSpells(dt);this.updateCine(dt);
   // bloodstain: recover souls (Tester r1 P1 #2)
   const S=this.stain;if(S&&!P.dead){if(Math.random()<.5)this.fx.add({k:'soul',x:S.x+rnd(-3,3),y:(S.y||GY)-rnd(0,4),vx:rnd(-4,4),vy:rnd(-24,-10),l:.31,m:.9});
-   if(Math.abs(P.x-S.x)<10&&Math.abs(P.y-(S.y||GY))<24){this.gainSouls(S.souls);this.fx.soul(S.x,(S.y||GY)-6,20);this.sfx('souls',.5);this.say('SOULS RETRIEVED',2);this.stain=null;this.sv.stain=null;this.sv.souls=this.souls;Save.write(this.sv)}}
+   if(Math.abs(P.x-S.x)<10&&Math.abs(P.y-(S.y||GY))<24){this.gainSouls(S.souls,1);this.fx.soul(S.x,(S.y||GY)-6,20);this.sfx('souls',.5);this.say('SOULS RETRIEVED',2);this.stain=null;this.sv.stain=null;this.sv.souls=this.souls;Save.write(this.sv)}}
   for(const[x,by]of this.braziers)if(Math.abs(x-this.cam.scrollX-160)<200&&Math.abs(by-this.cam.scrollY-90)<140){this.fx.fire(x,by-15,2,2);if(Math.random()<.06)this.fx.ember(x,by-18,1)}
   if(Math.abs(this.bonfire.x-P.x)<240){const n=this.bonfire.lit?2:1;for(let i=0;i<n;i++)this.fx.fire(this.bonfire.x,GY-3,1,this.bonfire.lit?4:2,this.bonfire.lit?1.3:.7);if(Math.random()<.15)this.fx.ember(this.bonfire.x,GY-8,1)}
   const th=this.def.theme,cX=this.cam.scrollX,cY=this.cam.scrollY;
@@ -534,9 +556,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(P.y-this.camY<56)ty=Math.min(ty,P.y-56);if(P.y-this.camY>170)ty=Math.max(ty,P.y-170);
   this.camTY=ty;this.camY=lerp(this.camY,ty,1-Math.pow(.004,dt));if(P.y-this.camY>176)this.camY=P.y-176;this.camY=clamp(this.camY,D.top,D.bottom-H);this.cam.scrollY=Math.round(this.camY)}
  setGates(ch,closed){for(const g of ch.gateObjs){g.closed=closed;g.body.body.enable=closed}}
- hitBreakable(k){k.hp--;k.flash=.1;const r=k.r,mx=(r[0]+r[2])/2,my=(r[1]+r[3])/2;this.fx.dust(mx,my,8);this.fx.spark(mx,my,8,0xb0a8d8,100);this.sfx('crumble',.25);this.cam.shake(90,.008);
+ hitBreakable(k,fromNet){if(NET.guest()&&!fromNet){k.flash=.1;this.sfx('crumble',.25);NET.send({t:'brk',id:k.id});return}k.hp--;k.flash=.1;const r=k.r,mx=(r[0]+r[2])/2,my=(r[1]+r[3])/2;this.fx.dust(mx,my,8);this.fx.spark(mx,my,8,0xb0a8d8,100);this.sfx('crumble',.25);this.cam.shake(90,.008);
   if(k.hp<=0){k.body.body.enable=false;k.body.destroy();for(let i=0;i<20;i++)this.fx.add({k:'dust',x:rnd(r[0],r[2]),y:rnd(r[1],r[3]),vx:rnd(-40,40),vy:rnd(-60,-10),l:0,m:rnd(.4,.8),sz:2});this.cam.shake(200,.014);this.sfx('crumble',.5);this.pop('THE WALL GIVES WAY',mx,r[1]-8);this.sv.broken.push(k.id);Save.write(this.sv)}}
- freeCage(c){c.freed=true;this.sv.freed.push(c.id);this.gainSouls(50);Save.write(this.sv);const n=this.cages.filter(q=>q.freed).length;
+ freeCage(c,fromNet){if(NET.guest()&&!fromNet){if(!c.req){c.req=1;NET.send({t:'cage',id:c.id});setTimeout(()=>c.req=0,800)}return}c.freed=true;this.sv.freed.push(c.id);this.gainSouls(50);Save.write(this.sv);const n=this.cages.filter(q=>q.freed).length;
   this.fx.spark(c.x,c.y-8,20,C.f1,140);this.fx.spark(c.x,c.y-8,10,0x8b86a8,120);this.fx.ember(c.x,c.y-8,24,2);for(let i=0;i<30;i++)this.fx.fire(c.x+rnd(-4,4),c.y-8-i*2,1,2,1.4);
   this.novas.push({x:c.x,y:c.y-8,t:0,m:.5,parry:1});this.sfx('chime',.5);this.sfx('souls',.4);this.pop('EMBER FREED '+n+'/'+this.cages.length,c.x,c.y-26,0xffb04a);this.cam.shake(120,.008);if(this.hs<=0)this.hitstop(.06)}
  spawnWave(ch){ch.live=ch.waves[ch.wave].map(([k,x,y])=>{const e=this.spawnEnemy(k,x,y);e.temp=1;e.state=k==='imp'?'hop':'chase';this.fx.ember(x,y-8,16,1.6);this.fx.fire(x,y-2,12,4,1.2);return e});this.say(ch.name+' - WAVE '+(ch.wave+1),1.6)}
@@ -544,7 +566,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(const c of this.covers){const r=c.r,inside=P.x>r[0]-2&&P.x<r[2]+2&&P.y-7>r[1]&&P.y-7<r[3]+2;c.a=lerp(c.a,inside?0:1,1-Math.pow(.001,dt));c.img.setAlpha(c.a);
    if(inside&&!c.found){c.found=true;this.sv.found.push(c.id);Save.write(this.sv);this.pop('HIDDEN ROOM',P.x,P.y-26,0x9ff0dc);this.sfx('chime',.35)}}
   for(const k of this.breakables)k.flash-=dt;
-  for(const ch of this.chs){const z=ch.zone,inZ=P.x>z[0]&&P.x<z[2]&&P.y>z[1]&&P.y<=z[3]+1&&!P.dead;
+  for(const ch of NET.guest()?[]:this.chs){const z=ch.zone,inZ=P.x>z[0]&&P.x<z[2]&&P.y>z[1]&&P.y<=z[3]+1&&!P.dead;
    if(ch.type==='timer'){if(!inZ&&!ch.active)ch.armed=1;
     if(!ch.active&&!ch.done&&inZ&&ch.armed){ch.active=1;ch.armed=0;ch.t=ch.limit;this.setGates(ch,false);this.say(ch.name+' - REACH THE CAGE',2);this.sfx('charge',.4);this.cam.shake(120,.006)}
     if(ch.active){ch.t-=dt;const cg=this.cages.find(c=>c.id===ch.cage);if(cg&&cg.freed){ch.active=0;ch.done=1;if(!this.sv.chDone.includes(ch.id))this.sv.chDone.push(ch.id);Save.write(this.sv);this.say('CHALLENGE CLEARED',2)}
@@ -625,7 +647,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(P.state==='rest'){if(P.t>1.4)P.state='idle'}
   P.wasOn=on;P.lastVy=body.velocity.y;
   if(P.hp<=0&&!P.dead)this.die()}
- hurtPlayer(n,src,att){const P=this.player;if(P.dead||this.cine||this.victory)return false;
+ hurtPlayer(n,src,att){if(this._inE&&this._eRemote)return false;// co-op: the guest takes its own damage from the host's enemy state
+  const P=this.player;if(P.dead||this.cine||this.victory)return false;
   if(att&&P.state==='parry'&&P.t<TUNE.parryWin&&(Math.sign(src-P.x)||P.f)===P.f){this.parried(att);return false}
   if(P.inv>0)return false;
   {const rb=this.rb();if(P.state==='roll'&&P.t>=rb.i0&&P.t<rb.i1){this.stats.dodged++;return false}}
@@ -651,7 +674,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const B=this.boss;if(B&&this.bossState==='fight'&&hit(B.x,B.y-16,18,32)){if(B.state==='stag'){this.damageBoss(1.5*TUNE.ripMul*ar*crit);rip=true;B.state='walk';B.cd=1}else this.damageBoss(1.5*ar);any=true}
   if(rip){this.stats.ripostes++;this.pop('RIPOSTE',hx,hy-14,0xffb04a);this.flashF=2;this.fx.spark(hx,hy,24,C.f1,180,20)}
   if(any){P.hitDone=true;this.hitstop(rip?.14:.055);this.cam.shake(rip?200:70,rip?.016:.006)}}
- damageEnemy(e,n,dir){e.hp-=n;e.flash=.1;this.fx.spark(e.b.x,e.b.y,10,0xffd04a,120,20);this.sfx('hit',.3);if(e.base!=='wraith')e.b.setVelocity(dir*90,-60);else e.b.x+=dir*6;
+ damageEnemy(e,n,dir,fromNet){if(NET.guest()&&!fromNet){e.flash=.1;this.fx.spark(e.b.x,e.b.y,10,0xffd04a,120,20);this.sfx('hit',.3);NET.send({t:'dmg',i:this.enemies.indexOf(e),n,dir});return}e.hp-=n;e.flash=.1;this.fx.spark(e.b.x,e.b.y,10,0xffd04a,120,20);this.sfx('hit',.3);if(e.base!=='wraith')e.b.setVelocity(dir*90,-60);else e.b.x+=dir*6;
   if(e.hp<=0&&!e.dead){e.dead=true;e.deadT=0;e.b.body.enable=false;this.fx.soul(e.b.x,e.b.y,8);this.gainSouls(e.souls);this.fx.dust(e.b.x,e.b.body.bottom,10);
    if(e.base==='imp')this.explode(e.b.x,e.b.y,false)}}
  explode(x,y,hurts){this.fx.fire(x,y,30,6,1.4);this.fx.spark(x,y,16,C.f1,150);this.fx.ember(x,y,10,2);this.novas.push({x,y,t:0,m:.25,fire:1});this.cam.shake(140,.01);
@@ -672,7 +695,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if((inp.jumpP||inp.atkP||inp.restP&&M.t>.3)&&!(M.kOk&&this.time.now-M.kOk<250))this.menuKey('ok');else if(inp.rollP)this.menuKey('back')}
  eqOpts(row){const inv=this.sv.inv;if(row===0)return inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='main');if(row===1)return[null,...inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='off')];return['none',...inv.filter(i=>ARMORS[i]&&i!=='none')]}
  menuKey(k){const M=this.menu;if(!M)return;const sv=this.sv;this.sfx('menu',.2);
-  if(M.mode==='main'){const O=this.mainOpts(),n=O.length;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='ok'){const o=O[M.sel];if(o==='LEVEL UP'){M.mode='level';M.sel=0;M.pend={...sv.stats};M.spent=0}else if(o==='EQUIPMENT'){M.mode='equip';M.sel=0}else if(o==='ITEMS AND SPELLS'){M.mode='items';M.sel=0}else if(o==='TRAVEL TO THE SHRINE')this.travel('shrine',{next:this.sid,bonfire:true});else this.menu=null}else this.menu=null;return}
+  if(M.mode==='main'){const O=this.mainOpts(),n=O.length;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='ok'){const o=O[M.sel];if(o==='LEVEL UP'){M.mode='level';M.sel=0;M.pend={...sv.stats};M.spent=0}else if(o==='EQUIPMENT'){M.mode='equip';M.sel=0}else if(o==='ITEMS AND SPELLS'){M.mode='items';M.sel=0}else if(o==='TRAVEL TO THE SHRINE'&&NET.guest()){this.menu=null;this.pop('THE HOST LEADS THE WAY',this.player.x,this.player.y-26,0x9ff0dc)}else if(o==='TRAVEL TO THE SHRINE')this.travel('shrine',{next:this.sid,bonfire:true});else this.menu=null}else this.menu=null;return}
   if(M.mode==='items'){const L=this.itemList(),n=L.length;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='ok'||k==='back'){M.mode='main';M.sel=2}return}
   if(M.mode==='keeper'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;else if(k==='ok'){if(M.sel===0){M.mode='talk';M.page=0;M.t=0;sv.met=1;this.sfx('talk',.3)}else if(M.sel===1){M.mode='shop';M.sel=0;M.say=KEEPER.shop}else{this.menu=null;this.pop(KEEPER.bye,this.def.keeper,GY-34,0xd8c8b0)}}else if(k==='back')this.menu=null;return}
   if(M.mode==='talk'){const L=KEEPER.lines[this.keeperTier()];if(k==='ok'||k==='back'){if(M.t*45<L[M.page].length&&k==='ok'){M.t=99;return}M.page++;M.t=0;this.sfx('talk',.3);if(M.page>=L.length||k==='back'){sv.heard=Math.max(sv.heard||0,this.keeperTier()+1);Save.write(sv);M.mode='keeper';M.sel=1}}return}
@@ -687,8 +710,11 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(M.mode==='equip'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;
    else if(k==='left'||k==='right'){const o=this.eqOpts(M.sel),key=['main','off','armor'][M.sel],i=o.indexOf(sv.eq[key]);sv.eq[key]=o[(i+(k==='right'?1:o.length-1))%o.length];this.applyBuild(false);Save.write(sv)}
    else{M.mode='main';M.sel=1}}}
- updatePickups(){const P=this.player;for(let i=this.items.length-1;i>=0;i--){const it=this.items[i];if(Math.abs(P.x-it.x)<10&&Math.abs(P.y-it.y)<20&&!P.dead){this.items.splice(i,1);
-   if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=itemName(it.item);this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('pickup',.45);this.fx.spark(it.x,it.y-6,14,C.f1,90)}}}
+ updatePickups(){const P=this.player;for(let i=this.items.length-1;i>=0;i--){const it=this.items[i];if(Math.abs(P.x-it.x)<10&&Math.abs(P.y-it.y)<20&&!P.dead){
+   if(NET.guest()){if(!it.req){it.req=1;NET.send({t:'pick',id:it.id});setTimeout(()=>it.req=0,800)}continue}this.takeItem(it);if(NET.host())NET.send({t:'picked',id:it.id,item:it.item})}}}
+ // loot: both players receive a picked item (host decides who touched it first)
+ takeItem(it){const i=this.items.indexOf(it);if(i>=0)this.items.splice(i,1);
+   if(!this.sv.inv.includes(it.item))this.sv.inv.push(it.item);this.sv.picked.push(it.id);Save.write(this.sv);const nm=itemName(it.item);this.pop('GOT '+nm,it.x,it.y-28,0xffe2a8);this.say(nm+' - EQUIP AT A BONFIRE',2.2);this.sfx('pickup',.45);this.fx.spark(it.x,it.y-6,14,C.f1,90)}
  // ---------------- spells ----------------
  castIce(x,f,owner,gy=GY){const V=ICEP;for(let i=0;i<V.n;i++){const sx=Math.round(x+i*V.step*f);if(this.lv&&Math.abs(this.lv.floorAt(sx,gy-6)-gy)>4)break;this.spells.push({k:'spike',gy,x:sx,t:-i*.045,h:lerp(V.hMin,V.hMax,Math.abs(Math.sin(i*2.3+x))),lean:rnd(-.4,.4),owner,hit:false})}this.cam.shake(80,.004)}
  castDome(x,owner,harmless,gy=GY){this.novas.push({dome:1,owner,harmless,x,y:gy,R:TUNE.domeR,grow:.45,t:0,m:1.8});this.cam.shake(160,.008);this.fx.shard(x,gy,20,120)}
@@ -723,7 +749,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(this.lv.kAt(s.x,s.y)===K_SOLID||s.t>(s.life||3)){if(fire){this.fx.fire(s.x,s.y,12,4,1.2);this.fx.ember(s.x,s.y,4,1.5)}else this.fx.shard(s.x,s.y,8);if(s.g)this.cam.shake(60,.004);this.shots.splice(i,1)}}}
  clearLine(x0,y0,x1,y1){for(let k=1;k<8;k++){const x=lerp(x0,x1,k/8),y=lerp(y0,y1,k/8);if(this.lv.kAt(x,y)===K_SOLID)return false}return true}
  // ---------------- enemies ----------------
- updateEnemies(dt){const P=this.player;for(const e of this.enemies){if(e.dead){e.deadT+=dt;continue}const b=e.b;e.t+=dt;e.flash-=dt;e.cd-=dt;const dx=P.x-b.x,adx=Math.abs(dx);
+ updateEnemies(dt){this._inE=1;for(const e of this.enemies){const P=NET.target(this,e);this._eRemote=!!P.remote;if(e.dead){e.deadT+=dt;continue}const b=e.b;e.t+=dt;e.flash-=dt;e.cd-=dt;const dx=P.x-b.x,adx=Math.abs(dx);
    if(adx>260||Math.abs(P.y-b.y)>150)continue;
    if(e.base==='hollow'||e.base==='knight'){const on=b.body.blocked.down,kn=e.base==='knight';
     if(e.state==='stag'){b.setVelocityX(b.body.velocity.x*.85);if(Math.random()<.3)this.fx.star(b.x+rnd(-4,4),b.y-12,C.f1);if(e.t>TUNE.stagT){e.state='chase';e.cd=.6}}
@@ -773,7 +799,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(B.hp<=0){this.bossState='dying';B.t=0;this.sfx('death',.6);this.say(this.def.boss.slain,3);this.cam.shake(600,.02)}}
   if(this.bossState==='dying'){if(Math.random()<.9)this.fx.shard(B.x+rnd(-10,10),B.y-rnd(0,34),2,120);if(Math.random()<.3)this.fx.spark(B.x+rnd(-8,8),B.y-rnd(0,30),4,C.ice2);
    if(B.t>2.2)this.finishBoss(B)}}
- finishBoss(B){this.bossState='dead';this.fx.soul(B.x,B.y-16,60);this.gainSouls((B.kind==='warden'?2000:3000)*(1+this.ng));this.gateL.body.enable=false;this.shots.length=0;this.flames=[];
+ finishBoss(B){this.bossState='dead';if(NET.host())NET.send({t:'bossdead',slain:this.def.boss.slain});this.fx.soul(B.x,B.y-16,60);this.gainSouls((B.kind==='warden'?2000:3000)*(1+this.ng));this.gateL.body.enable=false;this.shots.length=0;this.flames=[];
   const bk='ashenVigil.best.'+this.sid;// r3 P3: one naming scheme for every stage (legacy ramparts key migrated below)
   {const old=localStorage.getItem('ashenVigil.best');if(old&&!localStorage.getItem('ashenVigil.best.ramparts'))try{localStorage.setItem('ashenVigil.best.ramparts',old)}catch(e){}}
   if(!this.sv.lords.includes(B.kind))this.sv.lords.push(B.kind);
@@ -874,7 +900,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(rise<1){g.fillStyle(0x8a1a08);g.fillRect(x-18,GY,36,50);ga.fillStyle(C.f2,.7);ga.fillRect(x-18,GY,36,1);glow(ga,x,GY,20,C.f2,.25)}
   if(B.state==='roar')glow(ga,x,y-24,34+Math.sin(t*20)*4,C.f2,.22);
   for(const fl2 of this.flames){const fx=Math.round(fl2.x);glow(ga,fx,GY-6,10,C.f2,.3);this.light(fx,GY-8,30,C.f2,.7);for(let k=0;k<4;k++){ga.fillStyle(k<2?C.f1:C.f2,.8);ga.fillRect(fx-2+k,GY-4-k*3-((t*30+k*5)%4),2,4)}}}
- damageBoss(n){const B=this.boss;if(!B||this.bossState!=='fight')return;if(B.state==='roar'){this.fx.spark(B.x,B.y-18,6,0xffffff,80);return}B.hp-=n;if(B.flashCd<=0){B.flash=2;B.flashCd=.15}this.fx.spark(B.x,B.y-18,12,B.kind==='king'?C.f1:C.ice1,130,30);this.sfx('hit',.35)}
+ damageBoss(n,fromNet){if(NET.guest()&&!fromNet){const B=this.boss;if(B){B.flash=2;this.fx.spark(B.x,B.y-18,6,0xffd04a,80)}this.sfx('hit',.3);NET.send({t:'bdmg',n});return}const B=this.boss;if(!B||this.bossState!=='fight')return;if(B.state==='roar'){this.fx.spark(B.x,B.y-18,6,0xffffff,80);return}B.hp-=n;if(B.flashCd<=0){B.flash=2;B.flashCd=.15}this.fx.spark(B.x,B.y-18,12,B.kind==='king'?C.f1:C.ice1,130,30);this.sfx('hit',.35)}
  startCine(){this.gateL.body.enable=true;for(const e of this.enemies)if(!e.dead&&e.b.x<ARENA_L){e.dead=true;e.deadT=1;e.b.body.enable=false}this.shots.length=0;const BD=this.def.boss,hp=(BD.hp||40)*this.ngMul;this.flames=[];this.boss={kind:BD.kind,phase:1,x:ARENA_R-60,y:GY,f:-1,hp,hpMax:hp,t:0,state:'rise',cd:1.5,flash:0,flashCd:0,eyeFlash:0,step:0,eyes:0,rise:0,wt:.7};
   this.cine={t:0};this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,900,'Sine.easeInOut')}
  updateCine(dt){const c=this.cine;if(!c)return;c.t+=dt;const B=this.boss;this.bars=Math.min(1,c.t/.5);
@@ -891,7 +917,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  victoryTap(p){const V=this.victory;if(V.t<.8)return;const y0=V.phase==='choose'?112:121,i=Math.floor((p.y-y0)/11),n=V.phase==='choose'?2:this.victoryOpts().length;if(i<0||i>=n)return;V.sel=i;this.victoryGo()}
  victoryGo(){const V=this.victory;if(V.gone)return;
   if(!V.clear&&V.phase!=='choose'&&V.sel===0){V.phase='choose';V.sel=0;V.t=.8;this.sfx('chime',.4);return}
-  if(V.phase==='choose'){V.gone=1;const kind=V.sel?'fade':'rekindle';this.cam.fadeOut(800,kind==='fade'?2:40,kind==='fade'?2:20,kind==='fade'?6:5);this.time.delayedCall(820,()=>this.scene.start('ending',{kind}));return}
+  if(V.phase==='choose'){V.gone=1;const kind=V.sel?'fade':'rekindle';this.cam.fadeOut(800,kind==='fade'?2:40,kind==='fade'?2:20,kind==='fade'?6:5);if(NET.host())NET.send({t:'ending',kind});this.time.delayedCall(820,()=>this.scene.start('ending',{kind}));return}
   if(V.clear&&V.sel===1){V.gone=1;this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{Save.write({...this.sv,stage:'shrine',hubNext:this.def.next,retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})});return}
   if(V.clear&&V.sel===2)V.sel=1;
   V.gone=1;this.cam.fadeOut(500,7,5,15);
@@ -955,7 +981,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(st==='parry')fr=P.t<TUNE.parryWin?0:1;
   else if(st==='climb')fr=Math.floor(P.run)%2;
   if(P.land>0&&st==='idle')st='rollrec';
-  const pf=P.pflash>0;if(pf)P.pflash--;drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.32);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);
+  const pf=P.pflash>0;if(pf)P.pflash--;drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});this._hero={st,fr,hv:P.heavy&&P.state==='atk'};HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.32);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);
   if(P.state==='atk'){const m=this.move();if(P.t>=m.h0-.02&&P.t<m.h1+.08){const k=(P.t-m.h0+.02)/(m.h1-m.h0+.1);
     if(m.arc)drawSlash(ga,x+f*2,y-10-(m.spin?0:0),f,k,this.wp===WEAPONS.longsword&&!P.heavy?SLASH:m.arc,P.combo===1);
     else if(m.stab){const L=(m.reach||12)+6,yy=y-9+(P.combo===1?-2:P.combo===2?1:0);for(let i=0;i<L;i++){const a=(1-Math.abs(i/L-k))*.8;if(a>0)px(ga,x+f*(4+i),yy,i>L-4?0xffffff:C.f1,a)}glow(ga,x+f*(4+L*k),yy,4,C.f2,.3)}
@@ -1009,7 +1035,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const hx=X(9),hy=y-24+crouch;const ex=hx+Math.cos(ang)*24*f,ey=hy+Math.sin(ang)*24;line(g,hx,hy,ex,ey,C.ice2);line(g,hx+0,hy+1,ex,ey+1,C.ice4);px(ga,ex,ey,0xffffff);glow(ga,(hx+ex)/2,(hy+ey)/2,6,C.ice3,.15);
   if(B.state==='slam'&&B.t<.12)drawSlash(ga,X(9),y-24,f,B.t/.12,{r:22,th:4,sweep:150,trail:1});
   if(rise<1){g.fillStyle(0x352c5e);g.fillRect(x-14,GY,28,40);g.fillStyle(0x4b4078);g.fillRect(x-14,GY,28,1)}}
- drawHUD(){const g=this.gu,ga=this.gua,P=this.player,t=this.t;g.clear();ga.clear();
+ drawHUD(){const g=this.gu,ga=this.gua,P=this.player,t=this.t;g.clear();ga.clear();NET.hud(this,g);
   if(this.bars>0){const bh=Math.round(22*this.bars);g.fillStyle(0x05040b);g.fillRect(0,0,W,bh);g.fillRect(0,H-bh,W,bh)}
   if(this.flashA>0){ga.fillStyle(0xd8d0ff,this.flashA);ga.fillRect(0,0,W,H);this.flashA-=this.dt*2.2}
   if(this.flashF>0){ga.fillStyle(0xd8d0ff,.15);ga.fillRect(0,0,W,H);if(!this.paused)this.flashF--}
@@ -1074,6 +1100,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  interact(){const P=this.player,D=this.def,near=(x,r=14)=>Math.abs(P.x-x)<r;
   for(const l of this.lore)if(near(l.x,12)&&Math.abs(P.y-l.y)<20){this.loreView={id:l.id,t:0};if(!l.read){l.read=true;this.sv.lore.push(l.id);Save.write(this.sv);this.pop('LORE '+this.sv.lore.length+'/'+Object.keys(LORE).length,l.x,l.y-30,0xffb04a)}this.sfx('chime',.25);this.stats.loreRead=(this.stats.loreRead||0)+1;return true}
   if(D.hub&&near(D.keeper,18)){this.menu={mode:'keeper',sel:0,t:0,prev:{}};P.f=Math.sign(D.keeper-P.x)||1;this.pb.setVelocityX(0);this.sfx('talk',.3);return true}
+  if(D.hub&&near(D.exit,16)&&NET.guest()){this.pop('THE HOST LEADS THE WAY',P.x,P.y-26,0x9ff0dc);return true}
   if(D.hub&&near(D.exit,16)){const to=this.sv.hubNext&&STAGE_DEFS[this.sv.hubNext]?this.sv.hubNext:'ramparts';this.say('TRAVELLING TO '+STAGE_DEFS[to].name,1.5);this.travel(to);return true}
   return false}
  touchMir(){const inv=this.sv.inv,P=this.player;if(inv.includes('heal')&&P.hp<P.hpMax*.5)return'heal';if(inv.includes('lspear'))return'lspear';if(inv.includes('heal'))return'heal';return inv.includes('blessed')?'blessed':'heal'}

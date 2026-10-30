@@ -44,7 +44,7 @@ await ev(()=>{const s=S();s.menu={mode:'keeper',sel:1,t:0,prev:{}};s.souls=5000;
 R.buy=await ev(()=>{const s=S(),L=s.shopList(),i=L.findIndex(x=>x[0]==='talisman');s.menu.sel=i;const s0=s.souls;s.menuKey('ok');const j=s.shopList().findIndex(x=>x[0]==='lspear');s.menu.sel=j;s.menuKey('ok');const f0=s.player.flasks;s.menu.sel=s.shopList().findIndex(x=>x[0]==='flask');s.menuKey('ok');
  return{spent:s0-s.souls,inv:s.sv.inv.filter(i=>['talisman','lspear'].includes(i)),flaskBonus:s.sv.flaskBonus,flasks:s.player.flasks-f0,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).inv.includes('talisman'),poor:(s.souls=0,s.menu.sel=0,s.menuKey('ok'),s.menu.say)}});
 await wait(150);await shot('e09_merchant_not_enough_souls');await ev(()=>{S().menu=null});
-ok('merchant_sells_items_for_souls',R.buy.spent===600+1200+2000&&R.buy.inv.length===2&&R.buy.flaskBonus===1&&R.buy.flasks===1&&R.buy.saved&&/LACK/.test(R.buy.poor),R.buy);
+ok('merchant_sells_items_for_souls',R.buy.spent===600+1200+2000&&R.buy.inv.length===2&&R.buy.flaskBonus===1&&R.buy.flasks===0&&/* r5: a bought flask arrives at the next rest */R.buy.saved&&/LACK/.test(R.buy.poor),R.buy);
 // 6. hub leveling at the shrine bonfire
 await ev(()=>{const s=S();s.souls=3000;tp(s.bonfire.x+4);window.__inp=()=>s.menu?{}:{restP:1}});await pg.waitForFunction(()=>!!S().menu,null,{timeout:5000});
 R.lvl=await ev(()=>{const s=S(),l0=s.lvl,o=s.mainOpts();s.menuKey('ok');s.menuKey('right');s.menu.sel=8;s.menuKey('ok');return{opts:o,l0,l1:s.lvl,souls:s.souls}});await ev(()=>{S().menu=null;idle()});
