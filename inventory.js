@@ -16,6 +16,8 @@ const GEAR={
  ring_greed:{slot:'ring',name:'COVETOUS RING',w:.5,soul:.1,desc:'+10% SOULS'},ring_steel:{slot:'ring',name:'STEEL RING',w:1,abs:.05,desc:'+5% ABSORB'}};
 const INF={heavy:{name:'HEAVY',c:0xb8b0a0},sharp:{name:'SHARP',c:0x9fe0ff},fire:{name:'FIRE',c:0xff8a2a},frost:{name:'FROST',c:0x9fd8ff},lightning:{name:'LTNG',c:0xfff08a},dark:{name:'DARK',c:0xb070ff},holy:{name:'HOLY',c:0xffe8a0}};
 const INV_SPELLS=4;
+// the portrait: the in-game hero art at an integer nearest-neighbour scale (pixel rects, no filtering), feet on the plinth
+const INV_HS=4,INV_HX=52,INV_HY=129;
 // extra armor pieces + rings feed the derived build (pure: same inputs -> same build)
 (()=>{const d0=RPG.derive.bind(RPG);RPG.derive=function(st,eq){const d=d0(st,eq);if(!eq)return d;let w=0,po=0,ab=0,hp=0,fp=0,so=0;
  for(const k of['head','hands','legs','ring1','ring2']){const G=GEAR[eq[k]];if(!G)continue;w+=G.w||0;po+=G.poise||0;ab+=G.abs||0;hp+=G.hpMul||0;fp+=G.fp||0;so+=G.soul||0}
@@ -84,10 +86,10 @@ const INV_SPELLS=4;
   const panel=(x,y,w,h)=>{g.fillStyle(0x07050f,1);g.fillRect(x,y,w,h);g.fillStyle(0x7a5a24);g.fillRect(x,y,w,1);g.fillRect(x,y+h-1,w,1);g.fillRect(x,y,1,h);g.fillRect(x+w-1,y,1,h);g.fillStyle(0xd8b060);[[x,y],[x+w-1,y],[x,y+h-1],[x+w-1,y+h-1]].forEach(([a,b])=>g.fillRect(a,b,1,1))};
   panel(4,4,140,172);panel(146,4,170,172);tiny(g,'EQUIPMENT',10,10,0xffb04a);tiny(g,CLASSES[sv.cls].name+' LV '+this.lvl,60,10,0x8a86c0);
   // the model: 2x, wearing what's equipped (live)
-  const W0=WEAPONS[sv.eq.main],AR=ARMORS[sv.eq.armor||'none'];g.fillStyle(0x15112a);g.fillRect(36,28,56,104);g.fillStyle(0x221c3a);g.fillRect(40,124,48,3);
-  heroStyle(W0,false,AR);g.save();g.translateCanvas(62,124);g.scaleCanvas(2,2);drawHero(g,0,0,1,'idle',Math.floor(t*2)%2,t,{flash:M.flash>0});g.restore();NET.localStyle(this);heroStyle(this.wp,false,ARMORS[sv.eq.armor||'none']);
+  const W0=WEAPONS[sv.eq.main],AR=ARMORS[sv.eq.armor||'none'];g.fillStyle(0x15112a);g.fillRect(32,26,62,106);g.fillStyle(0x221c3a);g.fillRect(36,129,54,3);
+  heroStyle(W0,false,AR);g.save();g.translateCanvas(INV_HX,INV_HY);g.scaleCanvas(INV_HS,INV_HS);drawHero(g,0,0,1,'idle',Math.floor(t*2)%2,t,{flash:M.flash>0});NET.localStyle(this);heroStyle(this.wp,false,ARMORS[sv.eq.armor||'none']);
   // head/hands/legs/rings drawn as overlays on the model
-  const H=GEAR[sv.eq.head],HA=GEAR[sv.eq.hands],LG=GEAR[sv.eq.legs];if(H){g.fillStyle(/rime/.test(sv.eq.head)?0xb8d0ec:0x8a8a9a);g.fillRect(58,82,10,4)}if(HA){g.fillStyle(0x8a8a9a);g.fillRect(54,104,4,3);g.fillRect(68,104,4,3)}if(LG){g.fillStyle(/cloth/.test(sv.eq.legs)?0x6a5a48:0x8a8a9a);g.fillRect(56,114,14,4)}
+  const H=GEAR[sv.eq.head],HA=GEAR[sv.eq.hands],LG=GEAR[sv.eq.legs];if(H){g.fillStyle(/rime/.test(sv.eq.head)?0xb8d0ec:0x8a8a9a);g.fillRect(-2,-21,5,2)}if(HA){g.fillStyle(0x8a8a9a);g.fillRect(-4,-10,2,2);g.fillRect(3,-10,2,2)}if(LG){g.fillStyle(/cloth/.test(sv.eq.legs)?0x6a5a48:0x8a8a9a);g.fillRect(-3,-5,7,2)}g.restore();
   // slots
   this.invLayout={cells:[]};SLOTS.forEach((s,i)=>{const id=this.invCur(s.k),on=M.slot===i;g.fillStyle(id?0x221c3a:0x0d0a18);g.fillRect(s.x,s.y,18,18);
    g.fillStyle(on?(M.focus==='slots'?0xffe2a8:0xb08a40):id?0x6a5a88:0x3a3458);g.fillRect(s.x,s.y,18,1);g.fillRect(s.x,s.y+17,18,1);g.fillRect(s.x,s.y,1,18);g.fillRect(s.x+17,s.y,1,18);

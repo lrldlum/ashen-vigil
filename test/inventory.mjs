@@ -6,7 +6,7 @@ await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());
 await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await pg.waitForTimeout(1200);
 const S=f=>pg.evaluate(f),K=async k=>{await pg.keyboard.press(k);await pg.waitForTimeout(90)};
 await S(()=>{const s=__G.scene.getScene('stage');window.s=s;s.msg=null;s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});s.sv.inv.push('greatsword','spear','talisman','iron_helm','ring_life','ring_sage','iron_greaves');s.menu={mode:'main',sel:s.mainOpts().indexOf('EQUIPMENT'),t:1,prev:{}}});
-await K('Enter');ok('equipment_opens_visual_inventory',await S(()=>s.menu.mode)==='inv');await pg.screenshot({path:'screenshots/inventory/slots.png'});
+await K('Enter');ok('portrait_integer_scale_large',await S(()=>Number.isInteger(INV_HS)&&INV_HS>=4&&INV_HX-11*INV_HS/2>=24&&INV_HY<=132));ok('equipment_opens_visual_inventory',await S(()=>s.menu.mode)==='inv');await pg.screenshot({path:'screenshots/inventory/slots.png'});
 // keyboard: R hand grid, move right, compare shows, Enter equips immediately
 await K('Enter');ok('grid_focus',await S(()=>s.menu.focus)==='grid');await K('ArrowRight');
 const cmp=await S(()=>{const o=s.invOpts('main'),b1=s.invBuildWith('main',o[s.menu.gi]);return{id:o[s.menu.gi],a:s.build.ar,b:b1.ar}});ok('before_after_comparison',cmp.a!==cmp.b,cmp);
