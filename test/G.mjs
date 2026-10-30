@@ -21,7 +21,7 @@ const mk=async(rec)=>{const ctx=await br.newContext({viewport:{width:1280,height
  pg.on('close',()=>{for(const[id,p] of Object.entries(pages))if(p===pg)delete pages[id]});
  if(rec){fs.mkdirSync(VD,{recursive:true});const s=await ctx.newCDPSession(pg);s.on('Page.screencastFrame',f=>{fs.writeFileSync(`${VD}/${String(FR.length).padStart(5,'0')}.jpg`,Buffer.from(f.data,'base64'));FR.push(Date.now());s.send('Page.screencastFrameAck',{sessionId:f.sessionId}).catch(()=>{})});await s.send('Page.startScreencast',{format:'jpeg',quality:80,maxWidth:640,maxHeight:360,everyNthFrame:2})}
  const ev=(f,a)=>pg.evaluate(f,a);
- const go=async q=>{await pg.goto(B+q);await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(700);
+ const go=async q=>{await pg.goto(B+q.replace('?','?seed=0&'));await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(700);
   await ev(()=>{window.S=()=>__G.scene.getScene('stage');window.idle=()=>{window.__inp=()=>({})};window.press=k=>{let n=0;window.__inp=()=>(n++===0?{[k]:1}:{})};window.hold=(o,n)=>{let i=0;window.__inp=()=>(i++<n?o:{})};
    window.tp=(x,y=156)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.state='idle';s.player.inv=99;s.camY=s.camTY=y-156};
    window.clear=()=>{const s=S();s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false})};
@@ -103,7 +103,7 @@ await ev(()=>{const s=S();s.sv.lords=[];tp(STAGE_DEFS.shrine.stair.x);idle()});a
 await ev(()=>{const s=S();s.sv.lords=['warden','cantor','toller']});await wait(200);await ev(()=>press('restP'));await A.pg.waitForFunction(()=>__G.scene.getScene('stage').sid==='belltower'&&__G.scene.getScene('stage').player,null,{timeout:12000}).catch(()=>{});await wait(600);
 const opened=await ev(()=>({sid:S().sid,bossDead:S().bossState==='dead'}));
 ok('frozen_stair_sealed_then_opens_after_cantor',sealed.sid==='shrine'&&opened.sid==='belltower'&&opened.bossDead,{sealed,opened});
-await A.pg.goto(B+'?mute&slot=1&ending=rekindle');await wait(9000);const endL=await ev(()=>__G.scene.getScene('ending').lines);await shot('g11_ending_bell_line');
+await A.pg.goto(B+'?seed=0&mute&slot=1&ending=rekindle');await wait(9000);const endL=await ev(()=>__G.scene.getScene('ending').lines);await shot('g11_ending_bell_line');
 ok('ending_mentions_the_bell',endL.some(s=>/ONE BELL TOLLED/.test(s)),endL);
 // ---------- 9. signature weapons from ALL lords (real kills), equippable, heavy special attacks
 const sig={};
@@ -113,7 +113,7 @@ for(const[stage,kind,w]of[['ramparts','warden','frostbrand'],['cathedral','canto
  sig[kind]=await ev(w=>S().sv.inv.includes(w),w)}
 await go('?play&mute&slot=2&continue');
 const spec=await ev(async()=>{const s=S(),o={};s.menu=null;for(const w of['frostbrand','requiemspear','crownbreaker','clapper']){if(!s.sv.inv.includes(w))s.sv.inv.push(w);s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<30&&s.sv.eq.main!==w;i++)s.menuKey('right');s.menu=null;
-  const P=s.player;P.st=999;P.fp=P.fpMax=99;s.stats.specials=0;const e=s.spawnEnemy('acolyte',P.x+30,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';const h=e.hp,fp=P.fp;P.f=1;P.state='idle';
+  const P=s.player;P.st=999;P.fp=P.fpMax=99;P.spCd=0;s.stats.specials=0;const e=s.spawnEnemy('acolyte',P.x+30,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';const h=e.hp,fp=P.fp;P.f=1;P.state='idle';
   let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(r=>setTimeout(r,1500));window.__inp=()=>({});o[w]={eq:s.sv.eq.main===w,special:s.stats.specials,dmg:+(h-e.hp).toFixed(1),fp:fp-P.fp,spFp:WEAPONS[w].spFp,name:WEAPONS[w].name};e.dead=true;e.b.body.enable=false}return o});
 ok('every_lord_drops_signature_weapon',sig.warden&&sig.cantor&&sig.king&&vic.inv,sig);
 ok('signature_weapons_equippable_with_specials',Object.values(spec).every(o=>o.eq&&o.special===1&&o.dmg>0&&o.fp>=o.spFp*.5),spec);
@@ -122,7 +122,7 @@ await A.ctx.close();
 // ---------- 10. co-op: host-authoritative bells, chests, drops, mimics, boss signature for both
 const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&stage=belltower&class=knight');
 await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000}).catch(()=>{});const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;
-const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?mute&class=pyromancer&join='+code);
+const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?seed=0&mute&class=pyromancer&join='+code);
 await G.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(1500);
 await G.ev(()=>{window.S=()=>__G.scene.getScene('stage');window.tp=(x,y=156)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.inv=99;s.camY=s.camTY=y-156};window.press=k=>{let n=0;window.__inp=()=>(n++===0?{[k]:1}:{})}});
 ok('coop_linked_in_bell_tower',await G.ev(()=>NET.linked()&&S().sid)==='belltower',{});

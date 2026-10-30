@@ -35,7 +35,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   this.lostAt=performance.now()},
  me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,ar:S.sv&&S.sv.eq&&S.sv.eq.armor,
   cls:S.sv.cls,main:S.sv.eq.main,arm:S.sv.eq.armor,lv:S.lvl,sid:S.sid}},
- prog(S){const sv=S.sv;return{bells:sv.bells||[],chests:sv.chests||[],freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked}},
+ prog(S){const sv=S.sv;return{bells:sv.bells||[],chests:sv.chests||[],freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked,seed:sv.seed||0,shortcuts:sv.shortcuts||[]}},
  helloTo(){const S=this.scene;if(!S||!S.sv||!this.linked())return;this.send({t:'hello',sid:S.sid,prog:this.prog(S),ng:S.ng})},
  // ---------- called from Stage ----------
  onStage(S){this.scene=S;if(this.host())this.helloTo();if(this.guest()){this.send({t:'ready',p:this.me()});S.enemies.forEach(e=>{e.b.body.moves=false})}},
@@ -62,6 +62,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    else if(d.t==='brk'){const k=S.breakables.find(k=>k.id===d.id);if(k&&k.hp>0)S.hitBreakable(k,1)}
    else if(d.t==='pick'){const it=S.items.find(i=>i.id===d.id);if(it){S.takeItem(it,1);this.send({t:'picked',id:it.id,item:it.item})}}
    else if(d.t==='bell'){const b=S.bells.find(b=>b.id===d.id);if(b)S.ringBell(b,1)}
+   else if(d.t==='sc'){const c=(S.shortcuts||[]).find(c=>c.id===d.id);if(c)S.openShortcut(c,1)}
    else if(d.t==='chest'){const c=S.chests.find(c=>c.id===d.id);if(c)S.openChest(c,1)}
    else if(d.t==='mhit'){const c=S.chests.find(c=>c.id===d.id);if(c&&c.st==='awake')S.hitMimic(c,d.n,1)}
    else if(d.t==='dpick'){const i=S.drops.findIndex(x=>x.id===d.id);if(i>=0){const dr=S.drops.splice(i,1)[0];this.send({t:'dgot',d:dr});if(dr.kind==='gear'&&!S.sv.inv.includes(dr.item)){S.sv.inv.push(dr.item);Save.write(S.sv);S.pop('COMPANION FOUND '+(WEAPONS[dr.item]||ARMORS[dr.item]).name,S.player.x,S.player.y-30,0x9ff0dc)}}}
@@ -94,6 +95,9 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   // milestone G: bells + chests
   for(const b of S.bells||[])if((p.bells||[]).includes(b.id)&&!b.rung){b.rung=true;b.sw=1;if(!sv.bells.includes(b.id))sv.bells.push(b.id)}// mirror (order puzzles: host already validated)
   for(const b of S.bells||[])if(b.rung&&!(p.bells||[]).includes(b.id)){b.rung=false;sv.bells=sv.bells.filter(i=>i!==b.id)}
+  // r7: the guest adopts the host's mimic roll and opened shortcuts
+  if(p.seed!=null&&p.seed!==sv.seed){sv.seed=p.seed;const m=mimicIds(S.sid,p.seed);for(const c of S.chests||[])if(c.st==='shut')c.mimic=m.has(c.id)?1:0}
+  for(const c of S.shortcuts||[])if((p.shortcuts||[]).includes(c.id)&&!c.open)S.openShortcut(c,1);
   for(const c of S.chests||[])if((p.chests||[]).includes(c.id)&&c.st==='shut')S.openChest(c,1);
   sv.freed=[...p.freed];sv.found=[...p.found];sv.chDone=[...p.chDone];sv.broken=[...p.broken];sv.bonfire=p.bonfire||sv.bonfire},
  applySnap(S,d){if(d.prog)this.applyProg(S,d.prog);

@@ -250,3 +250,37 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - **TEXT SIZE option:** in the pause menu, press T (or tap the row) to switch Large/Small. It is saved in the save (`sv.textSize`) and in localStorage for the title screen.
 - Applies to dialogue, the HUD, menus, boss names, pickups and story text.
 - Shots: `screenshots/text/before|after/t01_dialogue … t06_story.png`. Tests: `test/textfix.mjs` (10 checks).
+
+## r7 fixes (Tester r7 on e04a38e, 7.4/10)
+**P1**
+- **Unique stage plans.** Keep, Spire, Cloister and Throne now have their own part lists, lengths and arena positions:
+  - Keep: 4000 px. Curtain wall, crypt, battlement gantry, gatehouse melee, siege ossuary + shortcut, breach tower, wind trench.
+  - Spire: 4320 px. Comet tower, lens nave, star-chart melee, star gantry, crypt, orrery ossuary + shortcut, zenith tower, tide rampart.
+  - Cloister: 3840 px. Crypt, spore walk, trellis colonnade, bramble ossuary + shortcut, belfry, trellis gantry over a rot bed, yard melee.
+  - Throne: 4640 px. Every echo on the road.
+  - Chests (loot.js), collectibles, cages, lore, items and hazard rectangles all moved per stage. Arena coordinates come from `def.arena` (the boss code's 3170/3300/3000 literals are now ARENA_L-relative).
+- **Mimics rolled per save.** `mimicIds(sid, sv.seed)` keeps the authored count but draws from the visible chests. `?seed=N` pins the roll; seed 0 gives the authored set, which the G–M tests use. In co-op the host's seed rides in prog.
+- **Main road:**
+  - New templates: `lockfight` (a ground melee with full-height gates and two waves), `shortcut`, `windgap`, `gravwall` and `sporewalk`.
+  - Every side stage (G–M) has two forced fights: a ground lockfight, plus the ossuary trial that the road now drops through.
+  - The pre-boss **shortcut door** is barred from the bonfire side. You open its lever from the far side after the ossuary, and it stays open in `sv.shortcuts` (co-op: 'sc' message plus prog).
+  - A hold-Right bot now stalls at the first melee (keep: x≈2000 after 30 s; arena at 3620).
+- **Co-op runaway hollows.** In updateEnemies, a ground foe leaving range drops out of swing/wind with zero velocity. Swing/wind times out after 0.9 s, and a target that jumps more than 200 px in a frame forces a retarget (`stats.swingFix`).
+
+**P2**
+- **Specials.** `specialPower(wp)` uses the held weapon's own AR (0.5×AR), capped at 0.84× that weapon's light DPS. Each special costs at least 14 FP and has a 1.5 s cooldown (`P.spCd`).
+- **Hazards:**
+  - Wind pushes 1500 px/s² on the ground and 1100 px/s² airborne (about 2.5× before), so an idle hero drifts 40–60 px/s and a gust can blow you off a battlement plank.
+  - Spores can kill below 25% HP, and being blighted blocks the flask.
+  - Thorn hedges are solid 12 px bodies; touching one hurts and knocks you back for 0.3 s.
+- **Usurp ending:** its own scene. The Hollow Throne sits on a dais, six coloured lord silhouettes kneel, and the ashen one climbs and takes the seat while a crown of ash kindles.
+
+**P3**
+- The Spire's tide zone is split around the gantry's hidden room, so it is no longer clamped near x1300.
+- Altars accept only the **wielded** weapon (lore h2 says so).
+- Catacomb warning posts: "LAVA BELOW - TAKE THE GANTRY" and "EMBER PITS BELOW".
+
+**Other**
+- The text pass's sentence case now keeps common words (ash, flame…) lowercase inside sentences unless they are part of a name.
+- Tests: `test/r7fix.mjs` (17 checks). G–M now pin `seed=0`, reset `spCd` before scripted specials, and read positions from the defs. L's spore check now expects death below 25%, and M equips each relic's weapon.
+- Shots: `screenshots/r7/before|after/` (the same spots in each stage, plus the catacomb low route and the usurp ending) and `screenshots/r7/after/r0x_*` from the test. Clip: `clips/r7.mp4`.

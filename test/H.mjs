@@ -22,7 +22,7 @@ const mk=async(rec)=>{const ctx=await br.newContext({viewport:{width:1280,height
  pg.on('close',()=>{for(const[id,p] of Object.entries(pages))if(p===pg)delete pages[id]});
  if(rec){fs.mkdirSync(VD,{recursive:true});const s=await ctx.newCDPSession(pg);s.on('Page.screencastFrame',f=>{fs.writeFileSync(`${VD}/${String(FR.length).padStart(5,'0')}.jpg`,Buffer.from(f.data,'base64'));FR.push(Date.now());s.send('Page.screencastFrameAck',{sessionId:f.sessionId}).catch(()=>{})});await s.send('Page.startScreencast',{format:'jpeg',quality:80,maxWidth:640,maxHeight:360,everyNthFrame:2})}
  const ev=(f,a)=>pg.evaluate(f,a);
- const go=async q=>{await pg.goto(B+q);await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(700);
+ const go=async q=>{await pg.goto(B+q.replace('?','?seed=0&'));await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(700);
   await ev(()=>{window.S=()=>__G.scene.getScene('stage');window.idle=()=>{window.__inp=()=>({})};window.press=k=>{let n=0;window.__inp=()=>(n++===0?{[k]:1}:{})};window.hold=(o,n)=>{let i=0;window.__inp=()=>(i++<n?o:{})};
    window.tp=(x,y=156)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.state='idle';s.player.inv=99;s.camY=s.camTY=y-156};
    window.clear=()=>{const s=S();s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false})};
@@ -35,7 +35,7 @@ await A.pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 await go('?play&mute&slot=3&class=knight&stage=ramparts');
 const SIGW=['frostbrand','requiemspear','crownbreaker','clapper','ashmaul'];
 const bal=await ev(async W=>{const s=S(),o={};clear();for(const w of W){if(!s.sv.inv.includes(w))s.sv.inv.push(w);s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<40&&s.sv.eq.main!==w;i++)s.menuKey('right');s.menu=null;
-  const r=[];let spec=0;for(let k=0;k<3;k++){const P=s.player;s.pb.setPosition(400,148);s.pb.setVelocity(0,0);P.st=999;P.fp=P.fpMax=99;P.state='idle';P.f=1;s.stats.specials=0;
+  const r=[];let spec=0;for(let k=0;k<3;k++){const P=s.player;s.pb.setPosition(400,148);s.pb.setVelocity(0,0);P.st=999;P.fp=P.fpMax=99;P.spCd=0;P.state='idle';P.f=1;s.stats.specials=0;
    await new Promise(q=>setTimeout(q,300));P.state='idle';const e=s.spawnEnemy('acolyte',400+30,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,200));const h=e.hp;
    let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(q=>setTimeout(q,1500));window.__inp=()=>({});r.push(h-e.hp);spec+=s.stats.specials;e.dead=true;e.b.body.enable=false}
   o[w]={eq:s.sv.eq.main===w,spec,dmg:+(r.reduce((a,b)=>a+b,0)/r.length).toFixed(2),runs:r.map(x=>+x.toFixed(1)),special:WEAPONS[w].special}}return o},SIGW);
@@ -43,14 +43,14 @@ const fb=bal.frostbrand.dmg;
 ok('signature_heavies_fire_specials_with_real_input',fb>0&&SIGW.every(w=>bal[w].eq&&bal[w].spec===3&&bal[w].dmg>0),bal);
 // the special itself, isolated (same build, same target at +30): each within 0.7x-1.3x of FROSTBRAND's frost row; also against a lord
 const iso=await ev(async W=>{const s=S(),P=s.player,o={};for(const w of W){const r=[];for(let k=0;k<3;k++){s.pb.setPosition(400,148);s.pb.setVelocity(0,0);P.f=1;P.fp=99;await new Promise(q=>setTimeout(q,250));
-  const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,150));const h=e.hp;s.weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,800));r.push(+(h-e.hp).toFixed(2));e.dead=true;e.b.body.enable=false}
+  const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,150));const h=e.hp;(s.player.spCd=0,s).weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,800));r.push(+(h-e.hp).toFixed(2));e.dead=true;e.b.body.enable=false}
   o[w]=+(r.reduce((a,b)=>a+b,0)/r.length).toFixed(2)}return o},SIGW);
 ok('real_heavy_lands_its_special',SIGW.every(w=>bal[w].dmg>=iso[w]*.9),{bal:Object.fromEntries(SIGW.map(w=>[w,bal[w].dmg])),iso});
 ok('signature_specials_balanced_vs_frostbrand',iso.frostbrand>0&&SIGW.every(w=>iso[w]>=iso.frostbrand*.7&&iso[w]<=iso.frostbrand*1.3),{iso,before:{frostbrand:8.8,requiemspear:1.8,crownbreaker:1.7,clapper:1.6}});
 // a special strikes each target once (no multi-hit stacking from overlapping bursts) and lords take a reduced share
 const once=await ev(async()=>{const s=S(),P=s.player,o={};for(const w of['crownbreaker','ashmaul']){s.sv.eq.main=w;s.applyEquip&&s.applyEquip();s.build=s.calcBuild?s.calcBuild():s.build;
   const e=s.spawnEnemy('acolyte',P.x+40,156);e.hp=999;e.temp=1;e.cd=99;let hits=0;const od=s.damageEnemy.bind(s);s.damageEnemy=(x,...a)=>{if(x===e)hits++;return od(x,...a)};
-  P.fp=99;s.weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,700));s.damageEnemy=od;o[w]=hits;e.dead=true;e.b.body.enable=false}return o});
+  P.fp=99;(s.player.spCd=0,s).weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,700));s.damageEnemy=od;o[w]=hits;e.dead=true;e.b.body.enable=false}return o});
 ok('special_hits_each_target_once',Object.values(once).every(n=>n===1),once);
 // ---------- 2. stage data: routes, secrets, collectibles, story
 await go('?play&mute&slot=1&class=knight&stage=catacomb');
@@ -122,13 +122,13 @@ const maul=await ev(async()=>{const s=S();s.menu={mode:'equip',sel:0,t:1,prev:{}
   s.pb.setPosition(1000,148);P.state='idle';await new Promise(r=>setTimeout(r,400));let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});let cols=0;for(let i=0;i<20;i++){await new Promise(r=>setTimeout(r,60));cols=Math.max(cols,(s.forgeCols||[]).length)}window.__inp=()=>({});return{eq:s.sv.eq.main,sp:s.stats.specials,cols,name:WEAPONS.ashmaul.name}});
 await shot('h10_ashmaul_forge_special');
 ok('ashmaul_equippable_forge_special',maul.eq==='ashmaul'&&maul.sp===1&&maul.cols>=1,maul);
-await A.pg.goto(B+'?mute&slot=1&ending=fade');await wait(9000);const endL=await ev(()=>__G.scene.getScene('ending').lines);await shot('h13_ending_forge_line');
+await A.pg.goto(B+'?seed=0&mute&slot=1&ending=fade');await wait(9000);const endL=await ev(()=>__G.scene.getScene('ending').lines);await shot('h13_ending_forge_line');
 ok('ending_mentions_the_forge',endL.some(s=>/LAST FORGE COOLED/.test(s)),endL);
 await A.ctx.close();
 // ---------- 7. co-op in the forge
 const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&stage=catacomb&class=knight');
 await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000}).catch(()=>{});const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;
-const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?mute&class=pyromancer&join='+code);
+const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?seed=0&mute&class=pyromancer&join='+code);
 await G.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(1500);
 await G.ev(()=>{window.S=()=>__G.scene.getScene('stage');window.tp=(x,y=156)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.inv=99;s.camY=s.camTY=y-156};window.press=k=>{let n=0;window.__inp=()=>(n++===0?{[k]:1}:{})}});
 ok('coop_linked_in_catacomb_forge',await G.ev(()=>NET.linked()&&S().sid)==='catacomb',{});

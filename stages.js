@@ -90,6 +90,21 @@ TPL.forge=(x,id)=>({carve:[[x,180,x+400,300],[x+8,156,x+40,180],[x+368,156,x+400
   solid:[[x+72,284,x+112,300],[x+112,268,x+152,300],[x+152,252,x+192,300],[x+232,252,x+272,300],[x+272,268,x+312,300],[x+312,284,x+352,300]],spikes:[[x+192,292,x+232,300]],
   chain:[[x+376,156,x+384,300]],plats:[[x+196,232,32]],braziers:[[x+130,268],[x+290,268]],enemies:[['knight',x+250,252],['hollow',x+60,300]]});
 const KEYS=['carve','solid','oneway','chain','spikes','back','covers','breakables','cages','challenges','braziers','enemies','plats'];
+// ---------------------------------------------------------------------------
+// r7 P1: route templates that put each stage's hazard and two forced fights ON the main road, plus a pre-boss shortcut door.
+// lockfight: a ground-floor melee room; both gates (full height) bar the way until every wave is down.
+// shortcut : an iron door in a full-height wall, barred from the bonfire side; its lever is on the far side (you reach it through the
+//            ossuary trial below), and once pulled it stays open in the save, so the bonfire-to-boss runback is earned once.
+// windgap  : a spike trench with one stone in the middle, under a head-wind that gusts on a timer.
+// gravwall : a 96px rampart that only a gravity-tide float clears.
+// sporewalk: a spore bed over the road with solid thorn hedges to hop while the rot drains you.
+TPL.lockfight=(x,id,name,w=320)=>({challenges:[{id:id+'_lock',type:'waves',name,ground:1,zone:[x+24,96,x+w-24,157],gates:[[x,-204,x+8,156],[x+w-8,-204,x+w,156]],
+  waves:[[['hollow',x+Math.round(w*.4),156],['knight',x+Math.round(w*.7),156]],[['imp',x+Math.round(w*.3),156],['hollow',x+Math.round(w*.8),156],['wraith',x+Math.round(w*.55),120]]]}]});
+TPL.shortcut=(x,id)=>({shortcuts:[{id:id+'_door',x,lever:x+26}]});
+TPL.windgap=(x,id,dir=-1,period=4)=>({spikes:[[x+40,148,x+136,156]],plats:[[x+80,138,16]],wind:[{r:[x-60,-80,x+200,157],dir,period,ground:1}]});
+TPL.gravwall=(x,id,period=4)=>({solid:[[x,60,x+16,156]],lowg:[{r:[x-120,-100,x+16,157],period,ground:1}]});
+TPL.sporewalk=(x,id,w=260,period=4)=>({spores:[{r:[x,90,x+w,160],period,ground:1}],thorns:[[x+Math.round(w*.3),x+Math.round(w*.3)+24,156],[x+Math.round(w*.72),x+Math.round(w*.72)+24,156]]});
+KEYS.push('shortcuts','wind','lowg','spores','thorns');
 function composeStage(base,parts,remap){const d={...base};KEYS.forEach(k=>d[k]=[...(base[k]||[])]);
  parts.forEach(([n,x,...a])=>{const r=TPL[n](x,base.pre+'_'+n+x,...a);KEYS.forEach(k=>{if(r[k])d[k].push(...r[k])})});
  const rk=k=>remap[k]||k;d.enemies=d.enemies.map(([k,x,y])=>[rk(k),x,y]);
@@ -153,7 +168,7 @@ STAGE_DEFS.belltower=composeStage({pre:'bt',name:'THE FROZEN BELL TOWER',world:3
   boss:{kind:'toller',name:'THE RIMEBOUND TOLLER',sub:'LORD OF THE FROZEN BELLS',slain:'THE BELL IS STILL',hp:58,card:'THE LAST BELL IS STILL. THE KEEPER WILL HEAR IT.',
    phases:['THE BELLS TOLL AS ONE','THE PEAL OF ENDINGS'],reward:'clapper'},
   enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2740],['wraith',2860]]},
- [['pillarRoom',160],['crypt',300],['bellframe',1000],['belfry',1100],['ossuary',1720,'BELL TRIAL'],['tower',2150,'FROST RUN',9],['icefall',2830],['ledge',2896]],
+ [['pillarRoom',160],['crypt',300],['bellframe',1000],['belfry',1100],['lockfight',2120,'BELFRY MELEE',300],['shortcut',1840],['ossuary',1720,'BELL TRIAL'],['tower',2150,'FROST RUN',9],['icefall',2830],['ledge',2896]],
  {hollow:'acolyte',knight:'sentinel',wraith:'chorister'});
 STAGE_DEFS.belltower.cages.push({id:'bt_bellcage',x:1250,y:-60,lock:'bt_bells'});
 STAGE_DEFS.belltower.lore=[{id:'b1',x:90,y:156},{id:'b2',x:1360,y:-60},{id:'b3',x:2940,y:156}];
@@ -181,9 +196,10 @@ STAGE_DEFS.catacomb=composeStage({pre:'cf',name:'THE BURNING CATACOMB FORGE',wor
   boss:{kind:'smith',name:'THE ASHWROUGHT SMITH',sub:'LORD OF THE CATACOMB FORGE',slain:'THE FORGE GOES COLD',hp:62,card:'THE LAST ANVIL IS SILENT. THE KEEPER WILL FEEL THE COLD.',
    phases:['THE BELLOWS BREATHE','THE CRUCIBLE POURS'],reward:'ashmaul'},
   enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2740],['wraith',2860]]},
- [['pillarRoom',160],['lavaRise',300],['gantry',1000],['forge',1100],['ossuary',1720,'ANVIL TRIAL'],['tower',2150,'SLAG RUN',9],['slagfall',2830],['ledge',2896]],
+ [['pillarRoom',160],['lavaRise',300],['gantry',1000],['forge',1100],['lockfight',2120,'SLAG-PIT MELEE',300],['shortcut',1840],['ossuary',1720,'ANVIL TRIAL'],['tower',2150,'SLAG RUN',9],['slagfall',2830],['ledge',2896]],
  {hollow:'husk',knight:'cinderknight',wraith:'wisp',imp:'magmaw'});
 STAGE_DEFS.catacomb.cages.push({id:'cf_anvilcage',x:1250,y:-60,lock:'cf_anvils'});
+STAGE_DEFS.catacomb.warns=[{x:292,y:156,t:'LAVA BELOW - TAKE THE GANTRY'},{x:1092,y:156,t:'EMBER PITS BELOW'}];// r7 P3
 STAGE_DEFS.catacomb.lore=[{id:'f1',x:90,y:156},{id:'f2',x:1360,y:-60},{id:'f3',x:2940,y:156}];
 STAGE_DEFS.shrine.descent={x:470};// the Ember Descent (a grate in the shrine floor, right of the keeper)
 
@@ -206,7 +222,7 @@ STAGE_DEFS.drowned=composeStage({pre:'dw',name:'THE DROWNED CRYPT',world:3360,to
   boss:{kind:'abbess',name:'THE TIDEBOUND ABBESS',sub:'LADY OF THE DROWNED CRYPT',slain:'THE TIDE GOES OUT',hp:60,card:'THE TIDE HAS GONE OUT. THE KEEPER IS THE LAST NOVICE.',
    phases:['THE SISTERS SING BENEATH','THE TIDE RISES'],reward:'tidecrook'},
   enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2700],['hollow',2760],['wraith',2860]]},
- [['pillarRoom',160],['crypt',300],['gantry',1000],['nave',1100],['ossuary',1720,'TIDE TRIAL'],['tower',2150,'SLUICE RUN',9],['cistern',2400],['icefall',2830],['ledge',2896]],
+ [['pillarRoom',160],['crypt',300],['gantry',1000],['nave',1100],['lockfight',2110,'SLUICE MELEE',290],['shortcut',1840],['ossuary',1720,'TIDE TRIAL'],['tower',2150,'SLUICE RUN',9],['cistern',2400],['icefall',2830],['ledge',2896]],
  {hollow:'acolyte',knight:'sentinel',wraith:'chorister'});
 STAGE_DEFS.drowned.cages.push({id:'dw_sigilcage',x:1250,y:-60,lock:'dw_sigils'});
 STAGE_DEFS.drowned.lore=[{id:'w1',x:90,y:156},{id:'w2',x:1360,y:-60},{id:'w3',x:2940,y:156}];
@@ -217,87 +233,93 @@ STAGE_DEFS.shrine.well={x:380};// the Drowned Well (between the keeper and the s
 // SIEGE: crumbling walls drop masonry (telegraphed), live BALLISTAE shoot bolts at anyone in their line, and WIND gusts sweep the battlements
 // (def.wind: zones with a direction and a gust period; airborne heroes get blown). Routes: HIGH battlements (chain at 1000, windy) or the LOW
 // undercroft. COLLECTIBLE: wreck all four ballistae to unseal the cage. Lord: THE IRONCLAD CASTELLAN (his gale sweeps the arena in phase 3).
-STAGE_DEFS.keep=composeStage({pre:'kp',name:'THE RUINED RAMPART KEEP',world:3360,top:-204,bottom:364,theme:'keep',side:1,
-  bonfire:1600,bonfireName:'BREACH VIGIL',next:'shrine',bellLock:'kp_ballistae',bellKind:'ballista',
+STAGE_DEFS.keep=composeStage({pre:'kp',name:'THE RUINED RAMPART KEEP',world:4000,arena:[3620,3980],top:-204,bottom:364,theme:'keep',side:1,
+  // r7: its own plan: the curtain wall rises early (pillar rooms), the battlements gantry sits mid-keep, a breach tower crowns the back half,
+  // and the road itself runs through a gatehouse melee, the siege ossuary (shortcut door above it) and a wind-swept spike trench
+  bonfire:2240,bonfireName:'BREACH VIGIL',next:'shrine',bellLock:'kp_ballistae',bellKind:'ballista',
   pal:{sky0:'#0a0a12',sky1:'#10101a',sky2:'#181824',sky3:'#22222e',sky4:'#30303c',far:'#121218',farW:'#3a3a48',farW2:'#8a8aa0',near:'#0a0a10',nearW:'#34343e',
    gTop:'#b8b0a0',g1:'#5a5650',g2:'#4a4642',gM:'#24221f',gD:'#34312c',b0:'#16151a',bM:'#08080a',bH:'#24232a',mist:'rgba(200,200,210,.10)',haze1:'rgba(30,30,40,.55)',haze2:'rgba(44,44,56,.6)',mist2:'rgba(170,170,190,.08)',pil:0x16151a,pilH:0x34343e},
-  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
-  wind:[{r:[1000,-200,1608,-52],dir:1,period:5},{r:[2210,-210,2720,-100],dir:-1,period:4}],
-  masonry:[700,1400,2050,2600],
-  items:[{id:'k_herald',x:1370,y:-104,item:'herald'},{id:'k_axe',x:620,y:300,item:'iron'}],
-  puddles:[[1700,22],[2240,16]],
-  bells:[{id:'bal1',x:1120,y:-60,f:1},{id:'bal2',x:1530,y:-60,f:-1},{id:'bal3',x:2300,y:-100,f:1},{id:'bal4',x:2000,y:156,f:-1}],
+  plats:[[3670,116,40],[3910,116,40],[3770,80,80],[1990,124,40]],
+  wind:[{r:[1060,-200,1668,-52],dir:1,period:5},{r:[2660,-210,3270,-100],dir:-1,period:4}],
+  masonry:[820,1900,2950,3350],
+  items:[{id:'k_herald',x:1456,y:-104,item:'herald'},{id:'k_axe',x:900,y:300,item:'iron'}],
+  puddles:[[1800,22],[3100,16]],
+  bells:[{id:'bal1',x:1120,y:-60,f:1},{id:'bal2',x:2750,y:-100,f:-1},{id:'bal3',x:2100,y:156,f:-1},{id:'bal4',x:900,y:300,f:-1}],
   boss:{kind:'marshal',name:'THE IRONCLAD CASTELLAN',sub:'LORD OF THE RUINED KEEP',slain:'THE KEEP HAS FALLEN',hp:62,card:'THE KEEP HAS FALLEN AT LAST. THE KEEPER KEEPS ALONE.',
    phases:['THE WALLS ANSWER THE HORN','THE WALLS COME DOWN'],reward:'halberd'},
-  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
- [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'SIEGE TRIAL'],['tower',2150,'BREACH RUN',9],['slagfall',2830],['ledge',2896]],
+  enemies:[['hollow',420],['wraith',700],['knight',1000],['imp',1300],['hollow',1560],['wraith',2150],['knight',2900],['imp',3080],['hollow',3200],['wraith',3480],['knight',3520]]},
+ [['pillarRoom',140],['crypt',560],['gantry',1060],['belfry',1240],['lockfight',1720,'GATEHOUSE MELEE'],['ossuary',2360,'SIEGE TRIAL'],['shortcut',2480],['tower',2600,'BREACH RUN',9],['windgap',3300],['ledge',3536]],
  {});
-STAGE_DEFS.keep.cages.push({id:'kp_balcage',x:1250,y:-60,lock:'kp_ballistae'});
-STAGE_DEFS.keep.lore=[{id:'k1',x:90,y:156},{id:'k2',x:1360,y:-60},{id:'k3',x:2940,y:156}];
+STAGE_DEFS.keep.cages.push({id:'kp_balcage',x:1310,y:-60,lock:'kp_ballistae'});
+STAGE_DEFS.keep.lore=[{id:'k1',x:90,y:156},{id:'k2',x:2900,y:-100},{id:'k3',x:3500,y:156}];
 STAGE_DEFS.shrine.gate={x:540};// the Keep Gate (a barred postern in the shrine's east wall)
 // ---------------- milestone K: THE ASTRAL SPIRE — a gothic observatory; gravity tides lift you in pulsing zones, star platforms flicker in and out,
 // starfall rains near the open domes, four star lenses must be turned to the sky (collectible) to unseal the orrery cage; lord: the Starbound Astronomer
-STAGE_DEFS.spire=composeStage({pre:'sp',name:'THE ASTRAL SPIRE',world:3360,top:-204,bottom:364,theme:'spire',side:1,
-  bonfire:1600,bonfireName:'ORRERY VIGIL',next:'shrine',bellLock:'sp_lenses',bellKind:'lens',
+STAGE_DEFS.spire=composeStage({pre:'sp',name:'THE ASTRAL SPIRE',world:4320,arena:[3940,4300],top:-204,bottom:364,theme:'spire',side:1,
+  // r7: its own plan: two observatory towers (a comet run at the gate, a zenith run at the back), the star gantry between them, the
+  // drowned nave of lenses under the gate, a star-chart melee and the orrery ossuary on the road, and a rampart only a gravity tide clears
+  bonfire:2000,bonfireName:'ORRERY VIGIL',next:'shrine',bellLock:'sp_lenses',bellKind:'lens',
   pal:{sky0:'#05041a',sky1:'#0a0826',sky2:'#120e34',sky3:'#1c1644',sky4:'#2a2258',far:'#0c0a1e',farW:'#2e2a5a',farW2:'#a8a0e8',near:'#06051a',nearW:'#2a2648',
    gTop:'#b8b0d8',g1:'#4e4a6a',g2:'#3e3a58',gM:'#1c1a2a',gD:'#2a2840',b0:'#121022',bM:'#06050c',bH:'#221e36',mist:'rgba(170,160,240,.10)',haze1:'rgba(20,16,50,.55)',haze2:'rgba(34,28,70,.6)',mist2:'rgba(200,190,255,.08)',pil:0x121022,pilH:0x2a2648},
-  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
-  lowg:[{r:[1000,-210,1608,-52],period:6},{r:[2210,-210,2720,-100],period:5,off:2}],
-  stars:[[1640,-80,30,3],[1700,-104,30,3.6],[2140,-60,36,4]],
-  starfall:[700,1400,2050,2600],
-  items:[{id:'s_herald',x:1370,y:-104,item:'herald'},{id:'s_ring',x:620,y:300,item:'iron'}],
-  puddles:[[1700,22],[2240,16]],
-  bells:[{id:'ln1',x:1120,y:-60},{id:'ln2',x:1530,y:-60},{id:'ln3',x:2300,y:-100},{id:'ln4',x:2000,y:156}],
+  plats:[[3990,116,40],[4230,116,40],[4090,80,80]],
+  lowg:[{r:[1180,-210,1470,-52],period:6},{r:[1610,-210,1788,-52],period:6,off:1},{r:[2660,-210,3270,-100],period:5,off:2}],
+  stars:[[1840,-80,30,3],[1900,-104,30,3.6],[3560,-60,36,4]],
+  starfall:[600,1500,2400,3600],
+  items:[{id:'s_herald',x:1580,y:-104,item:'herald'},{id:'s_ring',x:500,y:300,item:'iron'}],
+  puddles:[[1900,22],[3700,16]],
+  bells:[{id:'ln1',x:1320,y:-60},{id:'ln2',x:330,y:-100},{id:'ln3',x:2750,y:-100},{id:'ln4',x:600,y:300}],
   boss:{kind:'astronomer',name:'THE STARBOUND ASTRONOMER',sub:'LORD OF THE ASTRAL SPIRE',slain:'THE STARS GO DARK',hp:64,card:'THE LAST STAR-READER IS SILENT. THE SKY IS OURS TO READ.',
    phases:['THE HEAVENS TURN','THE SKY FALLS'],reward:'starlance'},
-  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
- [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'STAR TRIAL'],['tower',2150,'COMET RUN',9],['slagfall',2830],['ledge',2896]],
+  enemies:[['hollow',400],['wraith',680],['knight',1250],['imp',1500],['hollow',1700],['wraith',1900],['knight',2700],['imp',2950],['hollow',3150],['wraith',3500],['knight',3700]]},
+ [['tower',180,'COMET RUN',9],['nave',420],['lockfight',860,'STAR-CHART MELEE'],['gantry',1180],['crypt',1400],['ossuary',2120,'STAR TRIAL'],['shortcut',2240],['tower',2600,'ZENITH RUN',10],['gravwall',3400],['ledge',3856]],
  {});
-STAGE_DEFS.spire.cages.push({id:'sp_orrery',x:1250,y:-60,lock:'sp_lenses'});
-STAGE_DEFS.spire.lore=[{id:'a1',x:90,y:156},{id:'a2',x:1360,y:-60},{id:'a3',x:2940,y:156}];
+STAGE_DEFS.spire.cages.push({id:'sp_orrery',x:1220,y:-60,lock:'sp_lenses'});
+STAGE_DEFS.spire.lore=[{id:'a1',x:90,y:156},{id:'a2',x:3200,y:-100},{id:'a3',x:3820,y:156}];
 STAGE_DEFS.shrine.lift={x:80};// the Star Lift (an orrery cage near the shrine's west end)
 // ---------------- milestone L: THE BLIGHTED CLOISTER — an overgrown garden cloister; poison spore clouds pulse in the beds, thorn brakes line the walks,
 // vines choke the arches; four blighted blooms must be cut back (collectible) to unseal the reliquary cage; lord: the Thorned Prioress
-STAGE_DEFS.cloister=composeStage({pre:'cl',name:'THE BLIGHTED CLOISTER',world:3360,top:-204,bottom:364,theme:'cloister',side:1,
-  bonfire:1600,bonfireName:'TRELLIS VIGIL',next:'shrine',bellLock:'cl_blooms',bellKind:'bloom',
+STAGE_DEFS.cloister=composeStage({pre:'cl',name:'THE BLIGHTED CLOISTER',world:3840,arena:[3460,3820],top:-204,bottom:364,theme:'cloister',side:1,
+  // r7: its own plan: a garden of ground-level beds: the road crosses a spore walk at the gate, the trellis colonnade overhead, the
+  // bramble ossuary (shortcut door) by the bonfire, a second rot bed under the trellis gantry, and a cloister-yard melee before the lord
+  bonfire:1400,bonfireName:'TRELLIS VIGIL',next:'shrine',bellLock:'cl_blooms',bellKind:'bloom',
   pal:{sky0:'#08100a',sky1:'#0c160e',sky2:'#122014',sky3:'#1a2a1a',sky4:'#263822',far:'#0c140c',farW:'#2e3e26',farW2:'#a8c890',near:'#060c06',nearW:'#2a3a24',
    gTop:'#9ab080',g1:'#4e5a40',g2:'#3e4a34',gM:'#1c2418',gD:'#2a3424',b0:'#121a10',bM:'#060a06',bH:'#22301e',mist:'rgba(150,200,110,.10)',haze1:'rgba(20,40,16,.55)',haze2:'rgba(30,54,26,.6)',mist2:'rgba(190,230,150,.08)',pil:0x121a10,pilH:0x2a3a24},
-  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
-  spores:[{r:[560,90,760,160],period:5},{r:[2380,90,2560,160],period:6,off:2},{r:[1100,-150,1280,-60],period:7,off:4}],
-  thorns:[[1800,1832,156],[2580,2612,156],[1640,1664,-60]],
-  vines:[300,1003,2160,2830],
-  items:[{id:'l_herald',x:1370,y:-104,item:'herald'},{id:'l_ring',x:620,y:300,item:'iron'}],
-  puddles:[[1700,22],[2240,16]],
-  bells:[{id:'bl1',x:1120,y:-60},{id:'bl2',x:1530,y:-60},{id:'bl3',x:2300,y:-100},{id:'bl4',x:2000,y:156}],
+  plats:[[3510,116,40],[3750,116,40],[3610,80,80]],
+  spores:[{r:[2500,-150,2700,-60],period:7,off:4}],
+  vines:[736,2400,3000,3376],
+  items:[{id:'l_herald',x:2800,y:-104,item:'herald'},{id:'l_ring',x:300,y:300,item:'iron'}],
+  puddles:[[1200,22],[3200,16]],
+  bells:[{id:'bl1',x:800,y:20},{id:'bl2',x:2500,y:-60},{id:'bl3',x:400,y:300},{id:'bl4',x:2900,y:156}],
   boss:{kind:'prioress',name:'THE THORNED PRIORESS',sub:'LADY OF THE BLIGHTED CLOISTER',slain:'THE GARDEN WITHERS',hp:64,card:'THE PRIORESS SLEEPS AMONG HER ROSES. THE BLIGHT SLEEPS WITH HER.',
    phases:['THE BRAMBLES WAKE','THE GARDEN BREATHES ROT'],reward:'thornbrand'},
-  enemies:[['hollow',380],['wraith',700],['knight',900],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
- [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'BRAMBLE TRIAL'],['tower',2150,'ROT RUN',9],['slagfall',2830],['ledge',2896]],
+  enemies:[['hollow',360],['wraith',640],['knight',1000],['imp',1250],['hollow',2200],['wraith',2450],['knight',2650],['imp',2850],['hollow',2980],['wraith',3300]]},
+ [['crypt',200],['sporewalk',300],['pillarRoom',600],['ossuary',1520,'BRAMBLE TRIAL'],['shortcut',1640],['belfry',1960],['gantry',2400],['sporewalk',2480,300,5],['lockfight',3040,'CLOISTER-YARD MELEE'],['ledge',3376]],
  {});
-STAGE_DEFS.cloister.cages.push({id:'cl_reliquary',x:1250,y:-60,lock:'cl_blooms'});
-STAGE_DEFS.cloister.lore=[{id:'g1',x:90,y:156},{id:'g2',x:1360,y:-60},{id:'g3',x:2940,y:156}];
+STAGE_DEFS.cloister.cages.push({id:'cl_reliquary',x:2650,y:-60,lock:'cl_blooms'});
+STAGE_DEFS.cloister.lore=[{id:'g1',x:90,y:156},{id:'g2',x:1150,y:20},{id:'g3',x:3420,y:156}];
 STAGE_DEFS.shrine.arch={x:250};// the Overgrown Arch (a vine-choked trellis door between the bonfire and the keeper)
 // ---------------- milestone M: THE HOLLOW THRONE — the ashen finale sanctum. Its halls remember every lord: a gale gallery, a weightless nave,
 // a rotting bed and thorn brakes; six relic altars each want one lord's signature weapon (collectible) to open the hollow vault; lord: the Hollow Heir
-STAGE_DEFS.throne=composeStage({pre:'th',name:'THE HOLLOW THRONE',world:3360,top:-204,bottom:364,theme:'throne',side:1,finale:1,
-  bonfire:1600,bonfireName:'LAST VIGIL',next:'shrine',bellLock:'th_relics',bellKind:'relic',
+STAGE_DEFS.throne=composeStage({pre:'th',name:'THE HOLLOW THRONE',world:4640,arena:[4260,4620],top:-204,bottom:364,theme:'throne',side:1,finale:1,
+  // r7: the longest hall: echoes of every lord stand ON the road in turn: a rot bed, the gale gantry, the echo melee, the last ossuary
+  // (shortcut door), a wind trench and a tide rampart, under a tower of the weightless nave
+  bonfire:2300,bonfireName:'LAST VIGIL',next:'shrine',bellLock:'th_relics',bellKind:'relic',
   pal:{sky0:'#0a0806',sky1:'#120e0a',sky2:'#1a1410',sky3:'#241c16',sky4:'#32281e',far:'#120e0a',farW:'#3a3026',farW2:'#d8b890',near:'#080604',nearW:'#30281e',
    gTop:'#a89880',g1:'#5a5046',g2:'#4a423a',gM:'#221e1a',gD:'#322c26',b0:'#16120e',bM:'#080604',bH:'#26201a',mist:'rgba(200,180,150,.10)',haze1:'rgba(40,30,20,.55)',haze2:'rgba(56,44,30,.6)',mist2:'rgba(230,210,180,.08)',pil:0x16120e,pilH:0x30281e},
-  plats:[[3030,116,40],[3270,116,40],[3130,80,80]],
-  wind:[{r:[1000,-200,1608,-52],dir:1,period:5}],
-  lowg:[{r:[2210,-210,2720,-100],period:5,off:2}],
-  spores:[{r:[560,90,760,160],period:5}],
-  thorns:[[1800,1832,156]],
-  items:[{id:'t_herald',x:1370,y:-104,item:'herald'},{id:'t_ring',x:620,y:300,item:'iron'}],
-  puddles:[[1700,22],[2240,16]],
-  bells:[{id:'rl_toller',x:900,y:156,lord:'toller',w:'clapper'},{id:'rl_smith',x:1120,y:-60,lord:'smith',w:'ashmaul'},{id:'rl_abbess',x:1530,y:-60,lord:'abbess',w:'tidecrook'},
-   {id:'rl_marshal',x:2000,y:156,lord:'marshal',w:'halberd'},{id:'rl_astronomer',x:2300,y:-100,lord:'astronomer',w:'starlance'},{id:'rl_prioress',x:2500,y:156,lord:'prioress',w:'thornbrand'}],
+  plats:[[4310,116,40],[4550,116,40],[4410,80,80]],
+  wind:[{r:[1100,-200,1708,-52],dir:1,period:5}],
+  lowg:[{r:[3000,-210,3560,-100],period:5,off:2}],
+  thorns:[[3300,3324,156]],
+  items:[{id:'t_herald',x:1500,y:-104,item:'herald'},{id:'t_ring',x:900,y:300,item:'iron'}],
+  puddles:[[2100,22],[3600,16]],
+  bells:[{id:'rl_toller',x:800,y:156,lord:'toller',w:'clapper'},{id:'rl_smith',x:1220,y:-60,lord:'smith',w:'ashmaul'},{id:'rl_abbess',x:1500,y:300,lord:'abbess',w:'tidecrook'},
+   {id:'rl_marshal',x:2200,y:156,lord:'marshal',w:'halberd'},{id:'rl_astronomer',x:3050,y:-100,lord:'astronomer',w:'starlance'},{id:'rl_prioress',x:3500,y:156,lord:'prioress',w:'thornbrand'}],
   boss:{kind:'heir',name:'THE HOLLOW HEIR',sub:'WHO WEARS THE EMPTY CROWN',slain:'THE THRONE STANDS EMPTY',hp:72,card:'THE HEIR IS ASH. THE THRONE WAITS FOR NO ONE, OR FOR YOU.',
    phases:['THE LORDS ANSWER THEIR HEIR','EVERY LORD AT ONCE'],reward:'hollowbrand'},
-  enemies:[['hollow',380],['wraith',700],['knight',960],['imp',1250],['hollow',1450],['wraith',1900],['knight',2120],['imp',2520],['hollow',2760],['wraith',2860]]},
- [['pillarRoom',160],['crypt',300],['gantry',1000],['belfry',1100],['ossuary',1720,'ECHO TRIAL'],['tower',2150,'LAST RUN',9],['slagfall',2830],['ledge',2896]],
+  enemies:[['hollow',380],['wraith',700],['knight',1150],['imp',1400],['hollow',1600],['wraith',2250],['knight',3000],['imp',3200],['hollow',3450],['wraith',3650],['knight',4000],['hollow',4100]]},
+ [['pillarRoom',140],['crypt',500],['sporewalk',920,170],['gantry',1100],['nave',1300],['lockfight',1760,'ECHO MELEE'],['ossuary',2420,'ECHO TRIAL'],['shortcut',2540],['tower',2900,'LAST RUN',9],['belfry',3000],['windgap',3700],['gravwall',3980],['ledge',4176]],
  {});
-STAGE_DEFS.throne.cages.push({id:'th_vault',x:1250,y:-60,lock:'th_relics'});
-STAGE_DEFS.throne.lore=[{id:'h1',x:90,y:156},{id:'h2',x:1360,y:-60},{id:'h3',x:2940,y:156}];
+STAGE_DEFS.throne.cages.push({id:'th_vault',x:1360,y:-60,lock:'th_relics'});
+STAGE_DEFS.throne.lore=[{id:'h1',x:90,y:156},{id:'h2',x:3500,y:-100},{id:'h3',x:4220,y:156}];
 STAGE_DEFS.shrine.sanctum={x:425};// the Hollow Door (an ash-sealed door that opens once the six lords are beaten)
 const THRONE_LORDS=['toller','smith','abbess','marshal','astronomer','prioress'];

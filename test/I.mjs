@@ -23,7 +23,7 @@ const mk=async(rec)=>{const ctx=await br.newContext({viewport:{width:1280,height
  pg.on('close',()=>{for(const[id,p] of Object.entries(pages))if(p===pg)delete pages[id]});
  if(rec){fs.mkdirSync(VD,{recursive:true});const s=await ctx.newCDPSession(pg);s.on('Page.screencastFrame',f=>{fs.writeFileSync(`${VD}/${String(FR.length).padStart(5,'0')}.jpg`,Buffer.from(f.data,'base64'));FR.push(Date.now());s.send('Page.screencastFrameAck',{sessionId:f.sessionId}).catch(()=>{})});await s.send('Page.startScreencast',{format:'jpeg',quality:80,maxWidth:640,maxHeight:360,everyNthFrame:2})}
  const ev=(f,a)=>pg.evaluate(f,a);
- const go=async q=>{await pg.goto(B+q);await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(700);
+ const go=async q=>{await pg.goto(B+q.replace('?','?seed=0&'));await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(700);
   await ev(()=>{window.S=()=>__G.scene.getScene('stage');window.idle=()=>{window.__inp=()=>({})};window.press=k=>{let n=0;window.__inp=()=>(n++===0?{[k]:1}:{})};window.hold=(o,n)=>{let i=0;window.__inp=()=>(i++<n?o:{})};
    window.tp=(x,y=156)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.state='idle';s.player.inv=99;s.camY=s.camTY=y-156};
    window.clear=()=>{const s=S();s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false})};
@@ -35,11 +35,11 @@ await A.pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 // ---------- 1. the tide-crook special, balanced against FROSTBRAND (same build, same target), and fired by a real heavy
 await go('?play&mute&slot=3&class=knight&stage=ramparts');
 const iso=await ev(async W=>{const s=S(),P=s.player,o={};clear();for(const w of W){const r=[];for(let k=0;k<3;k++){s.pb.setPosition(400,148);s.pb.setVelocity(0,0);P.f=1;P.fp=99;await new Promise(q=>setTimeout(q,250));
-  const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,150));const h=e.hp;s.weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,800));r.push(h-e.hp);e.dead=true;e.b.body.enable=false}
+  const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,150));const h=e.hp;(s.player.spCd=0,s).weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,800));r.push(h-e.hp);e.dead=true;e.b.body.enable=false}
   o[w]=+(r.reduce((a,b)=>a+b,0)/r.length).toFixed(2)}return o},['frostbrand','tidecrook','ashmaul']);
 ok('tidecrook_special_balanced_vs_frostbrand',iso.frostbrand>0&&iso.tidecrook>=iso.frostbrand*.7&&iso.tidecrook<=iso.frostbrand*1.3,iso);
 const realF=async()=>{const s=S(),P=s.player;if(!s.sv.inv.includes('tidecrook'))s.sv.inv.push('tidecrook');s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<40&&s.sv.eq.main!=='tidecrook';i++)s.menuKey('right');s.menu=null;
-  s.pb.setPosition(400,148);s.pb.setVelocity(0,0);await new Promise(q=>setTimeout(q,300));P.st=999;P.fp=P.fpMax=99;P.state='idle';P.f=1;s.stats.specials=0;const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';e.kbImmune=1;if(e.b.body)e.b.body.moves=false;await new Promise(q=>setTimeout(q,200));const h=e.hp;
+  s.pb.setPosition(400,148);s.pb.setVelocity(0,0);await new Promise(q=>setTimeout(q,300));P.st=999;P.fp=P.fpMax=99;P.spCd=0;P.state='idle';P.f=1;s.stats.specials=0;const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';e.kbImmune=1;if(e.b.body)e.b.body.moves=false;await new Promise(q=>setTimeout(q,200));const h=e.hp;
   let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(q=>setTimeout(q,1500));window.__inp=()=>({});const o={eq:s.sv.eq.main,sp:s.stats.specials,dmg:+(h-e.hp).toFixed(2),name:WEAPONS.tidecrook.name};e.dead=true;e.b.body.enable=false;return o};let real=await ev(realF);for(let k=0;k<2&&!(real.eq==='tidecrook'&&real.sp===1&&real.dmg>=iso.tidecrook);k++)real=await ev(realF);
 ok('tidecrook_heavy_fires_its_special',real.eq==='tidecrook'&&real.sp===1&&real.dmg>=iso.tidecrook,real);
 // ---------- 2. stage data
@@ -117,13 +117,13 @@ await ev(k=>{S().sv.lords=[...new Set([...k,'warden','cantor','toller','smith'])
 await A.pg.waitForFunction(()=>__G.scene.getScene('stage').sid==='drowned'&&__G.scene.getScene('stage').player,null,{timeout:12000}).catch(()=>{});await wait(600);
 const opened=await ev(()=>({sid:S().sid,bossDead:S().bossState==='dead'}));
 ok('drowned_well_sealed_then_opens_after_smith',sealed==='shrine'&&opened.sid==='drowned'&&opened.bossDead,{sealed,opened});
-await A.pg.goto(B+'?mute&slot=1&ending=rekindle');await wait(9000);const endL=await ev(()=>__G.scene.getScene('ending').lines);await shot('i13_ending_crypt_line');
+await A.pg.goto(B+'?seed=0&mute&slot=1&ending=rekindle');await wait(9000);const endL=await ev(()=>__G.scene.getScene('ending').lines);await shot('i13_ending_crypt_line');
 ok('ending_mentions_the_drowned_crypt',endL.some(s=>/DROWNED CRYPT, THE WATER WARMED/.test(s)),endL);
 await A.ctx.close();
 // ---------- 9. co-op in the drowned crypt
 const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&stage=drowned&class=knight');
 await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000}).catch(()=>{});const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;
-const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?mute&class=pyromancer&join='+code);
+const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?seed=0&mute&class=pyromancer&join='+code);
 await G.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(1500);
 await G.ev(()=>{window.S=()=>__G.scene.getScene('stage');window.tp=(x,y=156)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.inv=99;s.camY=s.camTY=y-156};window.press=k=>{let n=0;window.__inp=()=>(n++===0?{[k]:1}:{})}});
 ok('coop_linked_in_drowned_crypt',await G.ev(()=>NET.linked()&&S().sid)==='drowned',{});
