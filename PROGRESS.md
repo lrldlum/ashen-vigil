@@ -1,0 +1,47 @@
+# Ashen Vigil (side-scroller): progress
+
+Local: `cd /workspace/ashen-vigil-ss && python3 -m http.server 8171 --bind 127.0.0.1`, then http://127.0.0.1:8171/?play (or `?demo&boss`, `?still=dome`, `?touch`, `?mute`).
+Static and ready for GitHub Pages: Phaser is vendored at vendor/phaser.min.js (the CDN tag is removed), all paths are relative, `.nojekyll` is present, and the test makes 0 requests to other sites. Nothing is published.
+
+## Milestone A: DONE (2026-10-29)
+Every item below is from Tester's r1 report (/workspace/reviewer/ashen_vigil_ss_r1_report.md).
+
+**P1**
+1. **Flask:** 3 charges on Q or F. Each heals 40 HP over a 0.6 s drink, and a hit interrupts it (the rest of the heal is lost). Refills at the bonfire and on respawn. The HUD shows code-drawn flask icons.
+2. **Souls:** on death your souls drop as a glowing stain at the death spot. It's saved with `stain:{x,souls}`, shows a "SOULS >/<" HUD hint, and touching it restores the souls. Dying again replaces the old stain, so those souls are lost.
+3. **Roll:** 0.36 s long, with i-frames only from 0.04 to 0.24 s. Costs 25 stamina and has 0.1 s of recovery. Leaves an ember trail.
+4. **Stamina:** regen 30/s after a 0.9 s delay (1.3 s once emptied). An attack costs 18 and a parry 12. No action is possible at 0 stamina, and the bar flashes red when you're empty or an action is refused.
+5. **Touch controls:** multi-touch pads (◀ ▶ ▲, JUMP, ATK, ROLL, PARRY, EST, ICE, BOLT, DOME, pause). They turn on automatically on touch devices or with `?touch`. In portrait, a DOM "ROTATE TO LANDSCAPE" overlay appears.
+6. **Victory card:** shows time, deaths and souls, then offers NG+ (enemies, boss and damage scale up, souls are kept) or RETURN TO TITLE. The second area is milestone C.
+
+**P2/P3**
+- **Parry (#7):** A or Shift+X. The window is 0.1 s (6 frames). A parry staggers a hollow or the boss's slam for 1.5 s, and a riposte deals 4x damage. A successful parry cancels the parry recovery.
+- **Boss tells (#8):** wind-ups are now 0.6 / 0.7 / 0.75 s for charge / slam / nova. Each has an eye flash, an audio cue, and a ground frost decal showing the attack's reach (slam line, charge arrows, nova ring).
+- **Boss hit flash (#9):** 2 rendered frames in pale blue (not white), then a 0.15 s cooldown.
+- **Rest (#10):** radius 28 px, with a "▲ REST" prompt.
+- **Enemies (#11):** the hollow has a 2-hit combo. There's a new shield **knight** (6 HP) that blocks frontal melee and breaks guard after 3 blocks. Hollows and knights get a teal rim, imps an orange rim.
+- **Title (#12):** a CONTINUE / NEW GAME menu, with tap support.
+- **HUD (#13, #14):** bars have gold frames drawn in code. The souls counter is 2x size with a +N popup.
+- **Pause (#15):** Esc or P pauses and lists the controls. M toggles sound.
+
+**Visual**
+- **Lighting:** an additive light layer (depth 2) with stepped radial pools from braziers, the bonfire, spikes, domes, bolts, explosions, shots, the hero, the stain and the boss. The pools light the skyline, the ground's top rows and puddle reflections. Lightning and parries flash the screen +15% for 2 frames.
+- **Background:** darker, with a near layer about 30% darker and fewer windows, plus a 2-tone horizon haze. The ground has 3 tile variants and 8 puddles.
+- **Hero:** now a 10x16 figure, rasterized per frame with a 1 px dark outline. Frames: run 6, attack 4 (two combo swings), roll 5, cast 3, death 6, plus idle, jump, fall, hurt, drink, parry and rest.
+- **Effects:** the slash is a 3-frame arc (the combo swing goes upward). Ice debris lies on the ground for 1 s. The boss has a pale-blue rim and frost breath.
+- **Frost dome:** the player spell is on D (30 FP) and is R=100 centred on the hero. The ring is about 240 px wide, matching Hugo's clip, with a thick bright ring and a crystal crown. Boss domes are R 92 / 104, the phase-change dome is 120, and the intro dome is 110.
+
+**Tests:** `node test/milestoneA.mjs`, with the server on 8171. It runs 17 checks, and the latest results are in test/milestoneA_results.txt. `node test/shots.mjs <dir>` takes screenshots and records any requests to other sites. `node test/clip.mjs /tmp/fr` captures frames, and this encodes the clip:
+`ffmpeg -f concat -safe 0 -i /tmp/fr/list.txt -vf "fps=30,scale=960:540:flags=neighbor" -c:v libx264 -pix_fmt yuv420p clips/A.mp4`.
+Screenshots are in screenshots/A/{before,after}/ and the clip is clips/A.mp4.
+
+**Known gaps:** there's still no heavy attack (it belongs to the weapon movesets in D). There's no slider for audio settings, only mute. There's still one stage.
+
+Note: core.js, data.js and level.js are untracked files from an earlier, unfinished refactor. index.html doesn't load them, so they're kept for reference only (the level.js chunk ideas may help with B).
+
+## Next milestones (not started)
+- **B:** Rayman Legends-style exploration in every stage: branching up and down routes, hidden rooms, secret collectibles to free, wall-jumps, climbables, challenge rooms, and a vertical camera.
+- **C:** Stage 2, the frozen Cathedral of the Pale Choir, and stage 3, the burning Cinderdeep (the tiles and backgrounds are already in assets/). Each gets a lord boss with an intro cinematic and 3 phases.
+- **D:** DS3-style classes and leveling, weapons and armor with scaling and weight, staffs and wands for INT spells, and 3 save slots.
+- **E:** Story: a hub shrine with a keeper, cryptic item text, and a rekindle or let-it-fade ending.
+- **F:** Host-and-join co-op over PeerJS with a room code. The PeerJS library must be vendored locally to keep the build static.

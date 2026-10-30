@@ -1,6 +1,9 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Ashen Vigil</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>html,body{margin:0;background:#07050f;width:100%;height:100%;overflow:hidden}canvas{image-rendering:pixelated;image-rendering:crisp-edges}</style>
-<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
-<script>window.Phaser||document.write('<script src="vendor/phaser.min.js"><\/script>')</script></head>
-<body><script src="game.js"></script></body></html>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>html,body{margin:0;background:#07050f;width:100%;height:100%;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+#rot{display:none;position:fixed;inset:0;z-index:9;background:#07050f;color:#ffb04a;font:bold 18px monospace;letter-spacing:2px;align-items:center;justify-content:center;text-align:center;flex-direction:column}
+#rot i{display:block;width:40px;height:66px;border:4px solid #ffb04a;border-radius:6px;margin-bottom:18px;animation:r 1.6s steps(4) infinite}
+@keyframes r{0%,40%{transform:rotate(0)}70%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (pointer:coarse){#rot{display:flex}}</style>
+<script src="vendor/phaser.min.js"></script></head>
+<body><div id="rot"><i></i>ROTATE TO LANDSCAPE</div><script src="game.js"></script></body></html>

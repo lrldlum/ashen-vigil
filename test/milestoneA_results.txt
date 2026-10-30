@@ -1,0 +1,236 @@
+{
+ "roll": {
+  "frames": 22,
+  "iframes": 12,
+  "pct": 55,
+  "dist": 59,
+  "cost": 25
+ },
+ "roll_iframes_<=60%": {
+  "pass": true,
+  "v": {
+   "frames": 22,
+   "iframes": 12,
+   "pct": 55,
+   "dist": 59,
+   "cost": 25
+  }
+ },
+ "stam": {
+  "attacks": 5,
+  "refused": 5,
+  "st": 0,
+  "flashSeen": true
+ },
+ "stamina_runs_dry_in_10_attacks": {
+  "pass": true,
+  "v": {
+   "attacks": 5,
+   "refused": 5,
+   "st": 0,
+   "flashSeen": true
+  }
+ },
+ "flask": {
+  "full": {
+   "hp": 70,
+   "flasks": 2
+  },
+  "interrupted": {
+   "hp": 41,
+   "flasks": 1,
+   "state": "idle"
+  }
+ },
+ "flask_heals_40": {
+  "pass": true,
+  "v": {
+   "hp": 70,
+   "flasks": 2
+  }
+ },
+ "flask_interruptible": {
+  "pass": true,
+  "v": {
+   "hp": 41,
+   "flasks": 1,
+   "state": "idle"
+  }
+ },
+ "rest": {
+  "lit": true,
+  "flasks": 3,
+  "dist": 25
+ },
+ "rest_at_25px": {
+  "pass": true,
+  "v": {
+   "lit": true,
+   "flasks": 3,
+   "dist": 25
+  }
+ },
+ "souls": {
+  "stain": {
+   "x": 900,
+   "souls": 777
+  },
+  "soulsAfterDeath": 0,
+  "soulsAfterPickup": 777,
+  "stainLeft": false,
+  "save": {
+   "bonfire": true,
+   "souls": 777,
+   "bossDown": false,
+   "deaths": 1,
+   "time": 13.330009999999938,
+   "ng": 0,
+   "stain": null
+  }
+ },
+ "souls_recovered": {
+  "pass": true,
+  "v": {
+   "stain": {
+    "x": 900,
+    "souls": 777
+   },
+   "soulsAfterDeath": 0,
+   "soulsAfterPickup": 777,
+   "stainLeft": false,
+   "save": {
+    "bonfire": true,
+    "souls": 777,
+    "bossDown": false,
+    "deaths": 1,
+    "time": 13.330009999999938,
+    "ng": 0,
+    "stain": null
+   }
+  }
+ },
+ "parry": {
+  "enemyState": "stag",
+  "dead": true,
+  "ripostes": 1,
+  "parries": 1,
+  "hp": 100
+ },
+ "parry_staggers_riposte_kills": {
+  "pass": true,
+  "v": {
+   "enemyState": "stag",
+   "dead": true,
+   "ripostes": 1,
+   "parries": 1,
+   "hp": 100
+  }
+ },
+ "knight": {
+  "hp0": 6,
+  "hp": 6,
+  "guard": 2
+ },
+ "knight_blocks_front": {
+  "pass": true,
+  "v": {
+   "hp0": 6,
+   "hp": 6,
+   "guard": 2
+  }
+ },
+ "pause": true,
+ "esc_pause": {
+  "pass": true,
+  "v": true
+ },
+ "bossFlash": {
+  "frames": 60,
+  "flashFrames": 14,
+  "T": 1,
+  "pctTime": 23,
+  "maxAllowed": 16
+ },
+ "boss_flash_2f_per_150ms": {
+  "pass": true,
+  "v": {
+   "frames": 60,
+   "flashFrames": 14,
+   "T": 1,
+   "pctTime": 23,
+   "maxAllowed": 16
+  }
+ },
+ "tell": {
+  "next": "charge",
+  "windup": 0.6,
+  "eyeFlash": true
+ },
+ "boss_windup_>=0.5s": {
+  "pass": true,
+  "v": {
+   "next": "charge",
+   "windup": 0.6,
+   "eyeFlash": true
+  }
+ },
+ "victory": {
+  "card": true
+ },
+ "ng": {
+  "ng": 1,
+  "bossState": "cine",
+  "victory": false
+ },
+ "victory_card_then_ngplus": {
+  "pass": true,
+  "v": {
+   "card": true,
+   "ng": 1,
+   "bossState": "cine",
+   "victory": false
+  }
+ },
+ "touch": {
+  "touchEnabled": true,
+  "moved": 65,
+  "atkState": "atk",
+  "jumpVy": -173
+ },
+ "touch_move_attack_jump": {
+  "pass": true,
+  "v": {
+   "touchEnabled": true,
+   "moved": 65,
+   "atkState": "atk",
+   "jumpVy": -173
+  }
+ },
+ "portrait": "flex",
+ "portrait_rotate_prompt": {
+  "pass": true,
+  "v": "flex"
+ },
+ "cont": {
+  "souls": 42,
+  "x": 1614,
+  "lit": true
+ },
+ "title_continue": {
+  "pass": true,
+  "v": {
+   "souls": 42,
+   "x": 1614,
+   "lit": true
+  }
+ },
+ "no_page_errors": {
+  "pass": true,
+  "v": []
+ },
+ "no_external_requests": {
+  "pass": true,
+  "v": []
+ }
+}
+PASS 17 / 17
