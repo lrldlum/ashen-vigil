@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Ashen Vigil — test</title>
+<style>html,body{margin:0;background:#0d0a12;width:100%;height:100%;overflow:hidden}canvas{image-rendering:pixelated}</style>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script></head><body><script>
+class Boot extends Phaser.Scene{constructor(){super('boot')}
+ preload(){const L=this.load;L.image('cover','assets/cover.png');
+  L.spritesheet('player','assets/sprites/player.png',{frameWidth:32,frameHeight:32});
+  L.spritesheet('tiles','assets/tiles/tiles_stone.png',{frameWidth:16,frameHeight:16});
+  ['far','mid','near'].forEach(k=>L.image('bg_'+k,`assets/bg/bg_stone_${k}.png`));
+  L.audio('jump','assets/audio/sfx_jump.wav');}
+ create(){if(location.search.includes("test"))return this.scene.start("test");this.add.image(160,90,"cover");this.add.text(160,160,'PRESS ANY KEY',{fontFamily:'monospace',fontSize:'8px',color:'#ffc85a'}).setOrigin(.5);
+  this.input.keyboard.once('keydown',()=>this.scene.start('test'));this.input.once('pointerdown',()=>this.scene.start('test'));}}
+class Test extends Phaser.Scene{constructor(){super('test')}
+ create(){const W=320*6;this.bgs=[['bg_far',.1],['bg_mid',.35],['bg_near',.6]].map(([k,f])=>[this.add.tileSprite(0,0,320,180,k).setOrigin(0).setScrollFactor(0),f]);
+  const g=this.physics.add.staticGroup();
+  for(let x=0;x<W;x+=16){g.create(x+8,164+8,'tiles',1);this.add.image(x+8,180-0,'tiles',0)}
+  for(let i=0;i<8;i++){const px=200+i*220;for(let j=0;j<3;j++)g.create(px+j*16,120-(i%2)*20,'tiles',6)}
+  this.anims.create({key:'run',frames:this.anims.generateFrameNumbers('player',{start:6,end:11}),frameRate:12,repeat:-1});
+  this.anims.create({key:'jump',frames:[{key:'player',frame:12}]});
+  this.p=this.physics.add.sprite(40,120,'player').play('run');this.p.body.setSize(10,22).setOffset(11,8);
+  this.physics.add.collider(this.p,g);this.physics.world.setBounds(0,0,W,180);this.p.setCollideWorldBounds(true);
+  const c=this.cameras.main;c.setBounds(0,0,W,180);c.startFollow(this.p,true,.12,0);c.setDeadzone(40,180);
+  this.add.text(4,4,'auto-run test • SPACE jump',{fontFamily:'monospace',fontSize:'8px',color:'#d6ccb4'}).setScrollFactor(0);
+  this.input.keyboard.on('keydown-SPACE',()=>this.jump());}
+ jump(){if(this.p.body.blocked.down){this.p.setVelocityY(-260);this.sound.play('jump',{volume:.3})}}
+ update(){this.p.setVelocityX(110);if(this.p.x>320*6-30)this.p.x=40;
+  if(this.p.body.blocked.right||Math.random()<.004)this.jump();
+  this.p.anims.play(this.p.body.blocked.down?'run':'jump',true);
+  this.bgs.forEach(([s,f])=>s.tilePositionX=this.cameras.main.scrollX*f);}}
+new Phaser.Game({type:Phaser.AUTO,width:320,height:180,pixelArt:true,roundPixels:true,backgroundColor:'#0d0a12',
+ scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},
+ physics:{default:'arcade',arcade:{gravity:{y:900}}},scene:[Boot,Test]});
+</script></body></html>
