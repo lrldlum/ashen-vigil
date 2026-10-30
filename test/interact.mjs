@@ -24,7 +24,7 @@ await ev(x=>{tp(x-4);S().player.hp=1},bx);await wait(500);
 ok('prompt_rest',await ev(()=>S().interactHint())==='Rest',await ev(()=>S().interactHint()));
 const j=await tapA();const r=await ev(()=>({hp:S().player.hp,max:S().player.hpMax,lit:S().bonfire.lit}));
 ok('near_A_rests_not_jumps',!j&&r.hp===r.max&&r.lit,{j,r});
-await pg.screenshot({path:'screenshots/interact_prompt_pad.png'});
+await pg.screenshot({path:'screenshots/interact_prompt_pad.png'});ok('menu_open_hides_hint',await ev(()=>!!S().menu&&S().interactHint()===null));
 await wait(1500);
 // a chest
 await go('stage=catacomb');
