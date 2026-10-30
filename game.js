@@ -1531,7 +1531,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(this.paused)this.drawPause(g);
   if(this.victory)this.drawVictory(g,ga)}
  // r4 P3: level-up / equipment panels are offset so they never cover the HUD bars
- drawMenu(g,ga){const m=this.menu.mode,o=m==='level'?[118,0]:m==='equip'?[74,12]:null;if(o){g.save();g.translateCanvas(o[0],o[1])}try{this.drawMenu0(g,ga)}finally{if(o)g.restore()}}
+ drawMenu(g,ga){const m=this.menu.mode,o=m==='level'?[118,0]:null;if(o){g.save();g.translateCanvas(o[0],o[1])}try{this.drawMenu0(g,ga)}finally{if(o)g.restore()}}
  drawMenu0(g,ga){const M=this.menu,sv=this.sv,P=this.player;const box=(x,y,w,h)=>{g.fillStyle(0x07050f,.88);g.fillRect(x,y,w,h);g.fillStyle(0x7a5a24);g.fillRect(x,y,w,1);g.fillRect(x,y+h-1,w,1);g.fillRect(x,y,1,h);g.fillRect(x+w-1,y,1,h);g.fillStyle(0xd8b060);[[x,y],[x+w-1,y],[x,y+h-1],[x+w-1,y+h-1]].forEach(([a,b])=>g.fillRect(a,b,1,1))};
   const row=(s,x,y,on,c)=>drawText(g,(on?'> ':'  ')+s,x,y,on?0xffe2a8:(c||0xb8b4d8));const CL=CLASSES[sv.cls];
   if(M.mode==='main'){const O=this.mainOpts(),h=40+O.length*9;box(8,40,140,h);drawText(g,this.def.bonfireName,14,45,0xffb04a);drawText(g,CL.name+'  LEVEL '+this.lvl,14,54,0x8a86c0);
@@ -1546,14 +1546,17 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    row('CONFIRM',12,46+8*9+3,M.sel===8,0xffe2a8);
    const D=[['HP',d0.hp,d.hp],['FP',d0.fp,d.fp],['STAMINA',d0.st,d.st],['LOAD',d0.load,d.load],['ATTACK',(d0.ar*100)|0,(d.ar*100)|0],['SPELL',(d0.spell*100)|0,(d.spell*100)|0]];
    D.forEach(([n,a,b],i)=>{drawText(g,n,140,46+i*9,0x8a86c0);drawText(g,String(b),176,46+i*9,b>a?0x58e070:0xd8d0ee)});return}
-  if(M.mode==='equip'){const d=this.build;box(6,20,240,154);drawText(g,'EQUIPMENT',12,25,0xffb04a);
+  if(M.mode==='equip'){const d=this.build;box(4,4,312,172);drawText(g,'EQUIPMENT',10,9,0xffb04a);drawText(g,'UP/DOWN SLOT  LEFT/RIGHT CHANGE',316-6-textW('UP/DOWN SLOT  LEFT/RIGHT CHANGE'),9,0x6a6490);
+   // equip GUI fix: fits 320x180 in both text sizes, labels never collide with values, long lines wrap or trim
+   const fit=(t,w)=>{t=String(t);while(t.length>1&&textW(t)>w)t=t.slice(0,-1);return t},wrap=(t,w,n)=>{const o=[];let l='';for(const wd of String(t).split(' ')){const c=l?l+' '+wd:wd;if(textW(c)>w&&l){o.push(l);l=wd}else l=c}if(l)o.push(l);return o.slice(0,n)};
    const W0=WEAPONS[sv.eq.main],W1=WEAPONS[sv.eq.off],A=ARMORS[sv.eq.armor||'none'];
-   const L=[['R HAND',W0?W0.name:'-',W0?RPG.letters(W0)+'  REQ '+RPG.reqs(W0)+(RPG.meets(W0,sv.stats)?'':'  WEAK!'):''],['L HAND',W1?W1.name:'EMPTY',W1?'CATALYST  REQ '+RPG.reqs(W1):''],['ARMOR',A.name,'WEIGHT '+A.w+'  POISE '+A.poise+'  ABSORB '+Math.round(A.abs*100)+'%']];
-   L.forEach(([a,b,c],i)=>{row(a,12,38+i*22,M.sel===i);drawText(g,'< '+b+' >',60,38+i*22,M.sel===i?0xffe2a8:0xd8d0ee);drawText(g,c,60,46+i*22,0x8a86c0)});
+   const L=[['R HAND',W0?W0.name:'-',W0?RPG.letters(W0)+'  REQ '+RPG.reqs(W0)+(RPG.meets(W0,sv.stats)?'':'  WEAK!'):''],['L HAND',W1?W1.name:'EMPTY',W1?(W1.mir?'TALISMAN':'CATALYST')+'  REQ '+RPG.reqs(W1):''],['ARMOR',A.name,'WEIGHT '+A.w+'  POISE '+A.poise+'  ABSORB '+Math.round(A.abs*100)+'%']];
+   const vx=TXT.big?66:58;L.forEach(([a,b,c],i)=>{const y=22+i*21,on=M.sel===i;if(on){g.fillStyle(0x2a2245);g.fillRect(7,y-2,306,19)}drawText(g,(on?'> ':'  ')+a,9,y,on?0xffe2a8:0xb8b4d8);
+    const n=this.eqOpts(i).length;drawText(g,fit((n>1?'< ':'')+b+(n>1?' >':''),310-vx),vx,y,on?0xffe2a8:0xd8d0ee);drawText(g,fit(c,310-vx),vx,y+8,0x8a86c0)});
    const rc=d.roll.kind==='LIGHT'?0x58e070:d.roll.kind==='MEDIUM'?0xd8d0ee:d.roll.kind==='HEAVY'?0xffb04a:0xd8402a;
-   drawText(g,'LOAD '+d.w+' / '+d.load+'  ('+Math.round(d.ratio*100)+'%)',12,108,0xd8d0ee);drawText(g,'ROLL '+d.roll.kind,12,117,rc);drawText(g,'ATTACK '+Math.round(d.ar*100)+'   SPELL '+Math.round(d.spell*100)+'   POISE '+d.poise,12,126,0xd8d0ee);
-   {const id=[sv.eq.main,sv.eq.off,sv.eq.armor||'none'][M.sel];(DESC[id]||[]).slice(0,3).forEach((s,i)=>drawText(g,s,12,148+i*8,0xa89878))}
-   drawText(g,'MOVESET: '+({sword:'2-HIT SLASH, OVERHEAD HEAVY',greatsword:'WIDE CLEAVE, LEAPING SLAM',dagger:'3-STAB FLURRY, LUNGE',spear:'LONG THRUST, CHARGE',axe:'CHOP, SPIN HEAVY',bow:'ARROW, CHARGED PIERCE',staff:'POKE, BASH, CASTS SPELLS'})[W0?W0.type:'dagger'],12,138,0x8a86c0)}}
+   drawText(g,'LOAD '+d.w+' / '+d.load+' ('+Math.round(d.ratio*100)+'%)',10,88,0xd8d0ee);drawText(g,'ROLL '+d.roll.kind,180,88,rc);drawText(g,fit('ATTACK '+Math.round(d.ar*100)+'   SPELL '+Math.round(d.spell*100)+'   POISE '+d.poise,300),10,98,0xd8d0ee);
+   drawText(g,fit('MOVESET: '+({sword:'2-HIT SLASH, OVERHEAD HEAVY',greatsword:'WIDE CLEAVE, LEAPING SLAM',dagger:'3-STAB FLURRY, LUNGE',spear:'LONG THRUST, CHARGE',axe:'CHOP, SPIN HEAVY',bow:'ARROW, CHARGED PIERCE',staff:'POKE, BASH, CASTS SPELLS'})[W0?W0.type:'dagger'],300),10,110,0x8a86c0);
+   {const id=[sv.eq.main,sv.eq.off,sv.eq.armor||'none'][M.sel];wrap((DESC[id]||[]).join(' '),300,TXT.big?5:6).forEach((t,i)=>drawText(g,t,10,124+i*(TXT.big?10:8),0xa89878))}}}
  // ---------------- milestone E: hub, keeper, merchant, lore, miracles ----------------
  mainOpts(){const o=['LEVEL UP','EQUIPMENT','ITEMS AND SPELLS'];if(!this.def.hub&&this.sv.lords.length)o.push('TRAVEL TO THE SHRINE');o.push('LEAVE');return o}
  itemList(){const sv=this.sv,o=[];sv.inv.filter(i=>WEAPONS[i]).forEach(i=>o.push([i,WEAPONS[i].hand==='off'?'OFF HAND':'WEAPON']));sv.inv.filter(i=>ARMORS[i]).forEach(i=>o.push([i,'ARMOR']));
