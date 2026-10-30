@@ -33,11 +33,40 @@ Y:'101101010010010',Z:'111001010100111','0':'111101101101111','1':'0101100100101
 '4':'101101111001001','5':'111100110001110','6':'011100111101111','7':'111001010010010','8':'111101111101111','9':'111101111001110',
 '.':'000000000000010',':':'000010000010000','-':'000000111000000','!':'010010010000010','/':'001001010100100',',':'000000000010100',"'":'010010000000000',' ':'000000000000000',
 '>':'100010001010100','<':'001010100010001','+':'000010111010000','(':'010100100100010',')':'010001001001010','?':'110001010000010','^':'010101000000000','=':'000111000111000','%':'101001010100101'};
-function textW(s,sc=1){return s.length*4*sc-sc}
-function drawText(g,s,x,y,col,sc=1,shadow=0x07050f,alpha=1){s=s.toUpperCase();
- const pass=(c,ox,oy)=>{g.fillStyle(c,alpha);for(let i=0;i<s.length;i++){const f=FONT[s[i]]||FONT[' '];
-  for(let k=0;k<15;k++)if(f[k]==='1')g.fillRect(x+ox+(i*4+k%3)*sc,y+oy+Math.floor(k/3)*sc,sc,sc)}};
- if(shadow!==null)pass(shadow,sc,sc);pass(col,0,0)}
+// text readability: "Vigil 5x7", an original mixed-case pixel font drawn for this game (caps 7 rows, 2-row descenders, 6px advance).
+// TXT.big=1 (Large, default) uses it for all 1x text; Small keeps the classic 3x5 caps font. Both draw with a 1px dark outline.
+const FONT2={"A":"0e11111f1111110000","B":"1e11111e11111e0000","C":"0e11101010110e0000","D":"1e11111111111e0000","E":"1f10101e10101f0000","F":"1f10101e1010100000","G":"0e11101711110f0000","H":"1111111f1111110000","I":"0e04040404040e0000","J":"0702020202120c0000","K":"111214181412110000","L":"1010101010101f0000","M":"111b15151111110000","N":"111915131111110000","O":"0e11111111110e0000","P":"1e11111e1010100000","Q":"0e11111115120d0000","R":"1e11111e1412110000","S":"0f10100e01011e0000","T":"1f0404040404040000","U":"1111111111110e0000","V":"11111111110a040000","W":"11111115151b110000","X":"11110a040a11110000","Y":"11110a040404040000","Z":"1f01020408101f0000","a":"00000e010f110f0000","b":"10101e1111111e0000","c":"00000e1010100e0000","d":"01010f1111110f0000","e":"00000e111f100e0000","f":"0608081e0808080000","g":"00000f11110f01010e","h":"10101e111111110000","i":"04000c0404040e0000","j":"02000602020202120c","k":"101012141814120000","l":"0c04040404040e0000","m":"00001a151515110000","n":"00001e111111110000","o":"00000e1111110e0000","p":"00001e11111e101010","q":"00000f11110f010101","r":"000016191010100000","s":"00000f100e011e0000","t":"08081e080809060000","u":"0000111111130d0000","v":"00001111110a040000","w":"0000111115150a0000","x":"0000110a040a110000","y":"00001111110f01010e","z":"00001f0204081f0000","0":"0e11131519110e0000","1":"040c040404040e0000","2":"0e11010204081f0000","3":"1e01010e01011e0000","4":"02060a121f02020000","5":"1f101e0101110e0000","6":"0e10101e11110e0000","7":"1f0102040808080000","8":"0e11110e11110e0000","9":"0e11110f01010e0000"," ":"000000000000000000",".":"000000000000040000",",":"000000000004040800",":":"000400000004000000",";":"000400000004040800","!":"040404040400040000","?":"0e1101020400040000","'":"040408000000000000","\"":"0a0a00000000000000","-":"0000000e0000000000","+":"0004041f0404000000","=":"00001f001f00000000","/":"010102040810100000","(":"020408080804020000",")":"080402020204080000","<":"020408100804020000",">":"080402010204080000","^":"040a11000000000000","%":"191a0204080b130000","_":"0000000000001f0000","*":"00150e1f0e15000000","#":"0a1f0a0a1f0a000000","&":"0c120c0815120d0000"};
+const TXT={big:(()=>{try{return localStorage.getItem('ashenVigil.text')!=='small'?1:0}catch(e){return 1}})(),
+ set(big,sv){this.big=big?1:0;try{localStorage.setItem('ashenVigil.text',big?'large':'small')}catch(e){}if(sv){sv.textSize=big?'large':'small';Save.write(sv)}}};
+const RUNS=new Map();
+function glyphRuns(big,ch){const key=(big?'b':'s')+ch;let r=RUNS.get(key);if(r)return r;r=[];
+ if(big){const h=FONT2[ch]||FONT2[' '];for(let y=0;y<9;y++){const v=parseInt(h.substr(y*2,2),16);let x=0;while(x<5){if(v&(16>>x)){let e=x;while(e<5&&v&(16>>e))e++;r.push([x,y,e-x]);x=e}else x++}}}
+ else{const f=FONT[ch]||FONT[' '];for(let y=0;y<5;y++){let x=0;while(x<3){if(f[y*3+x]==='1'){let e=x;while(e<3&&f[y*3+e]==='1')e++;r.push([x,y,e-x]);x=e}else x++}}}
+ RUNS.set(key,r);return r}
+const ACR=new Set(['HP','FP','NG','UP','ESC','LV','FTH','STR','DEX','INT','VIT','END','ARC','OK','II','III','IV','VI','PVP','WASD','AI']);
+const SMALLW=new Set(['of','the','a','an','and','to','in','at','on','for','is','by','or']);
+let PROPER=null;
+function properNouns(){if(PROPER)return PROPER;PROPER=new Set();const add=n=>{if(typeof n==='string')n.split(/[^A-Z']+/).forEach(w=>{if(w.length>2&&!SMALLW.has(w.toLowerCase()))PROPER.add(w)})};
+ try{for(const k in STAGE_DEFS){const d=STAGE_DEFS[k];add(d.name);add(d.bonfireName);if(d.boss)add(d.boss.name)}}catch(e){}
+ try{add(KEEPER.name)}catch(e){}try{for(const k in CLASSES)add(CLASSES[k].name)}catch(e){}
+ for(const w of['ASHEN','KEEPER','VIGIL','FLAME','CASTELLAN','ASTRONOMER','PRIORESS','HEIR','WARDEN','SHRINE'])PROPER.add(w);return PROPER}
+const NICE=new Map();
+// fewer all-caps blocks: short labels become Title Case, sentences become sentence case (names, acronyms and key letters stay capitalised)
+function nice(s){if(!/[A-Z]{2}/.test(s)||/[a-z]/.test(s))return s;let r=NICE.get(s);if(r!==undefined)return r;const P=properNouns(),words=s.trim().split(/\s+/).length,title=words<=4&&!/[.!?,]\s|[.!?]$/.test(s.trim());
+ let start=true;r=s.replace(/[A-Z][A-Z']*/g,(w,i)=>{const pre=s.slice(0,i);if(w.length===1||ACR.has(w))return w;const sent=start||/[.!?:]\s+$|[-(]\s*$/.test(pre);start=false;
+ const lw=w.toLowerCase(),cap=lw[0].toUpperCase()+lw.slice(1);
+  if(P.has(w))return cap;if(title)return sent||!SMALLW.has(lw)?cap:lw;return sent?cap:lw});
+ if(NICE.size>4000)NICE.clear();NICE.set(s,r);return r}
+function textW(s,sc=1){return sc===1&&TXT.big?s.length*6-1:s.length*4*sc-sc}
+function drawText(g,s,x,y,col,sc=1,shadow=0x07050f,alpha=1){s=String(s);const big=sc===1&&TXT.big;
+ if(big){s=nice(s);y-=1}else s=s.toUpperCase();const adv=big?6:4*sc;
+ const pass=(c,o)=>{g.fillStyle(c,alpha);for(let i=0;i<s.length;i++){const ox=x+i*adv;for(const[gx,gy,w]of glyphRuns(big,s[i]))
+  if(o)g.fillRect(ox+gx*sc-sc,y+gy*sc-sc,(w+2)*sc,3*sc);else g.fillRect(ox+gx*sc,y+gy*sc,w*sc,sc)}};
+ if(sc>1){if(shadow!==null){g.fillStyle(shadow,alpha);for(let i=0;i<s.length;i++)for(const[gx,gy,w]of glyphRuns(0,s[i]))g.fillRect(x+i*adv+gx*sc+sc,y+gy*sc+sc,w*sc,sc)}}
+ else pass(shadow===null?0x05040b:shadow,1);
+ pass(col,0)}
+// wrap a paragraph to a pixel width in the current font
+function wrapText(str,w){const out=[];let cur='';for(const wd of String(str).split(/\s+/).filter(Boolean)){const t=cur?cur+' '+wd:wd;if(cur&&textW(t)>w){out.push(cur);cur=wd}else cur=t}if(cur)out.push(cur);return out}
 // ---------- pixel helpers ----------
 function px(g,x,y,c,a=1){g.fillStyle(c,a);g.fillRect(Math.round(x),Math.round(y),1,1)}
 function line(g,x0,y0,x1,y1,c,a=1){x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);g.fillStyle(c,a);
@@ -434,7 +463,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.player={x:sx,y:GY,f:1,hp:100,hpMax:100,fp:80,fpMax:80,st:100,stMax:100,stDelay:0,stFlash:0,state:'idle',t:0,inv:0,run:0,coy:0,buf:0,atkBuf:0,flash:0,dead:false,flasks:TUNE.flaskN,healLeft:0,combo:0,land:0,dropT:0,wall:0,wallC:0,wallLock:0,spikeT:0,climbCd:0,safe:{x:sx,y:GY}};
   this.souls=sv.souls||0;this.stain=sv.stain||null;this.soulPop=null;this.applyBuild(true);this.arrows=[];this.menu=null;
   this.items=(D.items||[]).filter(it=>!sv.picked.includes(it.id)).map(it=>({...it,bob:rnd(0,6)}));
-  sv.lore=sv.lore||[];sv.lords=sv.lords||[];sv.endings=sv.endings||[];this.lore=(D.lore||[]).map(l=>({...l,read:sv.lore.includes(l.id)}));this.loreView=null;this.player.flasks=TUNE.flaskN+(sv.flaskBonus||0);if(D.hub){this.bonfire.lit=true;sv.bonfire=true}
+  if(sv.textSize)TXT.big=sv.textSize==='small'?0:1;sv.lore=sv.lore||[];sv.lords=sv.lords||[];sv.endings=sv.endings||[];this.lore=(D.lore||[]).map(l=>({...l,read:sv.lore.includes(l.id)}));this.loreView=null;this.player.flasks=TUNE.flaskN+(sv.flaskBonus||0);if(D.hub){this.bonfire.lit=true;sv.bonfire=true}
   this.enemies=[];
   D.enemies.forEach(([k,x,y])=>this.spawnEnemy(k,x,y));
   this.shots=[];this.spells=[];this.bolts=[];this.novas=[];this.flames=[];
@@ -445,10 +474,10 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.kl={};this.input.keyboard.on('keydown',e=>{if(!this.menu&&!e.repeat)this.kl[e.keyCode]=1});
   this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}// r5: a key tapped faster than one frame still moves the menu cursor (edge detection alone could miss it)
   if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r']}[e.key];if(m&&!e.repeat){if(this.menu.t<.15)return;this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
-   const M=this.menu;if(!e.repeat&&['Enter','z','Z','x','X'].includes(e.key)&&M.t>.3){M.kOk=this.time.now;this.menuKey('ok');return}}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
+   const M=this.menu;if(!e.repeat&&['Enter','z','Z','x','X'].includes(e.key)&&M.t>.3){M.kOk=this.time.now;this.menuKey('ok');return}}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute;if(this.paused&&(e.key==='t'||e.key==='T'))TXT.set(!TXT.big,this.sv)});
   this.touch=Q.has('touch')||!!(this.sys.game.device.input.touch);this.tPrev={};this.tTap={};
   if(this.touch)this.input.addPointer(4);
-  this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
+  this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.paused&&Math.abs(p.y-(44+9*12+3))<6){TXT.set(!TXT.big,this.sv);return}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
   this.inp={};this.hs=0;this.msg=null;this.t=0;this.flashA=0;this.ai={t:0,roll:2.5,bolt:3};this.stats={dodged:0,parries:0,ripostes:0,flasks:0};
   this.cam.fadeIn(500,7,5,15);
   if(DEMO&&Q.has('boss')){this.pb.x=ARENA_L-60}
@@ -469,7 +498,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const B=this.boss;if(!gone&&B&&this.bossState==='fight'&&!a.hit.includes(B)&&Math.abs(B.x-a.x)<12&&a.y>B.y-44&&a.y<B.y){a.hit.push(B);this.damageBoss(a.dmg*1.5);if(!a.pierce)gone=true}
    for(const c of this.cages)if(!gone&&!c.freed&&Math.abs(c.x-a.x)<8&&Math.abs(c.y-8-a.y)<10){gone=true;c.locked?this.pop('SEALED',c.x,c.y-22,0x9fb8e8):this.freeCage(c)}
    if(gone){this.fx.spark(a.x,a.y,5,0xffe2a8,60);this.arrows.splice(i,1)}}}
- say(s,d=2){this.msg={s,t:d}}
+ say(s,d=2){this.msg={s,t:d+1.2+String(s).length*.03}}// text readability: messages stay up longer
  pop(s,x,y,c=0xffe2a8){this.pops.push({s,x,y,c,t:0})}
  sfx(k,v=.35){try{this.sound.play(k,{volume:v})}catch(e){}}
  light(x,y,r,c,a){this.lights.push({x,y,r,c,a})}
@@ -1357,7 +1386,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.drawPlayer(g,ga);
   if(this.waters&&this.waters.length)this.drawWaters(g,ga);
   this.fx.draw(ga,g);
-  for(let i=this.pops.length-1;i>=0;i--){const p=this.pops[i];p.t+=this.dt||0;if(p.t>.9){this.pops.splice(i,1);continue}drawText(g,p.s,Math.round(p.x-textW(p.s)/2),Math.round(p.y-p.t*14),p.c,1,0x07050f,Math.min(1,(.9-p.t)*4))}
+  for(let i=this.pops.length-1;i>=0;i--){const p=this.pops[i];p.t+=this.dt||0;if(p.t>1.6){this.pops.splice(i,1);continue}const pa=Math.min(1,(1.6-p.t)*4),pw=textW(p.s),px=Math.round(p.x-pw/2),py=Math.round(p.y-Math.min(p.t,.6)*14);g.fillStyle(0x05040b,.55*pa);g.fillRect(px-3,py-3,pw+6,TXT.big?12:9);drawText(g,p.s,px,py,p.c,1,0x07050f,pa)}
   this.renderLights();
   this.drawHUD()}
  // additive light layer: stepped radial pools that also light the skyline, the ground top and puddle reflections
@@ -1456,10 +1485,11 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const s=String(this.souls),sw=textW(s,2);g.fillStyle(0x07050f,.72);g.fillRect(W-sw-18,3,sw+16,14);g.fillRect(W-sw-17,2,sw+14,16);g.fillStyle(0x9fd8ff);g.fillRect(W-sw-14,7,4,4);g.fillStyle(0xffffff);g.fillRect(W-sw-13,8,2,2);glow(ga,W-sw-12,9,5,C.ice3,.35);drawText(g,s,W-sw-6,5,0xd8d0ee,2);
    if(this.soulPop&&this.soulPop.t>0){const sp=this.soulPop;sp.t-=this.dt;const ps='+'+sp.n;drawText(g,ps,W-textW(ps)-6,19+Math.round((1.4-sp.t)*3),0x9fd8ff,1,0x07050f,Math.min(1,sp.t*2))}
    if(this.stain){const ds=Math.round(this.stain.x-P.x),ss='SOULS '+(ds>0?'>':'<');drawText(g,ss,W-textW(ss)-6,this.soulPop&&this.soulPop.t>0?27:20,0x5fe0c0,1,0x07050f,.6+.4*Math.sin(t*5))}
-   const B=this.boss;if(B&&this.bossState==='fight'){const w=this.touch?140:180,x0=(W-w)/2,y0=H-14;drawText(g,this.def.boss.name+(this.ng?' +'+this.ng:''),x0,y0-7,0xd8d0ee);g.fillStyle(0x7a5a24);g.fillRect(x0-2,y0-2,w+4,7);g.fillStyle(0x07050f);g.fillRect(x0-1,y0-1,w+2,5);g.fillStyle(0x2a1020);g.fillRect(x0,y0,w,3);g.fillStyle(0xb8302a);g.fillRect(x0,y0,Math.max(0,Math.round(w*B.hp/B.hpMax)),3);if(B.kind!=='warden'){g.fillStyle(0xd8b060);for(const k of[.66,.33])g.fillRect(x0+Math.round(w*k),y0-1,1,5)}}
+   const B=this.boss;if(B&&this.bossState==='fight'){const w=this.touch?140:180,x0=(W-w)/2,y0=H-14;{const bn=this.def.boss.name+(this.ng?' +'+this.ng:''),by=y0-(TXT.big?11:8);g.fillStyle(0x05040b,.6);g.fillRect(x0-2,by-2,textW(bn)+5,TXT.big?11:9);drawText(g,bn,x0,by,0xf0e8ff)}g.fillStyle(0x7a5a24);g.fillRect(x0-2,y0-2,w+4,7);g.fillStyle(0x07050f);g.fillRect(x0-1,y0-1,w+2,5);g.fillStyle(0x2a1020);g.fillRect(x0,y0,w,3);g.fillStyle(0xb8302a);g.fillRect(x0,y0,Math.max(0,Math.round(w*B.hp/B.hpMax)),3);if(B.kind!=='warden'){g.fillStyle(0xd8b060);for(const k of[.66,.33])g.fillRect(x0+Math.round(w*k),y0-1,1,5)}}
    if(this.touch&&!this.paused)this.drawTouch(g)}
   if(this.msg){this.msg.t-=this.paused?0:this.dt;const m=this.msg,a=clamp(m.t*2,0,1);const BS=(this.def.boss||{}).slain;const big=m.s==='EMBER EXTINGUISHED'||m.s===BS;const sc=big?2:1;
    if(big){g.fillStyle(0x05040b,.6*a);g.fillRect(0,78,W,22)}
+   if(!big){const mw=textW(m.s);g.fillStyle(0x05040b,.6*a);g.fillRect(Math.round(W/2-mw/2)-5,36,mw+10,TXT.big?13:11)}
    drawText(g,m.s,Math.round(W/2-textW(m.s,sc)/2),big?83:40,big?(m.s===BS?0xffe2a8:0xd8402a):0xd8d0ee,sc,0x05040b,a);if(m.t<=0)this.msg=null}
   if(this.menu&&!this.victory)this.drawMenu(g,ga);
   if(this.loreView&&!this.victory)this.drawLore(g,ga);
@@ -1587,11 +1617,11 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const nx=this.sv.hubNext&&STAGE_DEFS[this.sv.hubNext]?this.sv.hubNext:'ramparts',nm=STAGE_DEFS[nx].name;if(Math.abs(P.x-ex)<40)drawText(g,'^ '+nm,Math.round(ex-textW('^ '+nm)/2),GY-58,0xb8c4ff);
    // broken statue of the first lord behind the bonfire
    g.fillStyle(0x14101a);g.fillRect(136,GY-70,22,70);g.fillRect(132,GY-78,30,8);g.fillRect(140,GY-92,14,14);g.fillStyle(0x221c2a);g.fillRect(136,GY-70,2,70)}}
- drawLore(g,ga){const V=this.loreView,L=LORE[V.id]||[],a=Math.min(1,V.t/.25),h=26+L.length*9;g.fillStyle(0x05040b,.86*a);g.fillRect(24,40,272,h);g.fillStyle(0x7a5a24,a);g.fillRect(24,40,272,1);g.fillRect(24,40+h-1,272,1);
-  drawText(g,'AN ENGRAVED STONE',30,45,0xffb04a,1,null,a);L.forEach((s,i)=>drawText(g,s,30,57+i*9,0xd8c8b0,1,null,a));drawText(g,'UP / X  CLOSE',226,40+h-9,0x6b67a0,1,null,a)}
+ drawLore(g,ga){const V=this.loreView,L=wrapText((TXT.big?nice:String)((LORE[V.id]||[]).join(' ')),258),a=Math.min(1,V.t/.25),h=28+L.length*(TXT.big?10:9);g.fillStyle(0x05040b,.86*a);g.fillRect(24,40,272,h);g.fillStyle(0x7a5a24,a);g.fillRect(24,40,272,1);g.fillRect(24,40+h-1,272,1);
+  drawText(g,'AN ENGRAVED STONE',30,45,0xffb04a,1,null,a);L.forEach((s,i)=>drawText(g,s,30,57+i*(TXT.big?10:9),0xd8c8b0,1,null,a));drawText(g,'UP / X  CLOSE',290-textW('UP / X  CLOSE'),40+h-9,0x6b67a0,1,null,a)}
  drawKeeperUI(g,ga,M,box,row){const sv=this.sv;
   if(M.mode==='keeper'){box(8,40,128,58);drawText(g,KEEPER.name,14,45,0xd8c8b0);['TALK','BUY','LEAVE'].forEach((s,i)=>row(s,14,58+i*9,M.sel===i));drawText(g,'SOULS '+this.souls,14,89,0x9fd8ff);return}
-  if(M.mode==='talk'){const L=this.keeperLines(),s=L[Math.min(M.page,L.length-1)],n=Math.floor(M.t*45);box(10,126,300,46);drawText(g,KEEPER.name,16,131,0xffb04a);drawText(g,s.slice(0,n),16,144,0xd8d0ee);
+  if(M.mode==='talk'){const L=this.keeperLines(),s=L[Math.min(M.page,L.length-1)],n=Math.floor(M.t*45);box(10,114,300,58);drawText(g,KEEPER.name,16,119,0xffb04a);{let k=n;wrapText(TXT.big?nice(s):s,286).forEach((ln,i)=>{if(k>0)drawText(g,ln.slice(0,k),16,132+i*10,0xf0e8ff);k-=ln.length+1})}
    if(n>=s.length&&Math.sin(this.t*8)>0)drawText(g,'>',300,162,0xffe2a8);drawText(g,(M.page+1)+'/'+L.length,16,162,0x6b67a0);return}
   if(M.mode==='shop'){const L=this.shopList();box(6,14,308,160);drawText(g,KEEPER.name+' - WARES',12,19,0xffb04a);drawText(g,'SOULS '+this.souls,230,19,0x9fd8ff);
    L.forEach(([id,price],i)=>{row(itemName(id),12,32+i*9,M.sel===i,this.souls>=price?0xb8b4d8:0x6b4a4a);drawText(g,String(price),112,32+i*9,this.souls>=price?0x9fd8ff:0x6b4a4a)});row('LEAVE',12,32+L.length*9,M.sel===L.length);
@@ -1600,8 +1630,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
  drawPause(g){g.fillStyle(0x05040b,.82);g.fillRect(0,0,W,H);drawText(g,'PAUSED',Math.round(W/2-textW('PAUSED',2)/2),22,0xffe2a8,2);
-  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST AT BONFIRE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'ESC / P  RESUME'];
-  L.forEach((s,i)=>drawText(g,s,70,46+i*10,i===8?0x9fd8ff:0xd8d0ee))}
+  const L=['ARROWS  MOVE','Z / SPACE  JUMP','X  ATTACK (TAP AGAIN: COMBO)','C  ROLL','A / SHIFT+X  PARRY','Q / F  DRINK FLASK   W  HEAVY ATTACK','V  FROST SPIKES   S  STORM   D  DOME','UP / E  REST AT BONFIRE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME'];
+  L.forEach((s,i)=>drawText(g,s,56,44+i*12,i===8||i===9?0x9fd8ff:0xd8d0ee))}
  drawVictory(g,ga){const V=this.victory,a=Math.min(1,V.t/.6);g.fillStyle(0x05040b,.78*a);g.fillRect(0,0,W,H);
   g.fillStyle(0x7a5a24,a);g.fillRect(60,30,200,1);g.fillRect(60,150,200,1);
   const hd=V.clear?'STAGE CLEAR':'VICTORY ACHIEVED';drawText(g,hd,Math.round(W/2-textW(hd,2)/2),40,0xffe2a8,2,0x1a0d22,a);glow(ga,W/2,46,50,C.f2,.08*a);

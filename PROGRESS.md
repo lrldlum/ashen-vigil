@@ -241,3 +241,12 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Story ties: keeper lines (sealed, open, slain) and lore h3 on the Heir learning every lord's art.
 - Co-op: the host is authoritative for relics, chests, mimics, boss shots and the boss, and sends the ending to the guest. Echo-hall hazards run locally.
 - Tests: `test/M.mjs` (26 checks). milestoneE's lore total counts the throne.
+
+## Text readability pass (priority interrupt, before N)
+- **Font:** "Vigil 5x7", an original mixed-case pixel font drawn for this game in code (no vendored font, so no licence or credit is needed). Caps are 7 rows, lowercase has 2-row descenders, the advance is 6 px, and glyphs are drawn as whole-pixel runs at integer scale (pixelArt + roundPixels, no blur). Large titles (sc ≥ 2) keep the classic 3x5 face.
+- **Contrast:** all 1x text gets a 1px dark outline (one expanded rect per glyph run). Messages, pickups and the boss name sit on dark semi-transparent panels. Lore and keeper dialogue re-wrap to their panels; the dialogue box is taller.
+- **Fewer all-caps blocks:** `nice()` turns all-caps strings into sentence case (or Title Case for short labels). Names (stages, lords, vigils, the keeper, classes), acronyms (HP, FP, LV, NG…) and key letters stay capitalised. The source strings are unchanged, so the Small size shows the old caps.
+- **Longer on screen:** `say()` lasts `d + 1.2 + 0.03 s/char`, and pickup pops 1.6 s (was 0.9 s), rising only for the first 0.6 s.
+- **TEXT SIZE option:** in the pause menu, press T (or tap the row) to switch Large/Small. It is saved in the save (`sv.textSize`) and in localStorage for the title screen.
+- Applies to dialogue, the HUD, menus, boss names, pickups and story text.
+- Shots: `screenshots/text/before|after/t01_dialogue … t06_story.png`. Tests: `test/textfix.mjs` (10 checks).
