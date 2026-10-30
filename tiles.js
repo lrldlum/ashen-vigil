@@ -45,11 +45,16 @@ const TILEMAT=(()=>{
  // CLOISTER — broken mosaic, moss and roots
  M.cloister={pal:['#3a2a1a','#2a1c10','#4a7a2a','#7ab040','#c04a3a','#3a6ac0','#e0c050','#e8e0c8'],
   solid(o){const{X,Y,dy}=o;if(dy<4){if(vn(X,0,8,3)>.6)return dy<2?3:2;const tx=X>>2,miss=hs(tx,1,4)<.15;if(miss)return 1;if((X&3)===3||dy===3)return 1;return[4,5,6,7][Math.floor(hs(tx,0,5)*4)]}
-   const r=Math.abs(Math.sin(Y*.15+X*.02+vn(X,0,30,6)*6)*20-(X%40-20));if(r<1.2)return 0===((X+Y)&1)?3:2;const n=vn(X,Y,6,7);return n>.55?0:1},
+   for(let k=-1;k<=1;k++){const col=Math.floor(X/28)+k,len=8+hs(col,3,12)*26;if(dy>len||hs(col,4,13)<.35)continue;const x0=col*28+hs(col,5,14)*20,rx=x0+Math.sin(dy*.22+col)*3+dy*(hs(col,6,15)-.5)*.9;if(Math.abs(X-rx)<(dy<len*.6?1.4:.8))return hs(X,Y,16)<.3?3:2;
+    const bx=rx+(dy-len*.4)*(hs(col,7,17)<.5?1:-1)*.8;if(dy>len*.4&&dy<len*.8&&Math.abs(X-bx)<.7)return 2}
+   const n=vn(X,Y,6,7)*.7+vn(X,Y,2,8)*.3;return n>.58?0:1},
   back(X,Y){return vn(X,Y,10,1)>.6?2:1},one(X,Y,u,v){return v===0?3:v<3?2:v<5?0:v===5?1:0}};
  // THRONE — black obsidian steps and void-glass
  M.throne={pal:['#0a0612','#14101e','#22183a','#6a3aa8','#d080ff','#1a0a2a','#3a2a5a','#ffffff'],
-  solid(o){const{X,Y,dy}=o;const step=(dy%10);if(step===0)return dy===0?4:3;if(step===1)return 6;const d=(X+dy*2)%37;if(d<2)return d?3:4;if(((X*31+Y*17)%211)===0)return 7;return vn(X,Y,9,4)>.55?1:(dy>20?0:2)},
+  solid(o){const{X,Y,dy}=o;if(dy===0)return vn(X,0,6,9)>.7?7:4;if(dy===1)return 3;
+   // irregular obsidian shards: hashed slanted cells, a glossy streak along each shard's upper edge, rare void cracks
+   const sl=Math.floor(X/18+dy*.35*(hs(Math.floor(dy/9),0,20)-.5)),row=Math.floor((dy+hs(sl,0,21)*6)/9),id=hs(sl,row,22),ey=(dy+hs(sl,0,21)*6)%9;
+   if(ey<1)return 5;if(ey<2&&id>.4)return 6;const cr=Math.abs(vn(X,Y,15,23)-.5);if(cr<.012)return 3;if(((X*31+Y*17)%251)===0)return 7;return id<.33?0:id<.7?1:2},
   back(X,Y){return(X+Y)%29===0?2:5},one(X,Y,u,v){return v===0?4:v<5?2:v===5?3:0}};
  const P={};for(const k in M){const toI=c=>{c=parseInt(c.slice(1),16);return((0xff<<24)|((c&0xff)<<16)|(c&0xff00)|((c>>16)&0xff))>>>0};M[k].c=M[k].pal.map(toI);const lum=c=>{c=parseInt(c.slice(1),16);return(c>>16)*.3+((c>>8)&255)*.59+(c&255)*.11};M[k].dark=M[k].pal.reduce((b,c,i,A)=>lum(c)<lum(A[b])?i:b,0)}
  return M})();
