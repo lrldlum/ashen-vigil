@@ -50,6 +50,11 @@ ok('guest_own_character',await G.ev(()=>S().sv.cls)==='pyromancer'&&await H.ev((
 await H.ev(()=>tp(260));await G.ev(()=>tp(300));await wait(900);
 const vis=await H.ev(()=>{const r=NET.remote;return{rx:Math.round(r.rx),sid:r.sid,tint:NET.TINT}});const visG=await G.ev(()=>({rx:Math.round(NET.remote.rx),sid:NET.remote.sid}));
 await H.pg.screenshot({path:S+'host_sees_guest.png'});await G.pg.screenshot({path:S+'guest_sees_host.png'});
+// r6: colour by role (P2 guest teal on BOTH screens, P1 host in its own colours on both)
+const hook=()=>{window.__hc=[];const o=window.drawHero;window.drawHero=function(g,x,...a){__hc.push([Math.round(x),HC.b]);return o.call(this,g,x,...a)}};await H.ev(hook);await G.ev(hook);await wait(500);
+const roleCol=async(p)=>p.ev(()=>{const s=S(),lx=Math.round(s.player.x),rx=Math.round(NET.remote.rx),L=__hc.slice(-40);return{local:[...new Set(L.filter(c=>Math.abs(c[0]-lx)<3).map(c=>c[1]))],remote:[...new Set(L.filter(c=>Math.abs(c[0]-rx)<3).map(c=>c[1]))],teal:NET.TINT.b}});
+const ch=await roleCol(H),cg=await roleCol(G);require_shots:{await H.pg.screenshot({path:'screenshots/r6/host_view_roles.png'});await G.pg.screenshot({path:'screenshots/r6/guest_view_roles.png'})}
+ok('r6_role_colours',ch.remote.length&&ch.remote.every(c=>c===ch.teal)&&ch.local.length&&ch.local.every(c=>c!==ch.teal)&&cg.local.length&&cg.local.every(c=>c===cg.teal)&&cg.remote.length&&cg.remote.every(c=>c!==cg.teal),{ch,cg});
 ok('players_visible_tinted',Math.abs(vis.rx-300)<12&&Math.abs(visG.rx-260)<12&&vis.tint&&vis.tint.b===0x3ab0a0,{vis,visG});
 // ---- 3. host-authoritative enemies: guest hit -> host kills -> guest sees death
 const kill=await G.ev(()=>{const s=S();const i=s.enemies.findIndex(e=>!e.dead);if(i<0)return null;s.damageEnemy(s.enemies[i],999,1);return i});await wait(1200);
@@ -76,7 +81,8 @@ ok('stage_follow',await G.ev(()=>S().sid)==='shrine'&&await H.ev(()=>S().sid)===
 await H.ev(()=>tp(250));await G.ev(()=>tp(280));await wait(1000);await H.pg.screenshot({path:S+'shrine_both.png'});
 // ---- 7. a third player is refused
 const T=await mk(false);await T.pg.goto(B+'?mute&join='+code+PX);await T.pg.waitForFunction(()=>__G.scene.getScene('title').joinErr,null,{timeout:15000}).catch(()=>{});
-const terr=await T.ev(()=>__G.scene.getScene('title').joinErr);await T.pg.screenshot({path:S+'room_full.png'});ok('room_full',/FULL/.test(terr||''),{terr});await T.ctx.close();
+const terr=await T.ev(()=>__G.scene.getScene('title').joinErr);await T.pg.screenshot({path:S+'room_full.png'});await wait(1500);const tst=await T.ev(()=>({st:NET.status,role:NET.role,err:__G.scene.getScene('title').joinErr}));await T.pg.screenshot({path:'screenshots/r6/room_full_status.png'});
+ok('room_full',/FULL/.test(terr||''),{terr});ok('r6_room_full_status_stays',tst.st==='ROOM IS FULL'&&tst.role===null&&/FULL/.test(tst.err),tst);await T.ctx.close();
 await wait(1000);ok('host_kept_guest_after_refusal',await H.ev(()=>NET.linked()),{});
 // ---- 8. disconnects: guest leaves -> host waits; new guest joins; host leaves -> guest walks alone
 await G.ctx.close();await H.pg.waitForFunction(()=>!NET.remote&&/WAITING/.test(NET.status),null,{timeout:12000}).catch(()=>{});
@@ -96,5 +102,5 @@ await br.close();
 try{const T0=Math.min(...FR.host.slice(0,1),...FR.guest.slice(0,1));
  for(const n of['host','guest']){const L=FR[n];let s=`file '${VD}/${n}/00000.jpg'\nduration ${((L[0]-T0)/1000).toFixed(3)}\n`;L.forEach((t,i)=>{s+=`file '${VD}/${n}/${String(i).padStart(5,'0')}.jpg'\nduration ${(((L[i+1]||t+100)-t)/1000).toFixed(3)}\n`});fs.writeFileSync(`${VD}/${n}.txt`,s);
   execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${VD}/${n}.txt -vf "scale=640:360,fps=30,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${n==='host'?'P1 HOST':'P2 GUEST (TOUCH)'}':x=8:y=8:fontsize=16:fontcolor=white:box=1:boxcolor=black@0.5" -pix_fmt yuv420p ${VD}/${n}.mp4`)}
- execSync(`ffmpeg -y -loglevel error -i ${VD}/host.mp4 -i ${VD}/guest.mp4 -filter_complex "[0:v][1:v]hstack=shortest=0" -c:v libx264 -pix_fmt yuv420p -crf 26 clips/F.mp4`);console.error('clip ok')}catch(e){console.error('clip fail',e.message)}
+ execSync(`ffmpeg -y -loglevel error -i ${VD}/host.mp4 -i ${VD}/guest.mp4 -filter_complex "[0:v][1:v]hstack=shortest=0" -c:v libx264 -pix_fmt yuv420p -crf 26 ${process.env.CLIP||'clips/F.mp4'}`);console.error('clip ok')}catch(e){console.error('clip fail',e.message)}
 console.log(JSON.stringify({pass,fail}));process.exit(fail?1:0);

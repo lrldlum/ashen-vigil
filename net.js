@@ -17,7 +17,9 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   this.peer.on('connection',c=>{if(this.linked()){c.on('open',()=>{c.send({t:'full'});setTimeout(()=>c.close(),300)});return}this.bind(c)});
   this.peer.on('error',e=>{if(e.type==='unavailable-id'){this.peer.destroy();this.startHost(this.newCode());return}this.err=String(e.type||e).toUpperCase();this.status='ROOM ERROR: '+this.err});
   this.peer.on('disconnected',()=>{try{this.peer.reconnect()}catch(e){}})},
- startJoin(code,cb){if(typeof Peer==='undefined'){cb&&cb('PEERJS MISSING');return}this.role='guest';this.code=code.toUpperCase();this.status='CONNECTING TO '+this.code;this.joinCb=cb;
+ startJoin(code,cb){if(typeof Peer==='undefined'){cb&&cb('PEERJS MISSING');return}this.role='guest';this.code=code.toUpperCase();this.status='CONNECTING TO '+this.code;this.joinCb=cb;this.refused=0;
+  // r6: give up after 15 s (strict NAT / blocked UDP never opens the channel) instead of hanging on CONNECTING
+  clearTimeout(this.jt);const jc=cb;this.jt=setTimeout(()=>{if(this.joinCb===jc){this.joinCb=null;this.leave(true);this.role=null;this.err=this.status='CONNECTION FAILED';jc('CONNECTION FAILED - TRY ANOTHER NETWORK')}},+(new URLSearchParams(location.search).get('jointimeout'))||15000);
   this.peer=new Peer(undefined,this.opts());
   this.peer.on('open',()=>{this.bind(this.peer.connect(this.pid(this.code),{reliable:true,serialization:'json'}))});
   this.peer.on('error',e=>{const m=e.type==='peer-unavailable'?'NO ROOM WITH THAT CODE':String(e.type||e).toUpperCase();this.status=m;this.err=m;if(this.joinCb){this.joinCb(m);this.joinCb=null;this.leave(true)}})},
@@ -31,7 +33,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   if(this.host()){this.status='WAITING FOR A COMPANION';S&&S.sys.isActive()&&S.say&&S.say('YOUR COMPANION HAS FADED',2.4)}
   else if(this.guest()){this.role='lost';this.status='HOST LOST';try{this.peer&&this.peer.destroy()}catch(e){}if(S&&S.sys.isActive()&&S.enemies){S.enemies.forEach(e=>{if(e.b.body)e.b.body.moves=true});if(S.boss&&S.bossState==='fight')S.bossState='fight';S.say('THE HOST IS GONE - YOU WALK ALONE',3)}}
   this.lostAt=performance.now()},
- me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,
+ me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,ar:S.sv&&S.sv.eq&&S.sv.eq.armor,
   cls:S.sv.cls,main:S.sv.eq.main,arm:S.sv.eq.armor,lv:S.lvl,sid:S.sid}},
  prog(S){const sv=S.sv;return{freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked}},
  helloTo(){const S=this.scene;if(!S||!S.sv||!this.linked())return;this.send({t:'hello',sid:S.sid,prog:this.prog(S),ng:S.ng})},
@@ -51,7 +53,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   if(full)m.prog=this.prog(S);return m},
  recv(d){const S=this.scene,live=S&&S.sys&&S.sys.isActive()&&S.player;
   if(d.t==='p'){const was=this.remote;this.remote={...d.p,rx:was?was.rx:d.p.x,ry:was?was.ry:d.p.y};return}
-  if(d.t==='full'){this.status='ROOM IS FULL';this.err='ROOM IS FULL';if(this.joinCb){this.joinCb('ROOM IS FULL');this.joinCb=null}this.leave();return}
+  if(d.t==='full'){this.refused=1;this.conn=null;this.status='ROOM IS FULL';this.err='ROOM IS FULL';if(this.joinCb){this.joinCb('ROOM IS FULL');this.joinCb=null}this.leave(true);this.role=null;this.status='ROOM IS FULL';return}
   if(this.host()){if(d.t==='ready'){this.remote=d.p?{...d.p,rx:d.p.x,ry:d.p.y}:this.remote;this.helloTo();if(live)S.say('A COMPANION ARRIVES',2);return}
    if(!live)return;
    if(d.t==='dmg'){const e=S.enemies[d.i];if(e&&!e.dead)S.damageEnemy(e,d.n,d.dir,1)}
@@ -107,10 +109,13 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    if(B.state==='slam'&&B.t<.12&&near&&!B.netHit){B.netHit=1;S.hurtPlayer(B.kind==='king'?28:24,B.x,'boss')}
    if(B.state==='charge'&&Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<30)S.hurtPlayer(20,B.x);if(B.state!=='slam')B.netHit=0}},
  // ---------- drawing ----------
- draw(S,g,ga){const R=this.remote;if(!R||R.sid!==S.sid)return;const x=Math.round(R.rx),y=Math.round(R.ry);
-  heroStyle(WEAPONS[R.main]||WEAPONS.longsword,!!R.hv,{pal:this.TINT});if(!R.dead)drawHero(g,x,y,R.f,R.st,R.fr,S.t,{flash:!!R.fl,combo:R.c});else{g.fillStyle(0x3a6a64,.6);g.fillRect(x-5,y-2,11,2)}
-  HERO.rim(ga,x,y,R.f,0x9ff0dc,.45);glow(ga,x,y-8,12,0x5fe0c0,.08);S.light(x,y-8,24,0x5fe0c0,.3);
-  const tag=this.host()?'P2':'P1',w=16;drawText(g,tag,x-3,y-31,0x9ff0dc);g.fillStyle(0x07050f);g.fillRect(x-w/2-1,y-24,w+2,3);g.fillStyle(0x5fe0c0);g.fillRect(x-w/2,y-23,Math.max(0,Math.round(w*R.hp/(R.hm||100))),1);
+ // r6: colour by ROLE, not local/remote: P1 (host) keeps its armour colours with an ember tag, P2 (guest) is teal on both screens
+ tag(g,x,y,isHost){const s=isHost?'P1 HOST':'P2 GUEST',w=textW(s),col=isHost?0xffb04a:0x5fe0c0;g.fillStyle(0x07050f,.85);g.fillRect(x-Math.round(w/2)-2,y-1,w+4,7);g.fillStyle(col,1);g.fillRect(x-Math.round(w/2)-2,y+6,w+4,1);drawText(g,s,x-Math.round(w/2),y,col)},
+ localStyle(S){if(this.guest()&&this.linked())heroStyle(S.wp,S.player.heavy&&S.player.state==='atk',{pal:this.TINT})},
+ draw(S,g,ga){const R=this.remote;if(!R||R.sid!==S.sid)return;const x=Math.round(R.rx),y=Math.round(R.ry),rh=this.guest();
+  heroStyle(WEAPONS[R.main]||WEAPONS.longsword,!!R.hv,rh?ARMORS[R.ar]:{pal:this.TINT});if(!R.dead)drawHero(g,x,y,R.f,R.st,R.fr,S.t,{flash:!!R.fl,combo:R.c});else{g.fillStyle(0x3a6a64,.6);g.fillRect(x-5,y-2,11,2)}
+  const rc=rh?0xffb04a:0x5fe0c0;HERO.rim(ga,x,y,R.f,rh?0xffd08a:0x9ff0dc,.45);glow(ga,x,y-8,12,rc,.08);S.light(x,y-8,24,rc,.3);
+  const w=16;this.tag(g,x,y-33,rh);if(this.linked()){const P=S.player;if(!P.dead)this.tag(g,Math.round(P.x),Math.round(P.y)-33,this.host())}g.fillStyle(0x07050f);g.fillRect(x-w/2-1,y-24,w+2,3);g.fillStyle(rc);g.fillRect(x-w/2,y-23,Math.max(0,Math.round(w*R.hp/(R.hm||100))),1);
   heroStyle(S.wp,S.player.heavy&&S.player.state==='atk',ARMORS[S.sv.eq.armor])},
  hud(S,g){if(!this.role)return;let s;if(this.host())s='ROOM '+this.code+(this.linked()?'  P2 '+(this.remote?CLASSES[this.remote.cls]?.name||'':''):'  '+this.status);else if(this.guest())s='CO-OP ROOM '+this.code+'  P2';else if(this.role==='lost')s='HOST LOST - SOLO';else return;
   const w=textW(s);g.fillStyle(0x07050f,.7);g.fillRect(Math.round(W/2-w/2)-3,2,w+6,8);drawText(g,s,Math.round(W/2-w/2),3,this.linked()?0x9ff0dc:0xb8b4d8)}};

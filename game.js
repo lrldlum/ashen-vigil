@@ -435,8 +435,10 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.boss=null;this.bossState=sv.bossDown||!D.boss?'dead':'sleep';this.cine=null;this.bars=0;this.victory=null;this.paused=false;this.flashF=0;
   this.cam=this.cameras.main;this.cam.setBounds(0,D.top,WORLD,D.bottom-D.top);this.camY=clamp(GY-156,D.top,D.bottom-H);this.camTY=this.camY;this.cam.scrollY=this.camY;this.cam.startFollow(this.pb,true,.12,0,0,0);this.camOff=0;
   this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,G,T,R,SPACE,SHIFT,ENTER');
+  // r6: Phaser drops JustDown when a key goes down and up inside one frame; latch presses so a quick tap (e.g. Up at the keeper) still counts
+  this.kl={};this.input.keyboard.on('keydown',e=>{if(!this.menu&&!e.repeat)this.kl[e.keyCode]=1});
   this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}// r5: a key tapped faster than one frame still moves the menu cursor (edge detection alone could miss it)
-  if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r']}[e.key];if(m&&!e.repeat){this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
+  if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r']}[e.key];if(m&&!e.repeat){if(this.menu.t<.15)return;this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
    const M=this.menu;if(!e.repeat&&['Enter','z','Z','x','X'].includes(e.key)&&M.t>.3){M.kOk=this.time.now;this.menuKey('ok');return}}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute});
   this.touch=Q.has('touch')||!!(this.sys.game.device.input.touch);this.tPrev={};this.tTap={};
   if(this.touch)this.input.addPointer(4);
@@ -474,7 +476,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  touchState(){const o={};if(!this.touch)return o;const held={};
   for(const p of this.input.manager.pointers){if(!p||!p.isDown)continue;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))held[b.k]=1}}
   for(const b of TBTN){o[b.k]=!!held[b.k];o[b.k+'P']=(!!held[b.k]&&!this.tPrev[b.k])||!!this.tTap[b.k]}this.tPrev=held;this.tTap={};this.tHeld=held;return o}
- readInput(){const K=this.keys,J=Phaser.Input.Keyboard.JustDown;
+ readInput(){const K=this.keys,kl=this.kl||{},J=k=>Phaser.Input.Keyboard.JustDown(k)||!!kl[k.keyCode];this.kl={};
   if(window.__inp)return window.__inp(this);
   if(DEMO)return this.demoInput();
   const T=this.touchState(),sh=K.SHIFT.isDown,xP=J(K.X),upP=J(K.UP)|J(K.E);
@@ -691,6 +693,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.menu={mode:'main',sel:0,t:0,prev:{}}}
  // ---------------- bonfire menu: LEVEL UP / EQUIPMENT (milestone D) ----------------
  menuInput(inp){const M=this.menu,pv=M.prev,e=k=>inp[k]&&!pv[k];M.prev={up:inp.up,dn:inp.dn,l:inp.l,r:inp.r};
+  // r6: the key that opened the menu (Up at the keeper / bonfire) is ignored for the first 0.15 s
+  if(M.t<.15)return;
   if(e('up'))this.menuKey('up');else if(e('dn'))this.menuKey('down');else if(e('l'))this.menuKey('left');else if(e('r'))this.menuKey('right');
   else if((inp.jumpP||inp.atkP||inp.restP&&M.t>.3)&&!(M.kOk&&this.time.now-M.kOk<250))this.menuKey('ok');else if(inp.rollP)this.menuKey('back')}
  eqOpts(row){const inv=this.sv.inv;if(row===0)return inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='main');if(row===1)return[null,...inv.filter(i=>WEAPONS[i]&&WEAPONS[i].hand==='off')];return['none',...inv.filter(i=>ARMORS[i]&&i!=='none')]}
@@ -981,7 +985,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(st==='parry')fr=P.t<TUNE.parryWin?0:1;
   else if(st==='climb')fr=Math.floor(P.run)%2;
   if(P.land>0&&st==='idle')st='rollrec';
-  const pf=P.pflash>0;if(pf)P.pflash--;drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});this._hero={st,fr,hv:P.heavy&&P.state==='atk'};HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.32);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);
+  const pf=P.pflash>0;if(pf)P.pflash--;NET.localStyle(this);drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});this._hero={st,fr,hv:P.heavy&&P.state==='atk'};HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.32);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);
   if(P.state==='atk'){const m=this.move();if(P.t>=m.h0-.02&&P.t<m.h1+.08){const k=(P.t-m.h0+.02)/(m.h1-m.h0+.1);
     if(m.arc)drawSlash(ga,x+f*2,y-10-(m.spin?0:0),f,k,this.wp===WEAPONS.longsword&&!P.heavy?SLASH:m.arc,P.combo===1);
     else if(m.stab){const L=(m.reach||12)+6,yy=y-9+(P.combo===1?-2:P.combo===2?1:0);for(let i=0;i<L;i++){const a=(1-Math.abs(i/L-k))*.8;if(a>0)px(ga,x+f*(4+i),yy,i>L-4?0xffffff:C.f1,a)}glow(ga,x+f*(4+L*k),yy,4,C.f2,.3)}

@@ -128,3 +128,10 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Disconnects: guest leaves -> host keeps the room open ("YOUR COMPANION HAS FADED", waits for a new guest). Host leaves -> guest resumes local simulation ("THE HOST IS GONE - YOU WALK ALONE"). Heartbeat timeout 7 s. A third joiner gets "ROOM IS FULL".
 - Test: test/milestoneF.mjs (20 checks). Room registration and offer/answer signaling go through the real broker (verified). **This box's managed Chrome policy (WebRtcIPHandling = disable_non_proxied_udp) yields zero ICE candidates**, so the WebRTC data channel itself can't open between two headless contexts here; the test carries the same JSON messages through a test-only relay (Playwright binding) for that last hop. Real devices on normal networks use the direct WebRTC channel.
 - Clip: clips/F.mp4 (host | guest touch side by side).
+
+## r6 review fixes
+- P2 keeper/bonfire menus open on their first row: menu navigation ignores input for the first 0.15 s, so the Up that opens the menu can't also move the cursor (it used to wrap TALK -> LEAVE). Also, a key tapped inside a single frame (Phaser drops JustDown when down+up land in one frame) is now latched, so a quick Up tap at the keeper opens the menu reliably.
+- P3 join timeout: after 15 s without a data channel the join gives up with "CONNECTION FAILED - TRY ANOTHER NETWORK" (peer torn down; ENTER retries). Still no TURN by design; strict NATs may fail.
+- P3 room full: the refusal no longer runs the drop path; status stays "ROOM IS FULL" (role cleared) instead of "HOST LOST".
+- P3 colours by role: P1 (host) keeps its armour colours with an ember "P1 HOST" tag; P2 (guest) is teal with a teal "P2 GUEST" tag on BOTH screens. Both players get a backed label.
+- Tests: test/r6fix.mjs (5 checks) + 2 new checks in test/milestoneF.mjs (role colours on both screens, ROOM IS FULL status). Shots: screenshots/r6/. Clip: clips/r6.mp4 (host | guest).
