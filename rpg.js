@@ -24,8 +24,8 @@ const WEAPONS={
  longsword:{name:'VIGIL LONGSWORD',type:'sword',hand:'main',base:1.0,req:{str:10,dex:10},sc:{str:'C',dex:'C'},w:3,swL:9,
   light:{t:.34,h0:.08,h1:.16,reach:12,w:22,h:18,mul:1,cost:18,lunge:30,n:2,arc:{r:16,th:3,sweep:200,trail:1}},
   heavy:{t:.62,h0:.30,h1:.38,reach:14,w:24,h:22,mul:2,cost:30,lunge:50,poise:2,arc:{r:18,th:4,sweep:170,trail:1}}},
- greatsword:{name:'ASHEN GREATSWORD',type:'greatsword',hand:'main',base:2.1,req:{str:16,dex:8},sc:{str:'B',dex:'D'},w:9,swL:13,
-  light:{t:.62,h0:.22,h1:.32,reach:16,w:30,h:26,mul:1,cost:28,lunge:40,n:2,poise:2,arc:{r:22,th:5,sweep:220,trail:1}},
+ greatsword:{name:'ASHEN GREATSWORD',type:'greatsword',hand:'main',base:1.8,req:{str:16,dex:8},sc:{str:'B',dex:'D'},w:9,swL:13,
+  light:{t:.7,h0:.25,h1:.36,reach:16,w:30,h:26,mul:1,cost:32,lunge:40,n:2,poise:2,arc:{r:22,th:5,sweep:220,trail:1}},
   heavy:{t:.9,h0:.48,h1:.56,reach:10,w:52,h:24,mul:2.2,cost:40,lunge:70,hop:-170,aoe:1,poise:3,shock:1,arc:{r:24,th:5,sweep:160,trail:1}}},
  dagger:{name:'BANDIT KNIFE',type:'dagger',hand:'main',base:.7,req:{str:5,dex:9},sc:{str:'E',dex:'B'},w:1.5,swL:5,crit:1.6,
   light:{t:.2,h0:.04,h1:.09,reach:10,w:18,h:14,mul:1,cost:10,lunge:50,n:3,stab:1},
@@ -39,7 +39,7 @@ const WEAPONS={
  bow:{name:'SHORT BOW',type:'bow',hand:'main',base:.8,req:{str:7,dex:12},sc:{str:'E',dex:'B'},w:2.5,swL:0,
   light:{t:.36,h0:.14,h1:.15,mul:1,cost:12,arrow:280},
   heavy:{t:.72,h0:.55,h1:.56,mul:2,cost:22,arrow:360,pierce:1}},
- staff:{name:'CRYSTAL STAFF',type:'staff',hand:'main',base:.45,req:{int:10},sc:{int:'D'},w:2,swL:11,cat:1,buff:120,csc:'B',
+ staff:{name:'CRYSTAL STAFF',type:'staff',hand:'main',base:.45,req:{int:10},sc:{int:'D'},w:2,swL:11,cat:1,buff:160,csc:'A',
   light:{t:.36,h0:.1,h1:.18,reach:12,w:20,h:16,mul:1,cost:14,lunge:20,n:1,stab:1},
   heavy:{t:.56,h0:.24,h1:.32,reach:12,w:22,h:22,mul:1.5,cost:24,lunge:30,poise:1,arc:{r:14,th:3,sweep:160,trail:0}}},
  wand:{name:'VIGIL WAND',type:'wand',hand:'off',base:0,req:{int:8},sc:{},w:1,cat:1,buff:100,csc:'C'}};
@@ -52,17 +52,18 @@ const ARMORS={
  iron:{name:'IRON BULWARK',w:20,poise:22,abs:.26,pal:{b:0x8a8a9a,s:0x4a4a5a,h:0xd0d0e0,c:0x6a1a14}}};
 // spells (INT): need a catalyst (staff in the right hand or a wand in either hand)
 const SPELLS={ice:{name:'FROST SPIKES',int:8,fp:15},bolt:{name:'STORM',int:9,fp:20},dome:{name:'FROST DOME',int:9,fp:30}};
+// r4: level cost x3 (d*3/8), heavy weapons (w>=6) keep only 35% AR when requirements are unmet
 const RPG={
  classStats(c){const o={};STATS.forEach((k,i)=>o[k]=CLASSES[c].s[i]);return o},
  level(c,st){return CLASSES[c].lvl+STATS.reduce((a,k,i)=>a+(st[k]-CLASSES[c].s[i]),0)},
  // DS3 soul curve, scaled /8 for this game's soul economy
- cost(L){const d=L<12?673+17*(L-1):Math.round(.02*L*L*L+3.06*L*L+105.6*L-895);return Math.round(d/8)},
+ cost(L){const d=L<12?673+17*(L-1):Math.round(.02*L*L*L+3.06*L*L+105.6*L-895);return Math.round(d*3/8)},
  meets(wp,st){return Object.entries(wp.req||{}).every(([k,v])=>st[k]>=v)},
- ar(wp,st){if(!wp)return 0;let b=1;for(const[k,l]of Object.entries(wp.sc||{}))b+=SCALE[l]*statCurve(st[k]);return wp.base*b*(this.meets(wp,st)?1:.5)},
+ ar(wp,st){if(!wp)return 0;let b=1;for(const[k,l]of Object.entries(wp.sc||{}))b+=SCALE[l]*statCurve(st[k]);return wp.base*b*(this.meets(wp,st)?1:wp.w>=6?.35:.5)},
  spellBuff(cat,st){if(!cat||!this.meets(cat,st))return 0;return cat.buff/100*(1+SCALE[cat.csc]*statCurve(st.int)*.6)},
  derive(st,eq){const main=WEAPONS[eq.main],off=WEAPONS[eq.off],arm=ARMORS[eq.armor||'none'];
   const load=25+st.vit*1.5,w=(main?main.w:0)+(off?off.w:0)+arm.w,ratio=w/load;
-  const roll=ratio<.3?{kind:'LIGHT',t:.32,v:190,i0:.03,i1:.26,cost:22}:ratio<.7?{kind:'MEDIUM',t:.36,v:170,i0:.04,i1:.24,cost:25}:ratio<=1?{kind:'HEAVY',t:.5,v:110,i0:.06,i1:.2,cost:32}:{kind:'OVERLOADED',t:0,v:0,i0:0,i1:0,cost:0};
+  const roll=ratio<.3?{kind:'LIGHT',t:.32,v:215,i0:.03,i1:.26,cost:22}:ratio<.7?{kind:'MEDIUM',t:.36,v:170,i0:.04,i1:.24,cost:25}:ratio<=1?{kind:'HEAVY',t:.5,v:110,i0:.06,i1:.2,cost:32}:{kind:'OVERLOADED',t:0,v:0,i0:0,i1:0,cost:0};
   const cat=main&&main.cat?main:off&&off.cat?off:null;
   return{hp:Math.round(100+(st.vig-10)*5),fp:Math.round(80+(st.int+st.fth-18)*2),st:Math.round(100+(st.end-10)*3),load:+load.toFixed(1),w:+w.toFixed(1),ratio,roll,
    poise:arm.poise,abs:arm.abs,ar:this.ar(main,st),cat,spell:this.spellBuff(cat,st),heal:40+Math.max(0,(st.fth-10)*1.5),soulMul:1+Math.max(0,st.lck-10)*.02,weak:main&&!this.meets(main,st)}},

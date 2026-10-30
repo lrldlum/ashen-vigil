@@ -1,0 +1,20 @@
+PASS title_erase_only_delete_confirmed {"afterX":true,"prompt":0,"cancelled":true,"erased":true}
+PASS kbd_chain_roofA_up {"x":382,"y":20,"on":true}
+PASS kbd_chain_roofA_upright {"x":384,"y":20,"on":true}
+PASS kbd_chain_roofA_jump {"x":382,"y":20,"on":true}
+PASS kbd_ledge_ramparts_up {"x":2911,"y":20,"on":true}
+PASS kbd_ledge_ramparts_upright {"x":2912,"y":20,"on":true}
+PASS kbd_ledge_ramparts_jump {"x":2911,"y":20,"on":true}
+PASS kbd_ledge_cathedral_up {"x":2910,"y":20,"on":true}
+PASS kbd_ledge_cathedral_upright {"x":2912,"y":20,"on":true}
+PASS kbd_ledge_cathedral_jump {"x":2910,"y":20,"on":true}
+PASS kbd_ledge_cinderdeep_up {"x":2910,"y":20,"on":true}
+PASS kbd_ledge_cinderdeep_upright {"x":2912,"y":20,"on":true}
+PASS kbd_ledge_cinderdeep_jump {"x":2911,"y":20,"on":true}
+PASS level_costs_about_3x {"cost10":310,"cost14":464,"gs":3.56,"dag":4.61,"ls":4.02,"gsWeak":0.7,"lsKnight":1.09,"staff40":2.66,"light":{"kind":"LIGHT","t":0.32,"v":215,"i0":0.03,"i1":0.26,"cost":22},"medium":{"kind":"MEDIUM","t":0.36,"v":170,"i0":0.04,"i1":0.24,"cost":25},"dn":{"k":"dn","x":39,"y":163,"r":8,"lab":"V"}}
+PASS greatsword_not_dominant {"cost10":310,"cost14":464,"gs":3.56,"dag":4.61,"ls":4.02,"gsWeak":0.7,"lsKnight":1.09,"staff40":2.66,"light":{"kind":"LIGHT","t":0.32,"v":215,"i0":0.03,"i1":0.26,"cost":22},"medium":{"kind":"MEDIUM","t":0.36,"v":170,"i0":0.04,"i1":0.24,"cost":25},"dn":{"k":"dn","x":39,"y":163,"r":8,"lab":"V"}}
+PASS light_roll_farther_than_medium {"light":{"kind":"LIGHT","t":0.32,"v":215,"i0":0.03,"i1":0.26,"cost":22},"medium":{"kind":"MEDIUM","t":0.36,"v":170,"i0":0.04,"i1":0.24,"cost":25}}
+PASS staff_spell_buff_int40_ge_2_5 2.66
+PASS touch_down_button_on_screen {"k":"dn","x":39,"y":163,"r":8,"lab":"V"}
+PASS no_page_errors []
+PASS 19 / 19

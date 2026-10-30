@@ -59,7 +59,7 @@ await ev(()=>{arena();equip({main:'spear'});dummy(26);press('heavyP')});await wa
 // dagger 3-hit chain
 R.combo=await ev(()=>new Promise(res=>{arena();equip({main:'dagger',off:null,armor:'leather'});const s=S(),e=dummy(12);e.state='idle';let n=0,max=0;window.__inp=()=>{n++;max=Math.max(max,s.player.combo);return n%4===1?{atkP:1}:{}};setTimeout(()=>{idle();e.dead=true;e.b.body.enable=false;res({maxCombo:max})},900)}));
 const M=R.moves;
-ok('distinct_movesets',M.greatsword.light.first>M.dagger.light.first+.1&&M.spear.reach34.dmg>0&&M.longsword.reach34.dmg===0&&M.dagger.reach34.dmg===0&&R.combo.maxCombo===2&&M.greatsword.heavy.dmg>M.dagger.heavy.dmg*2,{moves:M,combo:R.combo});
+ok('distinct_movesets',M.greatsword.light.first>M.dagger.light.first+.1&&M.spear.reach34.dmg>0&&M.longsword.reach34.dmg===0&&M.dagger.reach34.dmg===0&&R.combo.maxCombo===2&&M.greatsword.heavy.dmg>M.dagger.heavy.dmg*1.25,{moves:M,combo:R.combo});
 ok('heavy_attacks_stronger_and_special',Object.values(M).every(m=>m.heavy.dmg>m.light.dmg)&&M.axe.behind.dmg>0&&M.greatsword.behind.dmg>0&&M.longsword.behind.dmg===0,Object.fromEntries(Object.entries(M).map(([k,v])=>[k,{light:v.light.dmg,heavy:v.heavy.dmg,behind:v.behind.dmg}])));
 // bow: arrow at range, charged arrow pierces two
 R.bow=await ev(()=>new Promise(res=>{arena();equip({main:'bow',off:null,armor:'leather'});const a=dummy(120),b=dummy(150);a.state=b.state='idle';const h=[a.hp,b.hp];press('atkP');

@@ -287,7 +287,9 @@ class Title extends Phaser.Scene{constructor(){super('title')}
    else{const i=Math.floor((p.y-50)/10);if(p.x<110&&i>=0&&i<10){if(this.csel===i)this.key('Enter');else this.csel=i}else if(p.y>160)this.key('Escape')}})}
  key(k){if(this.gone)return;const up=k==='ArrowUp',dn=k==='ArrowDown',ok=k==='Enter'||k===' '||k==='z'||k==='Z';
   if(this.mode==='slots'){if(up)this.sel=(this.sel+2)%3;if(dn)this.sel=(this.sel+1)%3;if(up||dn)this.erase=-1;
-   if((k==='Delete'||k==='Backspace'||k==='x'||k==='X')&&this.saves[this.sel]){if(this.erase===this.sel){Save.clear(this.sel);this.saves[this.sel]=null;this.erase=-1}else this.erase=this.sel}
+   // r4 P1: erase only with Delete/Backspace, confirmed by a second Delete/Backspace; any other key cancels the prompt (X/attack never erases)
+   const del=k==='Delete'||k==='Backspace';if(this.erase>=0&&!del){this.erase=-1;return}
+   if(del&&this.saves[this.sel]){if(this.erase===this.sel){Save.clear(this.sel);this.saves[this.sel]=null;this.erase=-1}else this.erase=this.sel;return}
    if(ok){Save.use(this.sel);if(this.saves[this.sel])this.go(false);else{this.mode='class';this.csel=0}}}
   else{if(up)this.csel=(this.csel+9)%10;if(dn)this.csel=(this.csel+1)%10;if(k==='Escape'||k==='c'||k==='C')this.mode='slots';
    if(ok){const c=CLASS_ORDER[this.csel],CL=CLASSES[c];Save.write({cls:c,stats:RPG.classStats(c),eq:{main:CL.main,off:CL.off,armor:CL.armor},inv:[CL.main,CL.off,CL.armor,...(CL.extra||[])].filter(Boolean),bonfire:false,souls:0,bossDown:false,stage:'ramparts'});this.go(true)}}}
@@ -309,7 +311,7 @@ class Title extends Phaser.Scene{constructor(){super('title')}
   drawText(g,'A TALE OF THE LAST KINDLING',Math.round(W/2-textW('A TALE OF THE LAST KINDLING')/2),ty+26,0x8a86c0);
   if(this.mode==='slots'){const fmt=v=>{v=Math.floor(v||0);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`};
    this.saves.forEach((s,i)=>{const on=this.sel===i;let str;if(!s)str='SLOT '+(i+1)+'   - NEW JOURNEY -';else{const c=CLASSES[s.cls]?s.cls:'knight';str='SLOT '+(i+1)+'  '+CLASSES[c].name+' LV '+RPG.level(c,s.stats||RPG.classStats(c))+'  '+((STAGE_DEFS[s.stage]||STAGE_DEFS.ramparts).name.replace('THE ','').split(' ')[0])+'  '+fmt(s.time)+(s.ng?'  NG+'+s.ng:'')}
-    if(this.erase===i)str='SLOT '+(i+1)+'  ERASE? PRESS DEL AGAIN';const x=Math.round(W/2-textW(str)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+i*11,textW(str)+16,9);drawText(g,(on?'> ':'  ')+str,x,98+i*11,this.erase===i?0xd8402a:on?0xffe2a8:0x6b67a0)})}
+    if(this.erase===i)str='ERASE SLOT '+(i+1)+'? DEL AGAIN = YES  ANY KEY = NO';const x=Math.round(W/2-textW(str)/2)-4;g.fillStyle(0x07050f,on?.7:.4);g.fillRect(x-6,96+i*11,textW(str)+16,9);drawText(g,(on?'> ':'  ')+str,x,98+i*11,this.erase===i?0xd8402a:on?0xffe2a8:0x6b67a0)})}
   else{g.fillStyle(0x07050f,.86);g.fillRect(0,0,W,H);drawText(g,'CHOOSE YOUR ORIGIN',Math.round(W/2-textW('CHOOSE YOUR ORIGIN',2)/2),12,0xffb04a,2);
    CLASS_ORDER.forEach((c,i)=>{const on=this.csel===i;drawText(g,(on?'> ':'  ')+CLASSES[c].name,14,50+i*10,on?0xffe2a8:0x8a86c0);drawText(g,'LV '+CLASSES[c].lvl,84,50+i*10,on?0xffe2a8:0x5d5990)});
    const c=CLASS_ORDER[this.csel],CL=CLASSES[c],st=RPG.classStats(c),d=RPG.derive(st,{main:CL.main,off:CL.off,armor:CL.armor});
@@ -339,7 +341,7 @@ const ESIZE={hollow:[8,14],knight:[9,15],wraith:[10,12],imp:[7,6]};
 const ELOOK={acolyte:{c:0x8a96b8,s:0x3a4466,rim:0xd8f2ff,eye:0x9fd8ff},sentinel:{c:0x9ab0d8,s:0x46587e,rim:0xbfe4ff,eye:0xe8f6ff,sh:0xd8f2ff},
  husk:{c:0x3a2622,s:0x1a0d0a,rim:0xff7a1a,eye:0xffd04a},cinderknight:{c:0x4a2c26,s:0x22120e,rim:0xffa040,eye:0xfff0a0,sh:0xd25a1a},
  chorister:{c:0xb8c4e0,l:0xffffff,glow:0x9fa8ff,shot:'note'},wisp:{c:0xa02a08,l:0xffd04a,glow:0xff7a1a,shot:'fire'},magmaw:{c:0xffd04a,d:0x6a1408,rim:0xfff0a0}};
-const TBTN=[{k:'l',x:22,y:152,r:13,lab:'<'},{k:'r',x:56,y:152,r:13,lab:'>'},{k:'up',x:39,y:127,r:10,lab:'^'},{k:'dn',x:39,y:173,r:7,lab:'V'},
+const TBTN=[{k:'l',x:22,y:144,r:13,lab:'<'},{k:'r',x:56,y:144,r:13,lab:'>'},{k:'up',x:39,y:120,r:10,lab:'^'},{k:'dn',x:39,y:163,r:8,lab:'V'},
  {k:'jump',x:298,y:148,r:13,lab:'JUMP'},{k:'atk',x:270,y:162,r:12,lab:'ATK'},{k:'roll',x:270,y:135,r:11,lab:'ROLL'},{k:'parry',x:244,y:162,r:10,lab:'PRY'},{k:'hvy',x:244,y:138,r:9,lab:'HVY'},
  {k:'flask',x:302,y:34,r:9,lab:'EST'},{k:'ice',x:280,y:34,r:9,lab:'ICE'},{k:'bolt',x:258,y:34,r:9,lab:'BLT'},{k:'dome',x:236,y:34,r:9,lab:'DOM'},{k:'pause',x:160,y:10,r:7,lab:'II'}];
 class Stage extends Phaser.Scene{constructor(){super('stage')}
@@ -1002,7 +1004,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(this.menu&&!this.victory)this.drawMenu(g,ga);
   if(this.paused)this.drawPause(g);
   if(this.victory)this.drawVictory(g,ga)}
- drawMenu(g,ga){const M=this.menu,sv=this.sv,P=this.player;const box=(x,y,w,h)=>{g.fillStyle(0x07050f,.88);g.fillRect(x,y,w,h);g.fillStyle(0x7a5a24);g.fillRect(x,y,w,1);g.fillRect(x,y+h-1,w,1);g.fillRect(x,y,1,h);g.fillRect(x+w-1,y,1,h);g.fillStyle(0xd8b060);[[x,y],[x+w-1,y],[x,y+h-1],[x+w-1,y+h-1]].forEach(([a,b])=>g.fillRect(a,b,1,1))};
+ // r4 P3: level-up / equipment panels are offset so they never cover the HUD bars
+ drawMenu(g,ga){const m=this.menu.mode,o=m==='level'?[118,0]:m==='equip'?[74,12]:null;if(o){g.save();g.translateCanvas(o[0],o[1])}try{this.drawMenu0(g,ga)}finally{if(o)g.restore()}}
+ drawMenu0(g,ga){const M=this.menu,sv=this.sv,P=this.player;const box=(x,y,w,h)=>{g.fillStyle(0x07050f,.88);g.fillRect(x,y,w,h);g.fillStyle(0x7a5a24);g.fillRect(x,y,w,1);g.fillRect(x,y+h-1,w,1);g.fillRect(x,y,1,h);g.fillRect(x+w-1,y,1,h);g.fillStyle(0xd8b060);[[x,y],[x+w-1,y],[x,y+h-1],[x+w-1,y+h-1]].forEach(([a,b])=>g.fillRect(a,b,1,1))};
   const row=(s,x,y,on,c)=>drawText(g,(on?'> ':'  ')+s,x,y,on?0xffe2a8:(c||0xb8b4d8));const CL=CLASSES[sv.cls];
   if(M.mode==='main'){box(8,40,128,58);drawText(g,this.def.bonfireName,14,45,0xffb04a);drawText(g,CL.name+'  LEVEL '+this.lvl,14,54,0x8a86c0);
    ['LEVEL UP','EQUIPMENT','LEAVE'].forEach((s,i)=>row(s,14,65+i*9,M.sel===i));drawText(g,'SOULS '+this.souls,14,92-1,0x9fd8ff);return}

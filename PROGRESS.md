@@ -89,3 +89,11 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - P2 Magmaw: own behaviour — lurks submerged in the floor, surfaces near you, spits two arcing lava globs, sinks.
 - P2 SFX: 12 new synthesized sounds (menu, pickup, chime, crumble, clang, slam, lava, heal, thunder, buff, talk, fanfare) replace the reused ones.
 - P3: title backdrop follows the highlighted slot's stage; best times all use `ashenVigil.best.<stage>` (legacy key migrated); souls counter has a dark backing.
+
+## Hotfix r4 (live-player issues)
+- P1 title erase: X (attack) never erases. Only Delete/Backspace opens "ERASE SLOT n? DEL AGAIN = YES  ANY KEY = NO"; any other key cancels.
+- P1 chain-top: r4 reviewed c5b5d97; the fix landed in 499ea85. test/r4fix.mjs now climbs with the real keyboard (UP, UP+RIGHT, UP then jump+RIGHT) at roof A and the ledge in all 3 stages: all land on the slab (y=20).
+- Balance: level costs x3 (DS3 curve x3/8); greatsword base 2.1->1.8, light 0.7 s / 32 ST, heavy weapons keep 35% AR when requirements are unmet (was 50%); LIGHT roll velocity 215 (covers ~25% more than MEDIUM); staff catalyst buff 160 / scaling A (2.66x at INT 40).
+- UI: level-up / equipment panels offset off the HUD bars; touch pad raised so the down button fits at 844x390.
+- Faith heal for Herald/Cleric: ships with milestone E (talisman + HEAL miracle), not in this hotfix.
+- milestoneD distinct_movesets: greatsword-heavy bound relaxed to 1.25x dagger heavy (knight doesn't meet STR 16 and the nerf is intended).
