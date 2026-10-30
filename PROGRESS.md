@@ -284,3 +284,9 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - The text pass's sentence case now keeps common words (ash, flame…) lowercase inside sentences unless they are part of a name.
 - Tests: `test/r7fix.mjs` (17 checks). G–M now pin `seed=0`, reset `spCd` before scripted specials, and read positions from the defs. L's spore check now expects death below 25%, and M equips each relic's weapon.
 - Shots: `screenshots/r7/before|after/` (the same spots in each stage, plus the catacomb low route and the usurp ending) and `screenshots/r7/after/r0x_*` from the test. Clip: `clips/r7.mp4`.
+
+## Backgrounds pass (per-stage parallax)
+- bg.js (BGART): code-drawn sky, far and near layers plus a screen-space ambient layer (depth -9.7) for cathedral, cinderdeep, belltower (peaks, snowstorm, swinging bells), catacomb/forge (lava falls, smoke, chimneys), drowned (caustics, sunken arches, coffins), keep (storm, lightning, banners), spire (nebulae, floating stones, planets), cloister (rotted trees, spores, stained glass) and throne (void, broken colossus). Ramparts keeps the original city.
+- genTextures(scene, sx, pal, sid) swaps in the stage's art, and the stage update redraws the ambient layer.
+- test/bgfix.mjs: 23 checks (per-layer md5 is unique across the 10 stages, ambient layer present, no page errors).
+- Shots: screenshots/bg/before|after/<stage>.png, plus the grid at screenshots/bg/compare.png.

@@ -84,10 +84,13 @@ function sparkle(g,x,y,s,c,a=1){x=Math.round(x);y=Math.round(y);g.fillStyle(c,a)
 function makeCanvas(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.imageSmoothingEnabled=false;fn(x,w,h);return c}
 function seedRand(s){return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646}}
 const BAYER=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
-function genTextures(scene,sx='',pal=null){
+function genTextures(scene,sx='',pal=null,theme=null){
  const T=scene.textures;
  if(T.exists('sky'+sx))return;
- const keep={...C};if(pal)Object.assign(C,pal);try{genTex(T,sx)}finally{Object.assign(C,keep)}}
+ const keep={...C};if(pal)Object.assign(C,pal);try{genTex(T,sx)}finally{Object.assign(C,keep)}
+ // bg pass: a stage with its own art (bg.js) replaces the shared city skyline with its own sky, far and near layers
+ const A=theme&&typeof BGART!=='undefined'&&BGART[theme];if(A){for(const[k,w,fn]of[['sky',W,(x,w)=>{BGART_sky(x,w,A)}],['far',640,(x,w)=>A.far(x,w)],['near',800,(x,w)=>A.near(x,w)]]){T.remove(k+sx);T.addCanvas(k+sx,makeCanvas(w,H,fn))}}}
+function BGART_sky(x,w,A){const b=A.sky;for(let y=0;y<H;y++){const t=Math.min(.999,y/150)*(b.length-1),i=Math.floor(t),f=t-i;for(let xx=0;xx<w;xx++){x.fillStyle=b[Math.min(b.length-1,i+(f>(BAYER[y&3][xx&3]+.5)/16?1:0))];x.fillRect(xx,y,1,1)}}A.skyX&&A.skyX(x,w)}
 function genTex(T,sx){
  T.addCanvas('sky'+sx,makeCanvas(W,H,(x)=>{const bands=[C.sky0,C.sky1,C.sky2,C.sky3,C.sky4];const R=seedRand(7);
   for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++){const t=Math.min(.999,y/150)*(bands.length-1);const i=Math.floor(t),f=t-i;
@@ -351,7 +354,7 @@ class Title extends Phaser.Scene{constructor(){super('title')}
  go(isNew){if(this.gone)return;this.gone=1;this.cameras.main.fadeOut(400,7,5,15);this.time.delayedCall(420,()=>this.scene.start('stage',{fresh:false}))}
  // r3 P3: the title backdrop shows the highlighted save's current stage
  setBackdrop(){const s=this.mode==='slots'&&this.saves[this.sel],sid=s&&STAGE_DEFS[s.stage]?s.stage:'ramparts';if(sid===this.bgSid)return;this.bgSid=sid;const tx=sid==='ramparts'?'':'_'+sid,D=STAGE_DEFS[sid];
-  genTextures(this,tx,D.pal);this.bg.L.forEach(([s],i)=>s.setTexture(['sky','far','near'][i]+tx));if(this.textures.exists('ground'+tx))this.gnd.setTexture('ground'+tx)}
+  genTextures(this,tx,D.pal,sid);this.bg.L.forEach(([s],i)=>s.setTexture(['sky','far','near'][i]+tx));if(this.textures.exists('ground'+tx))this.gnd.setTexture('ground'+tx)}
  update(_,d){const dt=d/1000;this.t+=dt;this.setBackdrop();const hd=this.held;if(hd&&!hd.long&&this.time.now-hd.t0>600){hd.long=1;if(this.saves[hd.i]){this.sel=hd.i;this.erase=hd.i;this.eatUp=1}}this.bg(this.t*8);const ga=this.ga,gn=this.gn,g=this.gt;ga.clear();gn.clear();g.clear();
   // bonfire + kneeling knight silhouette
   const bx=200,by=GY;if(Math.random()<.9)this.fx.fire(bx,by-3,2,3);if(Math.random()<.2)this.fx.ember(bx,by-8,1);this.fx.update(dt);
@@ -414,12 +417,12 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const sv=(!this.fresh&&Save.load())||{bonfire:false,souls:0,bossDown:false};sv.stage=STAGE_DEFS[sv.stage]?sv.stage:(STAGE_DEFS[Q.get('stage')]?Q.get('stage'):'ramparts');sv.deaths=sv.deaths||0;sv.time=sv.time||0;sv.ng=sv.ng||0;this.sv=sv;
   this.ng=sv.ng;this.ngMul=1+.5*this.ng;this.playT=sv.time;
   const sid=sv.stage,D=STAGE_DEFS[sid];this.sid=sid;this.def=D;Object.assign(C,BASEPAL,D.pal||{});WORLD=D.world;ARENA_L=D.arena?D.arena[0]:2980;ARENA_R=D.arena?D.arena[1]:3340;
-  const tx=sid==='ramparts'?'':'_'+sid;genTextures(this,tx,D.pal);this.lv=LEVELS[sid]||(LEVELS[sid]=new Level(D));this.physics.world.setBounds(0,D.top,WORLD,D.bottom-D.top);
+  const tx=sid==='ramparts'?'':'_'+sid;genTextures(this,tx,D.pal,sid);this.lv=LEVELS[sid]||(LEVELS[sid]=new Level(D));this.physics.world.setBounds(0,D.top,WORLD,D.bottom-D.top);
   sv.freed=sv.freed||[];sv.found=sv.found||[];sv.chDone=sv.chDone||[];sv.broken=sv.broken||[];
   // milestone D: character (class, stats, equipment, inventory)
   {const cls=CLASSES[sv.cls]?sv.cls:(CLASSES[Q.get('class')]?Q.get('class'):'knight'),CL=CLASSES[cls];sv.cls=cls;sv.stats=sv.stats||RPG.classStats(cls);
    sv.eq=sv.eq||{main:CL.main,off:CL.off,armor:CL.armor};sv.inv=sv.inv||[CL.main,CL.off,CL.armor,...(CL.extra||[])].filter(Boolean);sv.picked=sv.picked||[]}
-  this.bgf=makeBG(this,tx);
+  this.bgf=makeBG(this,tx);this.bgArt=typeof BGART!=='undefined'&&BGART[sid]||null;this.gamb=this.bgArt?this.add.graphics().setScrollFactor(0).setDepth(-9.7):null;
   if(!this.textures.exists('lvl_'+sid))this.textures.addCanvas('lvl_'+sid,this.lv.paint());this.add.image(0,D.top,'lvl_'+sid).setOrigin(0).setDepth(1);
   this.gs=this.add.graphics().setDepth(0);
   this.gp=this.add.graphics().setDepth(1.5);// puddles
@@ -1376,7 +1379,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.time.delayedCall(520,()=>{if(V.sel===0&&V.clear){Save.write({...this.sv,stage:this.def.next,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}
    else if(V.sel===0){const s=this.sv;Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:s.deaths,time:this.playT,ng:this.ng+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings,flaskBonus:s.flaskBonus});this.scene.restart({fresh:false})}else this.scene.start('title')})}
  // ---------------- render ----------------
- render(dt){const g=this.gn,ga=this.ga,cam=this.cam,P=this.player;g.clear();ga.clear();this.lights.length=0;this.bgf(cam.scrollX,cam.scrollY);this.mist.forEach((m,i)=>{m.tilePositionX=cam.scrollX*(.2+i*.05)+this.t*(4+i*3);m.y=Math.round(GY-34-i*36-cam.scrollY*(i?.4:1))});const t=this.t;
+ render(dt){const g=this.gn,ga=this.ga,cam=this.cam,P=this.player;g.clear();ga.clear();this.lights.length=0;this.bgf(cam.scrollX,cam.scrollY);if(this.gamb){this.gamb.clear();this.bgArt.amb(this.gamb,this.t,cam.scrollX)}this.mist.forEach((m,i)=>{m.tilePositionX=cam.scrollX*(.2+i*.05)+this.t*(4+i*3);m.y=Math.round(GY-34-i*36-cam.scrollY*(i?.4:1))});const t=this.t;
   for(const[x,by]of this.braziers){g.fillStyle(0x0d0a1c);g.fillRect(x-1,by-12,3,12);g.fillRect(x-4,by-14,9,2);g.fillRect(x-3,by-12,7,1);g.fillRect(x-3,by-1,7,1);
    glow(ga,x,by-17,22+Math.sin(t*11+x)*1.2,C.f3,.13);glow(ga,x,by-16,8,C.f2,.18);this.light(x,by-16,48+Math.sin(t*13+x)*2,C.f2,.5);
    for(let k=0;k<4;k++){const hy=by-24-k*7-((t*14+k*7)%7);const hx=x+Math.sin(t*5+k*1.7+x)*1.5;ga.fillStyle(0xff9040,.05);ga.fillRect(Math.round(hx)-1,Math.round(hy),3,4)}}
