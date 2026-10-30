@@ -295,3 +295,11 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Gamepad: gamepad.js polls navigator.getGamepads() every frame (0.2 deadzone) and merges the pad into Stage.readInput. In menus, pad presses are replayed as arrow/Enter/Escape keys. Map: A jump/confirm, B roll/back, X attack, Y heavy, LB parry, RB/LT/RT spells, View flask, Start pause. It shows a connect toast and a 'press any button' hint on the title screen, and each local pad gets its own slot. test/gamepad.mjs has 20 checks. Copy updated on the title screen, the pause screen and in README.md.
 - Gamepad fix: the player now follows every connected pad, merged together. Before, only the first entry in getGamepads() was used, and Chrome often lists an idle duplicate or virtual pad first (XInput+DirectInput, Steam Input). Non-standard Xbox layouts (triggers and d-pad on axes) are handled too. test/gamepad_real.mjs mocks Chrome's behaviour: fresh frozen snapshots, no connect event, {pressed,value,touched}, and a duplicate pad listed first.
 - Tile polish: cloister roots are now organic hashed root strands with branches over mottled earth (no lattice), and throne is irregular slanted obsidian shards with glossy upper edges and faint void cracks (no step grid). After shots and screenshots/tiles/compare.png regenerated. Full suite on cc32289 was green (gamepad, tilesfix, bgfix, textfix, r7fix, G-M, milestoneA-F, r3-r6).
+
+## 2026-10-30 evening (pad interact, home travel, equip GUI, visual inventory)
+- d0e23f4 context pad A (interact near usable things, else jump) + glyph prompts; 6f5a4b0 hide Rest prompt under the bonfire menu.
+- 58f222f Travel to Home from every bonfire; hub bonfire lists unlocked (visited) stages; home smith + merchant placeholders.
+- 701fe0b equip menu fix (fits screen, no overlap, wrapped text).
+- Visual inventory (inventory.js): model with labelled slots (R/L hand, head, chest, hands, legs, 2 rings, 4 spells, 3 items),
+  icon grid with stats on icons, before/after comparison, live equip; new GEAR pieces (head/hands/legs/rings) feed RPG.derive.
+  Data: sv.eq.{head,hands,legs,ring1,ring2,q1..q3}, sv.att.slots (4 spells), sv.wup {id:{lv,inf}} for upgrades/infusions.

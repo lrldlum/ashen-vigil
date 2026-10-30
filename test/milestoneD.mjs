@@ -40,8 +40,8 @@ await ev(()=>{const s=S();s.menu.sel=8;s.menuKey('ok')});await wait(200);
 R.lv1=await ev(()=>({lvl:S().lvl,hp:S().player.hpMax,souls:S().souls,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).stats.vig}));
 ok('level_up_at_bonfire_rising_costs',R.menuOpen&&R.costs.every((c,i)=>i===0||c>R.costs[i-1])&&R.lv1.lvl===R.lv0.lvl+5&&R.lv1.hp===R.lv0.hp+25&&R.lv1.souls===R.lv0.souls-R.costs.reduce((a,b)=>a+b)&&R.lv1.saved===17,{costs:R.costs,lv0:R.lv0,lv1:R.lv1});
 // equipment menu: cycle through owned weapons and armor
-await ev(()=>{const s=S();s.sv.inv.push('greatsword','iron','spear');s.menu.mode='main';s.menu.sel=1;s.menuKey('ok');s.menuKey('right')});await wait(200);await shot('d05_equipment_menu');
-R.eqm=await ev(()=>{const s=S(),a=s.sv.eq.main;s.menuKey('down');s.menuKey('down');s.menuKey('right');return{main:a,armor:s.sv.eq.armor,load:+s.build.ratio.toFixed(2),roll:s.build.roll.kind}});
+await ev(()=>{const s=S();s.sv.inv.push('greatsword','iron','spear');s.menu.mode='main';s.menu.sel=1;s.menuKey('ok');s.menuKey('ok');s.menuKey('right');s.menuKey('ok')});await wait(200);await shot('d05_equipment_menu');
+R.eqm=await ev(()=>{const s=S(),a=s.sv.eq.main;s.menuKey('back');s.menuKey('right');s.menuKey('down');s.menuKey('ok');s.menuKey('right');s.menuKey('ok');return{main:a,armor:s.sv.eq.armor,load:+s.build.ratio.toFixed(2),roll:s.build.roll.kind}});
 ok('equipment_menu_changes_weapon_and_armor',R.eqm.main!=='longsword'&&R.eqm.armor!=='knight',R.eqm);
 await ev(()=>{S().menu=null});
 // 4. requirements + scaling letters
