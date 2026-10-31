@@ -33,7 +33,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   if(this.host()){this.status='WAITING FOR A COMPANION';S&&S.sys.isActive()&&S.say&&S.say('YOUR COMPANION HAS FADED',2.4)}
   else if(this.guest()){this.role='lost';this.status='HOST LOST';if(S&&S.victory&&S.victory.guest)S.victory.guest=0;try{this.peer&&this.peer.destroy()}catch(e){}if(S&&S.sys.isActive()&&S.enemies){S.enemies.forEach(e=>{if(e.b.body)e.b.body.moves=true});if(S.boss&&S.bossState==='fight')S.bossState='fight';S.say('THE HOST IS GONE - YOU WALK ALONE',3)}}
   this.lostAt=performance.now()},
- me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,ar:S.sv&&S.sv.eq&&S.sv.eq.armor,
+ me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,ar:S.sv&&S.sv.eq&&S.sv.eq.armor,hd:S.sv&&S.sv.eq&&S.sv.eq.head,hn:S.sv&&S.sv.eq&&S.sv.eq.hands,lg:S.sv&&S.sv.eq&&S.sv.eq.legs,
   cls:S.sv.cls,main:S.sv.eq.main,arm:S.sv.eq.armor,lv:S.lvl,sid:S.sid}},
  prog(S){const sv=S.sv;return{bells:sv.bells||[],chests:sv.chests||[],freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked,seed:sv.seed||0,shortcuts:sv.shortcuts||[]}},
  helloTo(){const S=this.scene;if(!S||!S.sv||!this.linked())return;this.send({t:'hello',sid:S.sid,prog:this.prog(S),ng:S.ng})},
@@ -66,7 +66,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    else if(d.t==='sc'){const c=(S.shortcuts||[]).find(c=>c.id===d.id);if(c)S.openShortcut(c,1)}
    else if(d.t==='chest'){const c=S.chests.find(c=>c.id===d.id);if(c)S.openChest(c,1)}
    else if(d.t==='mhit'){const c=S.chests.find(c=>c.id===d.id);if(c&&c.st==='awake')S.hitMimic(c,d.n,1)}
-   else if(d.t==='dpick'){const i=S.drops.findIndex(x=>x.id===d.id);if(i>=0){const dr=S.drops.splice(i,1)[0];this.send({t:'dgot',d:dr});if(dr.kind==='gear'&&!S.sv.inv.includes(dr.item)){S.sv.inv.push(dr.item);Save.write(S.sv);S.pop('COMPANION FOUND '+(WEAPONS[dr.item]||ARMORS[dr.item]).name,S.player.x,S.player.y-30,0x9ff0dc)}}}
+   else if(d.t==='dpick'){const i=S.drops.findIndex(x=>x.id===d.id);if(i>=0){const dr=S.drops.splice(i,1)[0];this.send({t:'dgot',d:dr});if(dr.kind==='gear'&&!S.sv.inv.includes(dr.item)){S.sv.inv.push(dr.item);Save.write(S.sv);S.pop('COMPANION FOUND '+((WEAPONS[dr.item]||ARMORS[dr.item]||(typeof GEAR!=='undefined'&&GEAR[dr.item])||{}).name||String(dr.item).toUpperCase()),S.player.x,S.player.y-30,0x9ff0dc)}}}
    else if(d.t==='parry'){const e=S.enemies[d.i];if(e&&!e.dead){e.state='stag';e.t=0}}
    return}
   // ---------- guest ----------
@@ -78,7 +78,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   else if(d.t==='hurt'){}// guest takes damage locally from the host's state
   else if(d.t==='picked'){const i=S.items.findIndex(x=>x.id===d.id);const it=i>=0?S.items[i]:{id:d.id,item:d.item,x:S.player.x,y:S.player.y};S.takeItem(it,1)}
   else if(d.t==='drop'){if(!S.drops.find(x=>x.id===d.d.id))S.drops.push({...d.d})}
-  else if(d.t==='dgone'){S.drops=S.drops.filter(x=>x.id!==d.id);if(d.gear&&!S.sv.inv.includes(d.gear)){S.sv.inv.push(d.gear);Save.write(S.sv);S.pop('COMPANION FOUND '+(WEAPONS[d.gear]||ARMORS[d.gear]).name,S.player.x,S.player.y-30,0x9ff0dc)}}
+  else if(d.t==='dgone'){S.drops=S.drops.filter(x=>x.id!==d.id);if(d.gear&&!S.sv.inv.includes(d.gear)){S.sv.inv.push(d.gear);Save.write(S.sv);S.pop('COMPANION FOUND '+((WEAPONS[d.gear]||ARMORS[d.gear]||(typeof GEAR!=='undefined'&&GEAR[d.gear])||{}).name||String(d.gear).toUpperCase()),S.player.x,S.player.y-30,0x9ff0dc)}}
   else if(d.t==='dgot'){S.drops=S.drops.filter(x=>x.id!==d.d.id);S.takeDrop(d.d)}
   else if(d.t==='bossdead'){if(d.kind)S.awardSignature(d.kind,S.boss?S.boss.x:S.player.x);S.bossState='dead';S.boss=null;S.gateL.body.enable=false;S.shots.length=0;S.flames=[];S.say(d.slain||'LORD FELLED',3);S.sv.bossDown=true;Save.write(S.sv);S.time.delayedCall(1600,()=>{if(S.sys.isActive()&&S.bossState==='dead'&&!S.victory){S.best=S.best||S.playT;S.bestNew=false;S.victory={t:0,sel:0,clear:!!S.def.next,guest:1}}})}
   else if(d.t==='ending'){Save.write({...S.sv,souls:S.souls});S.scene.start('ending',{kind:d.kind})}},
@@ -135,8 +135,8 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  tag(g,x,y,isHost){const s=isHost?'P1 HOST':'P2 GUEST',w=textW(s),col=isHost?0xffb04a:0x5fe0c0;g.fillStyle(0x07050f,.85);g.fillRect(x-Math.round(w/2)-2,y-1,w+4,7);g.fillStyle(col,1);g.fillRect(x-Math.round(w/2)-2,y+6,w+4,1);drawText(g,s,x-Math.round(w/2),y,col)},
  localStyle(S){if(this.guest()&&this.linked())heroStyle(S.wp,S.player.heavy&&S.player.state==='atk',{pal:this.TINT})},
  draw(S,g,ga){const R=this.remote;if(!R||R.sid!==S.sid)return;const x=Math.round(R.rx),y=Math.round(R.ry),rh=this.guest();
-  heroStyle(WEAPONS[R.main]||WEAPONS.longsword,!!R.hv,rh?ARMORS[R.ar]:{pal:this.TINT});if(!R.dead)drawHero(g,x,y,R.f,R.st,R.fr,S.t,{flash:!!R.fl,combo:R.c});else{g.fillStyle(0x3a6a64,.6);g.fillRect(x-5,y-2,11,2)}
-  const rc=rh?0xffb04a:0x5fe0c0;HERO.rim(ga,x,y,R.f,rh?0xffd08a:0x9ff0dc,.45);glow(ga,x,y-8,12,rc,.08);S.light(x,y-8,24,rc,.3);
+  heroStyle(WEAPONS[R.main]||WEAPONS.longsword,!!R.hv,rh?ARMORS[R.ar]:{pal:this.TINT});const pxr=!R.dead&&S.pxc&&PIXCH.remote(S,R,x,y,rh);if(!R.dead&&!pxr)drawHero(g,x,y,R.f,R.st,R.fr,S.t,{flash:!!R.fl,combo:R.c});else{g.fillStyle(0x3a6a64,.6);g.fillRect(x-5,y-2,11,2)}
+  const rc=rh?0xffb04a:0x5fe0c0;if(!pxr)HERO.rim(ga,x,y,R.f,rh?0xffd08a:0x9ff0dc,.45);glow(ga,x,y-8,12,rc,.08);S.light(x,y-8,24,rc,.3);
   const w=16;this.tag(g,x,y-33,rh);if(this.linked()){const P=S.player;if(!P.dead)this.tag(g,Math.round(P.x),Math.round(P.y)-33,this.host())}g.fillStyle(0x07050f);g.fillRect(x-w/2-1,y-24,w+2,3);g.fillStyle(rc);g.fillRect(x-w/2,y-23,Math.max(0,Math.round(w*R.hp/(R.hm||100))),1);
   heroStyle(S.wp,S.player.heavy&&S.player.state==='atk',ARMORS[S.sv.eq.armor])},
  hud(S,g){if(!this.role)return;let s;if(this.host())s='ROOM '+this.code+(this.linked()?'  P2 '+(this.remote?CLASSES[this.remote.cls]?.name||'':''):'  '+this.status);else if(this.guest())s='CO-OP ROOM '+this.code+'  P2';else if(this.role==='lost')s='HOST LOST - SOLO';else return;

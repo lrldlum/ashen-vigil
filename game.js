@@ -916,7 +916,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(d.t>.35&&!P.dead&&Math.abs(P.x-d.x)<10&&Math.abs(P.y-d.y)<20){if(NET.guest()){if(!d.req){d.req=1;NET.send({t:'dpick',id:d.id});setTimeout(()=>d.req=0,800)}}else{this.drops.splice(i,1);this.takeDrop(d);if(NET.host())NET.send({t:'dgone',id:d.id,gear:d.kind==='gear'?d.item:null})}}}}
  // what a drop does for whoever picked it up (pickup burst drawn per kind)
  takeDrop(d){const P=this.player,sv=this.sv;let nm,col;
-  if(d.kind==='gear'){nm=(WEAPONS[d.item]||ARMORS[d.item]).name;col=0xffe2a8;if(!sv.inv.includes(d.item))sv.inv.push(d.item);this.say(nm+' - EQUIP AT A BONFIRE',2);this.sfx('pickup',.45);this.fx.spark(d.x,d.y-6,18,C.f1,110)}
+  if(d.kind==='gear'){nm=((WEAPONS[d.item]||ARMORS[d.item]||(typeof GEAR!=='undefined'&&GEAR[d.item])||{}).name||String(d.item).toUpperCase());col=0xffe2a8;if(!sv.inv.includes(d.item))sv.inv.push(d.item);this.say(nm+' - EQUIP AT A BONFIRE',2);this.sfx('pickup',.45);this.fx.spark(d.x,d.y-6,18,C.f1,110)}
   else{const L=CONSUMABLES[d.kind];nm=L.name;col=L.col;this.sfx(L.fx==='souls'?'souls':'heal',.35);
    if(L.hp){P.hp=Math.min(P.hpMax,P.hp+L.hp);this.fx.ember(P.x,P.y-8,14,1.4)}if(L.fp){P.fp=Math.min(P.fpMax,P.fp+L.fp);this.fx.shard(P.x,P.y-10,10,90)}
    if(L.souls)this.gainSouls(L.souls,1);if(L.guard)this.buffs.guard=L.guard;if(L.stam)this.buffs.stam=L.stam;

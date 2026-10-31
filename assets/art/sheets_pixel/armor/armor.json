@@ -1,0 +1,246 @@
+{
+ "frameWidth": 46,
+ "frameHeight": 46,
+ "totalFrames": 30,
+ "origin": [
+  0.5,
+  0.90625
+ ],
+ "base": "sheets_pixel/hero_strip.png",
+ "drawOrder": [
+  "legs",
+  "chest",
+  "hands",
+  "head"
+ ],
+ "pieces": [
+  {
+   "slot": "head",
+   "pieceId": "plate_head",
+   "file": "sheets_pixel/armor/head_plate_head.png",
+   "hides": [
+    "hood",
+    "mask"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Sentinel Helm"
+  },
+  {
+   "slot": "chest",
+   "pieceId": "plate_chest",
+   "file": "sheets_pixel/armor/chest_plate_chest.png",
+   "hides": [
+    "torso"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Sentinel Plate"
+  },
+  {
+   "slot": "hands",
+   "pieceId": "plate_hands",
+   "file": "sheets_pixel/armor/hands_plate_hands.png",
+   "hides": [
+    "hands"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Sentinel Gauntlets"
+  },
+  {
+   "slot": "legs",
+   "pieceId": "plate_legs",
+   "file": "sheets_pixel/armor/legs_plate_legs.png",
+   "hides": [
+    "legs",
+    "boots"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Sentinel Greaves"
+  },
+  {
+   "slot": "head",
+   "pieceId": "rags_head",
+   "file": "sheets_pixel/armor/head_rags_head.png",
+   "hides": [
+    "hood"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Ashen Hood"
+  },
+  {
+   "slot": "chest",
+   "pieceId": "rags_chest",
+   "file": "sheets_pixel/armor/chest_rags_chest.png",
+   "hides": [
+    "torso"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Ashen Rags"
+  },
+  {
+   "slot": "hands",
+   "pieceId": "rags_hands",
+   "file": "sheets_pixel/armor/hands_rags_hands.png",
+   "hides": [
+    "hands"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Ashen Wraps"
+  },
+  {
+   "slot": "legs",
+   "pieceId": "rags_legs",
+   "file": "sheets_pixel/armor/legs_rags_legs.png",
+   "hides": [
+    "legs",
+    "boots"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Ashen Leggings"
+  },
+  {
+   "slot": "head",
+   "pieceId": "choir_head",
+   "file": "sheets_pixel/armor/head_choir_head.png",
+   "hides": [
+    "hood"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Pale Choir Veil"
+  },
+  {
+   "slot": "chest",
+   "pieceId": "choir_chest",
+   "file": "sheets_pixel/armor/chest_choir_chest.png",
+   "hides": [
+    "torso"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Pale Choir Robe"
+  },
+  {
+   "slot": "chest",
+   "pieceId": "kiln_chest",
+   "file": "sheets_pixel/armor/chest_kiln_chest.png",
+   "hides": [
+    "torso"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Kiln Iron Cuirass"
+  },
+  {
+   "slot": "legs",
+   "pieceId": "kiln_legs",
+   "file": "sheets_pixel/armor/legs_kiln_legs.png",
+   "hides": [
+    "legs",
+    "boots"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Kiln Iron Greaves"
+  },
+  {
+   "slot": "chest",
+   "pieceId": "leather_chest",
+   "file": "sheets_pixel/armor/chest_leather_chest.png",
+   "hides": [
+    "torso"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Wanderer Leathers"
+  },
+  {
+   "slot": "legs",
+   "pieceId": "leather_legs",
+   "file": "sheets_pixel/armor/legs_leather_legs.png",
+   "hides": [
+    "boots"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Wanderer Boots"
+  },
+  {
+   "slot": "chest",
+   "pieceId": "lamp_chest",
+   "file": "sheets_pixel/armor/chest_lamp_chest.png",
+   "hides": [
+    "torso"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Lamp Vestment"
+  },
+  {
+   "slot": "legs",
+   "pieceId": "lamp_legs",
+   "file": "sheets_pixel/armor/legs_lamp_legs.png",
+   "hides": [
+    "legs",
+    "boots"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "Lamp Skirt"
+  },
+  {
+   "slot": "head",
+   "pieceId": "iron_helm",
+   "file": "sheets_pixel/armor/head_iron_helm.png",
+   "hides": [
+    "hood (top)"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "IRON HELM"
+  },
+  {
+   "slot": "head",
+   "pieceId": "rime_hood",
+   "file": "sheets_pixel/armor/head_rime_hood.png",
+   "hides": [
+    "hood"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "RIMEBOUND HOOD"
+  },
+  {
+   "slot": "hands",
+   "pieceId": "iron_gauntlets",
+   "file": "sheets_pixel/armor/hands_iron_gauntlets.png",
+   "hides": [
+    "hands"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "IRON GAUNTLETS"
+  },
+  {
+   "slot": "hands",
+   "pieceId": "hunter_gloves",
+   "file": "sheets_pixel/armor/hands_hunter_gloves.png",
+   "hides": [
+    "hands"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "HUNTER GLOVES"
+  },
+  {
+   "slot": "legs",
+   "pieceId": "iron_greaves",
+   "file": "sheets_pixel/armor/legs_iron_greaves.png",
+   "hides": [
+    "legs",
+    "boots"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "IRON GREAVES"
+  },
+  {
+   "slot": "legs",
+   "pieceId": "cloth_trousers",
+   "file": "sheets_pixel/armor/legs_cloth_trousers.png",
+   "hides": [
+    "legs",
+    "boots"
+   ],
+   "hidesFrames": "all (0-29)",
+   "name": "CLOTH TROUSERS"
+  }
+ ],
+ "note": "Overlay strips, 46x46x30, same origin as hero; draw over base in drawOrder. Derived per-frame from the base hero mask, so they track exactly. Each piece covers its listed base parts in all frames 0-29; choir_chest adds robe pixels below the torso, plate_head adds a 2px crest."
+}
