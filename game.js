@@ -491,7 +491,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,G,T,R,SPACE,SHIFT,ENTER,J,K,L,U,I,H,TAB');this.kHold={};
   // r6: Phaser drops JustDown when a key goes down and up inside one frame; latch presses so a quick tap (e.g. Up at the keeper) still counts
   // boss intros: any confirm key or Esc skips (touch: tap); pads are polled in updateCine
-  this.input.keyboard.on('keydown',e=>{if(this.cine&&!e.repeat&&['Enter',' ','z','Z','x','X','j','J','Escape'].includes(e.key))this.skipCine()});this.input.on('pointerdown',()=>{if(this.cine)this.skipCine()});this.events.once('shutdown',()=>this.endVideo());
+  // r10: only Enter/Esc (pad: A/Start, touch: the Skip button) skip, and not in the first 0.7 s, so mashed attack/jump/taps don't eat the intro
+  this.input.keyboard.on('keydown',e=>{if(this.cine&&!e.repeat&&['Enter','Escape'].includes(e.key))this.skipCine()});this.events.once('shutdown',()=>{this.endVideo();this.skipBtn(0)});
   this.kl={};this.input.keyboard.on('keydown',e=>{if(!this.menu&&!e.repeat)this.kl[e.keyCode]=1});
   this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}// r5: a key tapped faster than one frame still moves the menu cursor (edge detection alone could miss it)
   if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r'],w:['up','up'],s:['down','dn'],a:['left','l'],d:['right','r'],W:['up','up'],S:['down','dn'],A:['left','l'],D:['right','r']}[e.key];if(m&&!e.repeat){if(this.menu.t<.15)return;this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
@@ -1369,20 +1370,24 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   // intros play in full once per save (and per session for co-op guests); on later attempts (after a death) only a short beat
   const K=BD.kind,SI=this.sv.seenIntro=this.sv.seenIntro||{},seen=!!(SI[K]||(window.__seenIntro||{})[K])&&!Q.has('intro');(window.__seenIntro=window.__seenIntro||{})[K]=1;
   if(!seen){SI[K]=1;if(!NET.guest())Save.write(this.sv)}
-  this.cine={t:0,kind:K,short:seen,pad:this.padSnap()};this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,seen?300:900,'Sine.easeInOut');
+  this.cine={t:0,kind:K,short:seen,pad:this.padSnap(),t0:performance.now()};if(!seen)this.skipBtn(1);this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,seen?300:900,'Sine.easeInOut');
   if(seen){this.cine.t=4.2;Object.assign(this.cine,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});this.bars=1}
   else if(BOSS_VIDEO[K]&&!Q.has('novideo')&&!DEMO)this.playVideo(BOSS_VIDEO[K])}
  padSnap(){try{return Array.from((navigator.getGamepads&&navigator.getGamepads())||[]).map(g=>g?g.buttons.map(b=>typeof b==='object'?b.pressed||b.value>.5:b>.5):[])}catch(e){return[]}}
- padEdge(c){const now=this.padSnap(),pv=c.pad||[];c.pad=now;return now.some((bs,i)=>bs.some((b,j)=>b&&!(pv[i]&&pv[i][j])))}
+ padEdge(c){const now=this.padSnap(),pv=c.pad||[];c.pad=now;return now.some((bs,i)=>bs.some((b,j)=>(j===0||j===9)&&b&&!(pv[i]&&pv[i][j])))}// A or Start only
+ skipBtn(on){let b=document.getElementById('skipIntro');if(!on){if(b)b.remove();return}if(b||!(('ontouchstart' in window)||navigator.maxTouchPoints>0||Q.has('touch')))return;b=document.createElement('button');b.id='skipIntro';b.textContent='Skip';b.style.cssText='position:fixed;right:12px;bottom:12px;z-index:30;padding:6px 14px;font:bold 14px monospace;color:#ffe2a8;background:rgba(26,13,34,.8);border:2px solid #ffe2a8;border-radius:4px';b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();this.skipCine()});document.body.appendChild(b)}
  // pre-rendered intro (Pale Cantor): a <video> over the canvas; sound first, muted file if autoplay with sound is refused
  playVideo(V){const c=this.cine,cv=this.sys.game.canvas,v=document.createElement('video'),r=cv.getBoundingClientRect();
   v.id='bossVideo';v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';v.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background:#000;object-fit:contain;z-index:20;pointer-events:none`;
+  // r10: keep the overlay on the canvas through resize, rotation and fullscreen
+  const fit=()=>{const q=cv.getBoundingClientRect();Object.assign(v.style,{left:q.left+'px',top:q.top+'px',width:q.width+'px',height:q.height+'px'})};v._fit=fit;for(const ev of['resize','orientationchange','fullscreenchange','webkitfullscreenchange'])(ev.includes('fullscreen')?document:window).addEventListener(ev,fit);this.scale.on('resize',fit);
   const muted=Q.has('mute')||this.sound.mute;const go=(src,m)=>{v.muted=m;v.src=src;return v.play()};
-  const done=()=>{if(c.video===v)this.endVideo()};v.onended=done;v.onerror=()=>{if(!v.muted)go(V.muted,true).catch(done);else done()};
+  const done=()=>{if(c.video===v)this.endVideo()};v.onended=()=>{if(c.video===v)this.endVideo(1)};v.onerror=()=>{if(!v.muted)go(V.muted,true).catch(done);else done()};
   document.body.appendChild(v);c.video=v;c.vt=0;window.__bossVideo={src:V.mp4,state:'playing'};
   go(muted?V.muted:V.mp4,muted).catch(()=>go(V.muted,true).catch(done))}
- endVideo(){const c=this.cine,v=c&&c.video||document.getElementById('bossVideo');if(v){try{v.pause()}catch(e){}v.remove()}if(c&&c.video){c.video=null;c.t=.9;if(window.__bossVideo)window.__bossVideo.state='done'}}
- skipCine(){const c=this.cine;if(!c||c.skipT>this.t-.15)return;c.skipT=this.t;c.skipped=1;window.__introSkipped=(window.__introSkipped||0)+1;if(c.video){this.endVideo();c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});return}if(c.t<4.2){c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1})}}
+ endVideo(full){const c=this.cine,v=c&&c.video||document.getElementById('bossVideo');if(v){try{v.pause()}catch(e){}if(v._fit){for(const ev of['resize','orientationchange'])window.removeEventListener(ev,v._fit);for(const ev of['fullscreenchange','webkitfullscreenchange'])document.removeEventListener(ev,v._fit);this.scale.off('resize',v._fit)}v.remove()}if(c&&c.video){c.video=null;c.t=.9;if(full){c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});if(this.boss)Object.assign(this.boss,{rise:1,eyes:1})}// r10: a video that played to its end already showed the rise
+  if(window.__bossVideo)window.__bossVideo.state='done'}}
+ skipCine(){const c=this.cine;if(!c||c.skipT>this.t-.15||performance.now()-(c.t0||0)<700)return;if(NET.guest()&&NET.linked()){c.skipT=this.t;NET.send({t:'skipreq'});return}/* co-op: the host owns the intro; a guest skip is a request */c.skipT=this.t;c.skipped=1;window.__introSkipped=(window.__introSkipped||0)+1;if(c.video){this.endVideo();c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});return}if(c.t<4.2){c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1})}}
  updateCine(dt){const c=this.cine;if(!c)return;const B=this.boss;if(this.padEdge(c))this.skipCine();if(c&&NET.guest()&&this.bossState==='fight'&&this.cine){this.endVideo();c.t=Math.max(c.t,4.2)}// co-op guest: the host's fight has begun
   if(c.video){c.vt+=dt;this.bars=1;if(c.vt>25)this.endVideo();return}c.t+=dt;this.bars=c.short?Math.max(this.bars,1):Math.min(1,c.t/.5);
   const K=B.kind;
@@ -1401,12 +1406,13 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(c.t>.9&&c.t<1.6){B.rise=ease((c.t-.9)/.7);if(Math.random()<.9){if(K==='king'||K==='smith')this.fx.fire(B.x+rnd(-16,16),GY,3,4,1.5);else if(K==='cantor')this.fx.star(B.x+rnd(-14,14),GY-rnd(10,60),0xb8a8ff);else this.fx.shard(B.x+rnd(-14,14),GY,2,80)}if(!c.shk){c.shk=1;this.cam.shake(700,.012);this.sfx(K==='cantor'?'bonfire':'charge',.5)}}
   if(c.t>1.6){B.eyes=Math.min(1,(c.t-1.6)/.3);if(!c.ign){c.ign=1;if(K==='king'||K==='smith'){this.explode(B.x,GY-20,false);this.fx.ember(B.x,GY-40,30,2.5);this.flashA=.3}else{this.fx.spark(B.x-3,B.y-29,14,K==='cantor'?0xb8a8ff:C.ice1,90);this.novas.push({dome:1,x:B.x,y:GY,R:110,grow:.45,t:0,m:1.4,harmless:1});this.flashA=.25}}}
   if(c.t>3.8){this.bars=Math.max(0,1-(c.t-3.8)/.4)}
-  if(c.t>4.2){this.cine=null;this.bars=0;this.bossState='fight';B.state='walk';B.rise=1;this.cam.startFollow(this.pb,true,.12,0,Math.round(this.camOff),0)}}
+  if(c.t>4.2&&NET.guest()&&NET.linked()&&this.bossState!=='fight')c.t=4.2;// co-op guest: hold the last beat until the host's fight starts
+  if(c.t>4.2){this.cine=null;this.skipBtn(0);this.bars=0;this.bossState='fight';B.state='walk';B.rise=1;this.cam.startFollow(this.pb,true,.12,0,Math.round(this.camOff),0)}}
  // ---------------- victory card (Tester r1 P1 #6) ----------------
  victoryInput(){}// keys handled by the keydown listener in create() so quick taps are never missed
- victoryOpts(){const V=this.victory;if(this.def.finale&&V.phase!=='choose')return['CLAIM THE HOLLOW THRONE','RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(this.def.side&&V.phase!=='choose')return['RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(V.phase==='choose')return['REKINDLE THE FIRST FLAME','LET THE FLAME FADE'];return V.clear?['ONWARD: '+STAGE_DEFS[this.def.next].name,'REST AT THE ASH SHRINE','RETURN TO TITLE']:['APPROACH THE FIRST FLAME','RETURN TO TITLE']}
- victoryTap(p){const V=this.victory;if(V.t<.8)return;const y0=V.phase==='choose'?112:121,i=Math.floor((p.y-y0)/11),n=V.phase==='choose'?2:this.victoryOpts().length;if(i<0||i>=n)return;V.sel=i;this.victoryGo()}
- victoryGo(){const V=this.victory;if(V.gone)return;
+ victoryOpts(){const V=this.victory;if(V.guest)return['THE HOST CHOOSES THE PATH'];if(this.def.finale&&V.phase!=='choose')return['CLAIM THE HOLLOW THRONE','RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(this.def.side&&V.phase!=='choose')return['RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(V.phase==='choose')return['REKINDLE THE FIRST FLAME','LET THE FLAME FADE'];return V.clear?['ONWARD: '+STAGE_DEFS[this.def.next].name,'REST AT THE ASH SHRINE','RETURN TO TITLE']:['APPROACH THE FIRST FLAME','RETURN TO TITLE']}
+ victoryTap(p){const V=this.victory;if(V.t<.8||V.guest)return;const y0=V.phase==='choose'?112:121,i=Math.floor((p.y-y0)/11),n=V.phase==='choose'?2:this.victoryOpts().length;if(i<0||i>=n)return;V.sel=i;this.victoryGo()}
+ victoryGo(){const V=this.victory;if(V.gone||V.guest)return;// co-op guest: read-only card, follows the host's choice
   if(this.def.finale&&V.sel===0){V.gone=1;const kind='usurp';this.cam.fadeOut(900,30,24,16);if(NET.host())NET.send({t:'ending',kind});this.time.delayedCall(920,()=>this.scene.start('ending',{kind}));return}
   if(this.def.side){V.gone=1;const sel=this.def.finale?V.sel-1:V.sel;this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{if(sel===0){Save.write({...this.sv,stage:'shrine',retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}else this.scene.start('title')});return}
   if(!V.clear&&V.phase!=='choose'&&V.sel===0){V.phase='choose';V.sel=0;V.t=.8;this.sfx('chime',.4);return}

@@ -31,7 +31,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  // graceful disconnects: host keeps the room open; guest keeps playing alone with local simulation
  dropped(why){if(!this.conn)return;const S=this.scene;this.conn=null;this.remote=null;
   if(this.host()){this.status='WAITING FOR A COMPANION';S&&S.sys.isActive()&&S.say&&S.say('YOUR COMPANION HAS FADED',2.4)}
-  else if(this.guest()){this.role='lost';this.status='HOST LOST';try{this.peer&&this.peer.destroy()}catch(e){}if(S&&S.sys.isActive()&&S.enemies){S.enemies.forEach(e=>{if(e.b.body)e.b.body.moves=true});if(S.boss&&S.bossState==='fight')S.bossState='fight';S.say('THE HOST IS GONE - YOU WALK ALONE',3)}}
+  else if(this.guest()){this.role='lost';this.status='HOST LOST';if(S&&S.victory&&S.victory.guest)S.victory.guest=0;try{this.peer&&this.peer.destroy()}catch(e){}if(S&&S.sys.isActive()&&S.enemies){S.enemies.forEach(e=>{if(e.b.body)e.b.body.moves=true});if(S.boss&&S.bossState==='fight')S.bossState='fight';S.say('THE HOST IS GONE - YOU WALK ALONE',3)}}
   this.lostAt=performance.now()},
  me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,ar:S.sv&&S.sv.eq&&S.sv.eq.armor,
   cls:S.sv.cls,main:S.sv.eq.main,arm:S.sv.eq.armor,lv:S.lvl,sid:S.sid}},
@@ -58,6 +58,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    if(!live)return;
    if(d.t==='dmg'){const e=S.enemies[d.i];if(e&&!e.dead)S.damageEnemy(e,d.n,d.dir,1)}
    else if(d.t==='bdmg')S.damageBoss(d.n,1);
+   else if(d.t==='skipreq'){if(S.cine)S.skipCine()}// guest asked to skip the boss intro: the host decides (same 0.7 s guard)
    else if(d.t==='cage'){const c=S.cages.find(c=>c.id===d.id);if(c&&!c.freed&&!c.locked)S.freeCage(c,1)}
    else if(d.t==='brk'){const k=S.breakables.find(k=>k.id===d.id);if(k&&k.hp>0)S.hitBreakable(k,1)}
    else if(d.t==='pick'){const it=S.items.find(i=>i.id===d.id);if(it){S.takeItem(it,1);this.send({t:'picked',id:it.id,item:it.item})}}
@@ -79,7 +80,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   else if(d.t==='drop'){if(!S.drops.find(x=>x.id===d.d.id))S.drops.push({...d.d})}
   else if(d.t==='dgone'){S.drops=S.drops.filter(x=>x.id!==d.id);if(d.gear&&!S.sv.inv.includes(d.gear)){S.sv.inv.push(d.gear);Save.write(S.sv);S.pop('COMPANION FOUND '+(WEAPONS[d.gear]||ARMORS[d.gear]).name,S.player.x,S.player.y-30,0x9ff0dc)}}
   else if(d.t==='dgot'){S.drops=S.drops.filter(x=>x.id!==d.d.id);S.takeDrop(d.d)}
-  else if(d.t==='bossdead'){if(d.kind)S.awardSignature(d.kind,S.boss?S.boss.x:S.player.x);S.bossState='dead';S.boss=null;S.gateL.body.enable=false;S.shots.length=0;S.flames=[];S.say(d.slain||'LORD FELLED',3);S.sv.bossDown=true}
+  else if(d.t==='bossdead'){if(d.kind)S.awardSignature(d.kind,S.boss?S.boss.x:S.player.x);S.bossState='dead';S.boss=null;S.gateL.body.enable=false;S.shots.length=0;S.flames=[];S.say(d.slain||'LORD FELLED',3);S.sv.bossDown=true;Save.write(S.sv);S.time.delayedCall(1600,()=>{if(S.sys.isActive()&&S.bossState==='dead'&&!S.victory){S.best=S.best||S.playT;S.bestNew=false;S.victory={t:0,sel:0,clear:!!S.def.next,guest:1}}})}
   else if(d.t==='ending'){Save.write({...S.sv,souls:S.souls});S.scene.start('ending',{kind:d.kind})}},
  follow(sid,prog){const S=this.scene;if(!S)return;if(this._following===sid)return;this._following=sid;const sv=S.sv||{};
   Save.write({...sv,stage:sid,souls:S.souls,bonfire:!!(prog&&prog.bonfire),bossDown:!!(prog&&prog.bossDown),stain:null});setTimeout(()=>{this._following=null},1500);

@@ -11,12 +11,12 @@ await ctx.addInitScript(()=>{window.__pad={buttons:Array(17).fill(0).map(()=>({p
  window.__padOn=false;navigator.getGamepads=()=>window.__padOn?[window.__pad]:[]});
 const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));
 const S=f=>pg.evaluate(f);const wait=ms=>pg.waitForTimeout(ms);
-const load=async(stage,clear=true)=>{if(clear){await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear())}
- await pg.goto(B+`?play&mute&class=knight&stage=${stage}`);await pg.waitForFunction(()=>{const s=window.__G&&__G.scene.getScene('stage');return s&&s.player&&s.sys.isActive()},null,{timeout:30000});await wait(600)};
+const load=async(stage,clear=true,extra='')=>{if(clear){await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear())}
+ await pg.goto(B+`?play&mute&class=knight&stage=${stage}${extra}`);await pg.waitForFunction(()=>{const s=window.__G&&__G.scene.getScene('stage');return s&&s.player&&s.sys.isActive()},null,{timeout:30000});await wait(600)};
 const enter=()=>S(()=>{const s=__G.scene.getScene('stage');s.player.inv=99;s.pb.setPosition(ARENA_L+40,140);s.pb.setVelocity(0,0)});
 const st=()=>S(()=>{const s=__G.scene.getScene('stage'),c=s.cine;return{bs:s.bossState,cine:!!c,t:c?+c.t.toFixed(2):null,short:c?!!c.short:null,video:!!(c&&c.video),vel:!!document.getElementById('bossVideo'),kind:s.def.boss&&s.def.boss.kind}});
 const until=async(f,ms=8000)=>{const t0=Date.now();while(Date.now()-t0<ms){const r=await st();if(f(r))return r;await wait(80)}return await st()};
-const keys=['Enter','Escape',' ','z','x','j'];let ki=0;
+const keys=['Enter','Escape'];let ki=0;
 for(const[stage,kind] of Object.entries(BOSSES).filter(([k])=>!process.env.ONLY||process.env.ONLY.split(',').includes(k))){await load(stage);await enter();
  const a=await until(r=>r.cine);ok(`${kind}_intro_plays`,a.cine&&a.kind===kind&&!a.short,a);
  if(kind==='cantor'){const v=await until(r=>r.vel,3000);await wait(1500);
@@ -30,6 +30,17 @@ for(const[stage,kind] of Object.entries(BOSSES).filter(([k])=>!process.env.ONLY|
  await S(()=>{window.__padOn=false})}
 // unskipped in-engine intro runs to the fight on its own
 await load('belltower');await enter();const u=await until(r=>r.bs==='fight',9000);ok('toller_intro_runs_to_fight',u.bs==='fight'&&!u.cine,u);
+// r10: grace period + only deliberate inputs skip
+await load('ramparts');await enter();await until(r=>r.cine);await pg.keyboard.press('Enter');await wait(150);
+const g1=await st();ok('early_enter_ignored(<0.7s)',g1.cine,g1);await wait(700);
+for(const k of['x','z',' ','j','k'])await pg.keyboard.press(k);await pg.mouse.click(640,360);await wait(200);
+const g2=await st();ok('attack_jump_click_do_not_skip',g2.cine,g2);
+// r10: touch gets a small Skip button
+await load('keep',true,'&touch');await enter();await until(r=>r.cine);await wait(900);
+const hasBtn=await S(()=>!!document.getElementById('skipIntro'));await pg.click('#skipIntro');const tb=await until(r=>r.bs==='fight'&&!r.cine,500);
+ok('touch_skip_button',hasBtn&&tb.bs==='fight'&&!(await S(()=>!!document.getElementById('skipIntro'))),{hasBtn,tb});
+// r10: cantor video natural end goes straight to the fight (no second rise)
+await load('cathedral');await enter();await until(r=>r.vel,4000);const ve=await until(r=>!r.vel,22000);const ne=await until(r=>r.bs==='fight',600);ok('video_end_no_double_rise',!ve.vel&&ne.bs==='fight',{ve,ne});
 // after a death: the save remembers the intro, so the next attempt only gets the short beat (no video)
 await load('cathedral');await enter();await until(r=>r.cine);await pg.keyboard.press('Escape');await until(r=>r.bs==='fight');
 const seen=await S(()=>Save.load().seenIntro);await S(()=>{const s=__G.scene.getScene('stage');s.hurtPlayer(9999,s.player.x+10)});await pg.waitForFunction(()=>__G.scene.getScene('stage').player.dead,null,{timeout:5000}).catch(()=>{});
