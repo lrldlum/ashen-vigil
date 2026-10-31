@@ -102,8 +102,8 @@ await ev(()=>{const s=S();s.boss.state='walk';s.boss.hp=1;s.damageBoss(5)});awai
 const vic=await ev(()=>({lords:S().sv.lords,inv:S().sv.inv.includes('hollowbrand'),opts:S().victoryOpts()}));
 ok('heir_drops_signature_hollowbrand',vic.lords.includes('heir')&&vic.inv,vic);
 await ev(()=>{S().victory.t=2;S().victory.sel=0;S().victoryGo()});await A.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('ending')&&__G.scene.getScene('ending').sys.isActive(),null,{timeout:20000}).catch(()=>{});await wait(6000);
-const us=await ev(()=>{const e=__G.scene.getScene('ending');return{kind:e.kind,lines:e.lines,title:ENDINGS[e.kind]&&ENDINGS[e.kind].title,saved:(Save.load()||{}).endings}});await shot('m11_usurp_ending');
-ok('claim_the_hollow_throne_usurp_ending',vic.opts.join('|')==='CLAIM THE HOLLOW THRONE|RETURN TO THE ASH SHRINE|RETURN TO TITLE'&&us.kind==='usurp'&&us.title==='THE HOLLOW THRONE'&&us.lines.some(s=>/AGE OF ASH/.test(s))&&us.lines.every(Boolean)&&us.saved.includes('usurp'),us);
+const us=await ev(()=>{const e=__G.scene.getScene('ending');return{kind:e.kind,lines:e.lines,title:ENDINGS[e.kind]&&ENDINGS[e.kind].title,saved:(Save.load()||{}).endings,ng:e.ngOk(),card:!!e.card}});await shot('m11_usurp_ending');
+ok('claim_the_hollow_throne_usurp_ending',vic.opts.join('|')==='CLAIM THE HOLLOW THRONE|APPROACH THE FIRST FLAME|RETURN TO THE ASH SHRINE|RETURN TO TITLE'&&us.ng===true&&us.kind==='usurp'&&us.title==='THE HOLLOW THRONE'&&us.lines.some(s=>/AGE OF ASH/.test(s))&&us.lines.every(Boolean)&&us.saved.includes('usurp'),{...us,opts:vic.opts});// the finale card also offers the first flame; beating the Heir unlocks JOURNEY ON (NG+) on the ending card
 await go('?play&continue&mute&slot=1');await ev(()=>{const s=S();if(s.sid!=='shrine')s.travel('shrine')});await A.pg.waitForFunction(()=>__G.scene.getScene('stage').sid==='shrine'&&__G.scene.getScene('stage').player,null,{timeout:20000}).catch(()=>{});await wait(900);
 const back=await ev(()=>({sid:S().sid}));ok('throne_returns_to_shrine',back.sid==='shrine',back);
 // ---------- 9. story ties
