@@ -6,7 +6,7 @@
 'use strict';
 const AUTOTILE=(()=>{
  const ON=new URLSearchParams(location.search).get('tiles')!=='0';
- const CELL=16,PAD=4,T=8,VAR=4;
+ const CELL=16,PAD=4,T=8,VAR=4,ART_CELL=32,ART_PAD=12;// CELL/PAD: code placeholders only; PNG atlases read cell/pad from manifest.json (default 32/12)
  const N=1,NE=2,E=4,SE=8,S=16,SW=32,W=64,NW=128;
  // blob reduction: a corner bit only counts when both of its edges are solid -> 47 unique masks; frame = rank of the mask
  const red=m=>{if(!(m&N&&m&E))m&=~NE;if(!(m&S&&m&E))m&=~SE;if(!(m&S&&m&W))m&=~SW;if(!(m&N&&m&W))m&=~NW;return m};
@@ -93,7 +93,7 @@ const AUTOTILE=(()=>{
  function fromImg(img,cell,pad){if(!img||!img.width)return null;const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.drawImage(img,0,0);return{w:c.width,h:c.height,cell,pad,d:new Uint32Array(x.getImageData(0,0,c.width,c.height).data.buffer)}}
  function set(sid){if(SET[sid]!==undefined)return SET[sid];
   const s=ST[sid];let out=null;
-  const a=ART[sid];if(a&&TM){const m=a.man,ce=m.cell|0||CELL,pa=m.pad!=null?m.pad|0:(ce-T)/2,tex=k=>TM.exists(k)?fromImg(TM.get(k).getSourceImage(),ce,pa):null;
+  const a=ART[sid];if(a&&TM){const m=a.man,ce=m.cell|0||ART_CELL,pa=m.pad!=null?m.pad|0:(m.cell?(ce-T)/2:ART_PAD),tex=k=>TM.exists(k)?fromImg(TM.get(k).getSourceImage(),ce,pa):null;
    const ti=tex('at_'+sid+'_tiles');if(ti){out={src:'png',mode:m.mode==='replace'?'replace':'overlay',var:m.variants||1,tiles:ti,one:tex('at_'+sid+'_oneway'),decor:tex('at_'+sid+'_decor'),dn:m.decorCount|0,dens:m.decorDensity!=null?+m.decorDensity:(s?s.dens:0),props:m.decorAllow||null}}}
   if(!out&&s)out={src:'code',mode:'overlay',var:VAR,tiles:genTiles(sid,s),one:genOne(sid,s),decor:genDecor(sid,s),dens:s.dens};
   if(out&&out.decor&&out.dn==null)out.dn=out.decor.n;if(out&&out.decor&&!out.dn)out.dn=Math.floor(out.decor.w/out.decor.cell);
@@ -120,8 +120,19 @@ const AUTOTILE=(()=>{
    else if(v===2&&S.one){const l=kk(i-1,j)===2||sol(i-1,j),r=kk(i+1,j)===2||sol(i+1,j),f=l&&r?2:l?3:r?1:0,vr=Math.floor(hs(i,j,seed+3)*Math.max(1,Math.floor(S.one.h/S.one.cell)));Qb.push([S.one,f,vr,dx,dy]);nT++}}
   for(const ph of[0,1])for(const[A,f,v,x,y]of Qb)blit(A,f,v,d,w,h,x,y,free,S.mode,ph);for(const[A,f,v,x,y]of Qd)blit(A,f,v,d,w,h,x,y,free,'overlay',2);
   stats[sid+(force?'_cov':'')]={tiles:nT,props:nP,src:S.src}}
+ // floating one-way 'plat' tileSprites (e.g. Bell Tower shaft ledges): rebuilt from the oneway atlas, render-only
+ function platCanvas(sid,w,seed){const S=set(sid);if(!S||!S.one)return null;const A=S.one,P=A.pad,n=Math.max(1,Math.round(w/T)),cw=n*T+2*P,ch=T+2*P,d=new Uint32Array(cw*ch),nv=Math.max(1,Math.floor(A.h/A.cell));
+  const Qp=[];for(let i=0;i<n;i++){const f=n===1?0:i===0?1:i===n-1?3:2;Qp.push([f,Math.floor(hs(i,seed,sseed(sid)+3)*nv),i*T+P,P])}
+  const free=(x,y)=>!(y>=P&&y<P+T&&x>=P&&x<P+n*T);for(const ph of[0,1])for(const[f,v,x,y]of Qp)blit(A,f,v,d,cw,ch,x,y,free,S.mode,ph);
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;const x=cv.getContext('2d'),im=x.createImageData(cw,ch);new Uint32Array(im.data.buffer).set(d);x.putImageData(im,0,0);cv.pad=P;return cv}
+ function decoratePlats(scene){if(!ON||!scene.sid)return;const sid=scene.sid,key='plat'+(sid==='ramparts'?'':'_'+sid);let n=0;
+  for(const o of scene.children.list.slice()){const tk=o.displayTexture||o.texture;if(o.type!=='TileSprite'||!tk||tk.key!==key)continue;const k=`atp_${sid}_${o.x|0}_${o.y|0}_${o.width|0}`;
+   if(!scene.textures.exists(k)){const cv=platCanvas(sid,o.width,(o.x|0)*7+(o.y|0));if(!cv)continue;scene.textures.addCanvas(k,cv)}
+   const P=(scene.textures.get(k).getSourceImage().pad)|0;o.setVisible(false);scene.add.image(o.x-P,o.y-P,k).setOrigin(0).setDepth(o.depth);n++}
+  stats[sid+'_plats']=n}
+ let wrapped=false;function wrapStage(){if(wrapped||typeof Stage==='undefined')return;wrapped=true;const SP=Stage.prototype,cr=SP.create;SP.create=function(...a){const r=cr.apply(this,a);try{decoratePlats(this)}catch(e){console.warn('autotile plats',e)}return r}}
  // Boot preload hook: reads assets/art/tiles/index.json, then queues each listed stage's manifest + PNG atlases
- function preload(load){if(!ON)return;TM=load.textureManager||TM;load.json('tiles_index','assets/art/tiles/index.json');
+ function preload(load){if(!ON)return;wrapStage();TM=load.textureManager||TM;load.json('tiles_index','assets/art/tiles/index.json');
   load.once('filecomplete-json-tiles_index',(k,t,data)=>{((data&&data.stages)||[]).forEach(sid=>{const base=`assets/art/tiles/${sid}/`;load.json('tm_'+sid,base+'manifest.json');
    load.once('filecomplete-json-tm_'+sid,(k2,t2,man)=>{if(!man)return;ART[sid]={man};delete SET[sid];load.image('at_'+sid+'_tiles',base+(man.tiles||'tiles.png'));if(man.oneway!==null)load.image('at_'+sid+'_oneway',base+(man.oneway||'oneway.png'));if(man.decor)load.image('at_'+sid+'_decor',base+man.decor)})})})}
- return{ON,BLOB,FRAME,ST,CELL,PAD,VAR,apply,preload,stats,set,reset(){for(const k in SET)delete SET[k]},atlas:sid=>set(sid)}})();
+ return{ON,platCanvas,decoratePlats,BLOB,FRAME,ST,CELL,PAD,VAR,apply,preload,stats,set,reset(){for(const k in SET)delete SET[k]},atlas:sid=>set(sid)}})();

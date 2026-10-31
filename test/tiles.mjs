@@ -1,9 +1,9 @@
 // autotile pass (render-only foreground): for every stage, collision grid + static bodies are byte-identical with ?tiles=0 and on,
 // the level texture changes, painting is deterministic, the PNG-atlas loader works (served via route), no page errors.
-// usage: node test/tiles.mjs (server :8171). EVID=dir for before_/after_ screenshots + atlases.
+// usage: PORT=8437 node test/tiles.mjs (static server on $PORT, default 8437). EVID=dir for before_/after_ screenshots + atlases.
 import { chromium } from './node_modules/playwright/index.mjs';
 import { createHash } from 'crypto';import fs from 'fs';
-const B='http://127.0.0.1:8171/',EV=process.env.EVID||'screenshots/tiles/';fs.mkdirSync(EV,{recursive:true});
+const B=`http://127.0.0.1:${process.env.PORT||8437}/`,EV=process.env.EVID||'screenshots/tiles/';fs.mkdirSync(EV,{recursive:true});
 let pass=0,fail=0;const ok=(c,m)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+m)};
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});
 const H=s=>createHash('md5').update(s).digest('hex').slice(0,12);
@@ -17,7 +17,7 @@ async function run(st,q,route){const pg=await br.newPage({viewport:{width:960,he
   const rects=[1,2,3,4].map(k=>JSON.stringify(lv.rects(k))).join('|');
   const tex=c=>{const x=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let h=0;for(let i=0;i<x.length;i+=7)h=(h*31+x[i])|0;return h};
   const t1=tex(s.textures.get('lvl_'+sid).getSourceImage()),t2=tex(lv.paint()),cov=(s.def.covers||[]).map(c=>tex(lv.paint(c.r,true))).join(',');
-  return{sid,k:Array.from(lv.k).join(''),back:Array.from(lv.back).join(''),bodies,rects,t1,t2,cov,on:typeof AUTOTILE!=='undefined'&&AUTOTILE.ON,stats:typeof AUTOTILE!=='undefined'?AUTOTILE.stats[sid]:null}});
+  return{sid,k:Array.from(lv.k).join(''),back:Array.from(lv.back).join(''),bodies,rects,t1,t2,cov,on:typeof AUTOTILE!=='undefined'&&AUTOTILE.ON,stats:typeof AUTOTILE!=='undefined'?AUTOTILE.stats[sid]:null,plats:typeof AUTOTILE!=='undefined'?AUTOTILE.stats[sid+'_plats']|0:0,nplat:s.children.list.filter(o=>o.type==='TileSprite'&&/^plat/.test((o.displayTexture||o.texture).key)).length}});
  return{pg,errs,r}}
 const stages=await (async()=>{const pg=await br.newPage();await pg.goto(B+'?play&mute&novideo&slot=1&stage=ramparts');await pg.waitForFunction(()=>typeof STAGE_DEFS!=='undefined');const s=await pg.evaluate(()=>Object.keys(STAGE_DEFS));await pg.close();return s})();
 console.log('stages:',stages.join(' '));
@@ -34,13 +34,14 @@ for(const st of stages){
  ok(a.rects===b.rects,`${st}: collision rects identical for solid/oneway/chain/spike (${H(a.rects)})`);
  ok(a.bodies===b.bodies&&a.bodies.length>0,`${st}: static physics bodies identical (${a.bodies.split(';').length} bodies, ${H(a.bodies)})`);
  ok(a.t1!==b.t1&&b.stats&&b.stats.tiles>0,`${st}: autotiles rendered (${b.stats&&b.stats.tiles} tiles, ${b.stats&&b.stats.props} props, src ${b.stats&&b.stats.src})`);
+ if(b.nplat)ok(b.plats===b.nplat,`${st}: floating plats decorated from oneway atlas (${b.plats}/${b.nplat})`);
  ok(b.t1===b.t2&&a.t1===a.t2,`${st}: painting deterministic (repaint hash equal)`);
  ok(A.errs.length===0&&Bq.errs.length===0,`${st}: no page errors ${[...A.errs,...Bq.errs].slice(0,2).join(' | ')}`);
  await A.pg.close();await Bq.pg.close()}
 // PNG loader: serve the dumped ramparts placeholder as an Artist atlas (replace a colour so it is distinguishable)
 {const st=stages[0],f=n=>fs.readFileSync(EV+`atlas_${st}_${n}.png`);
  const route=async pg=>{await pg.route('**/assets/art/tiles/index.json',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({stages:[st]})}));
-  await pg.route(`**/assets/art/tiles/${st}/manifest.json`,r=>r.fulfill({contentType:'application/json',body:JSON.stringify({stage:st,tile:8,cell:16,pad:4,mode:'overlay',variants:4,tiles:'tiles.png',oneway:'oneway.png',decor:'decor.png',decorCount:5,decorDensity:.2})}));
+  await pg.route(`**/assets/art/tiles/${st}/manifest.json`,r=>r.fulfill({contentType:'application/json',body:JSON.stringify({stage:st,tile:8,mode:'overlay',variants:4,tiles:'tiles.png',oneway:'oneway.png',decor:'decor.png',decorCount:5,decorDensity:.2})}));
   for(const[n,k] of [['tiles','t'],['oneway','o'],['decor','d']])await pg.route(`**/assets/art/tiles/${st}/${n}.png`,r=>r.fulfill({contentType:'image/png',body:f(k)}))};
  const none=async pg=>pg.route('**/assets/art/tiles/index.json',r=>r.fulfill({contentType:'application/json',body:'{"stages":[]}'}));
  const P=await run(st,'',route),Q=await run(st,'',none);

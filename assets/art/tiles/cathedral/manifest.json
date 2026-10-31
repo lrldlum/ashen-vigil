@@ -1,13 +1,13 @@
 {
  "stage": "cathedral",
  "tile": 8,
- "cell": 16,
- "pad": 4,
+ "cell": 32,
+ "pad": 12,
  "mode": "overlay",
  "variants": 4,
  "tiles": "tiles.png",
  "oneway": "oneway.png",
  "decor": "decor.png",
  "decorCount": 4,
- "decorDensity": 0.113
+ "decorDensity": 0.075
 }
