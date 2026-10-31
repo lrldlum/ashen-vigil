@@ -16,6 +16,16 @@ const ARMOR_SETS={
 }
  // modest weight: a 'gear' roll picks one of these pieces (instead of the weapon/armor pool) with this chance per table
  if(typeof SHOP!=='undefined')for(const [id,pr] of [['rags_head',400],['leather_legs',700],['leather_chest',1000],['lamp_chest',1300]])if(!SHOP.some(r=>r[0]===id))SHOP.splice(SHOP.length-1,0,[id,pr])})();
+const ARMOR_DESC={
+ plate_head:['A SENTINEL HELM, VISOR WORN SMOOTH BY RAIN.'],plate_chest:['SENTINEL PLATE. IT STOOD THE WALL','LONG AFTER THE MAN INSIDE HAD GONE.'],
+ plate_hands:['SENTINEL GAUNTLETS, STILL CLENCHED.'],plate_legs:['SENTINEL GREAVES. HEAVY, PATIENT, LOYAL.'],
+ rags_head:['A HOOD OF ASH-GREY CLOTH. IT SMELLS OF','OLD BONFIRES.'],rags_chest:['RAGS OF THE ASHEN. LIGHT ENOUGH TO RUN IN,','THIN ENOUGH TO REGRET IT.'],
+ rags_hands:['STRIPS OF CLOTH WOUND ROUND THE KNUCKLES.'],rags_legs:['ASHEN LEGGINGS, PATCHED MORE THAN SEWN.'],
+ choir_head:['A PALE VEIL FROM THE BELL CHOIR. THE','SINGERS NEVER SHOWED THEIR FACES.'],choir_chest:['THE PALE CHOIR ROBE. THE HEM STILL','HUMS WHEN THE BELLS TOLL.'],
+ kiln_chest:['A CUIRASS POURED IN THE KILN ITSELF.','IT HOLDS ITS HEAT FOR DAYS.'],kiln_legs:['KILN IRON GREAVES, SCORCHED BLACK.'],
+ leather_chest:['A WANDERER COAT OF OILED LEATHER.','MADE FOR ROADS, NOT WARS.'],leather_legs:['WANDERER BOOTS. THE SOLES HAVE SEEN','EVERY STAGE OF THE VIGIL.'],
+ lamp_chest:['A LAMPLIGHTER VESTMENT. ITS POCKETS','STILL HOLD SPENT WICKS.'],lamp_legs:['THE LAMP SKIRT, SINGED AT THE HEM.']};
+if(typeof DESC!=='undefined')for(const[k,v]of Object.entries(ARMOR_DESC))if(!DESC[k])DESC[k]=v;
 const ARMOR_DROP={ids:Object.keys(ARMOR_SETS),w:{common:.2,elite:.25,chest:.45,mimic:.35}};
 const ARMORL=(()=>{
  const DIR='assets/art/sheets_pixel/armor/',SLOTS=['legs','chest','hands','head'],EQK={legs:'legs',chest:'armor',hands:'hands',head:'head'};
