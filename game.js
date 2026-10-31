@@ -197,7 +197,7 @@ function drawDome(ga,x,gy,r,a,t,seed){x=Math.round(x);r=Math.max(2,Math.round(r)
   const h=(4+R()*r*.2)*Math.min(1,a*1.4);drawSpike(ga,null,sx,sy,h,1.2+R()*1.4,1,(R()-.5)*.8)}
  for(let k=0;k<4;k++)if(R()<.7)sparkle(ga,x+(R()*2-1)*r*.8,gy-R()*r*.8,2,C.ice1,a)}
 // ---------- hero: 10x16 figure rasterised per frame into a pixel buffer, then 1px dark outline (Tester r1 visual) ----------
-const itemName=id=>(WEAPONS[id]||ARMORS[id]||SPELLS[id]||MIRACLES[id]||{name:id==='flask'?'EMBER FLASK':String(id).toUpperCase()}).name;
+const itemName=id=>(WEAPONS[id]||ARMORS[id]||(typeof GEAR!=='undefined'&&GEAR[id])||SPELLS[id]||MIRACLES[id]||{name:id==='flask'?'EMBER FLASK':String(id).toUpperCase()}).name;
 const HB_W=40,HB_H=34,HB_OX=20,HB_OY=29;
 const HC={o:0x160810,b:C.pl,s:C.plS,h:C.plH,c:C.cape,c2:0x4a120c,st:C.steel,sd:0x8a84a8,gd:C.f1,eye:0x2a0e06,staff:0x6a4a3a,fl:0xffd04a};
 class HeroBuf{constructor(){this.a=new Int32Array(HB_W*HB_H);this.o=new Int32Array(HB_W*HB_H)}
@@ -898,7 +898,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(c.hop){c.ht+=dt;c.hx+=c.f*70*dt;c.jy=-Math.sin(Math.min(1,c.ht/.45)*Math.PI)*14;if(c.ht>.45){c.hop=0;c.jy=0;this.fx.dust(c.hx,c.y,6)}
     if(Math.abs(dx)<12&&Math.abs(P.y-c.y)<20&&!P.remote&&!c.bit){c.bit=1;c.bites=(c.bites||0)+1;this.hurtPlayer(18,c.hx)}}else c.bit=0}}
  rollDrop(table,x,y,force){if(NET.guest())return;const k=force===1?'gear':rollTable(table);
-  if(k==='none')return;let item=null;if(k==='gear'){const own=this.sv.inv,pool=GEAR_POOL.filter(i=>!own.includes(i));item=pool.length?pool[Math.floor(Math.random()*pool.length)]:null;if(!item){this.spawnDrop('soulshard',null,x,y);return}}
+  if(k==='none')return;let item=null;if(k==='gear'){const own=this.sv.inv,pool=(typeof ARMOR_DROP!=='undefined'&&Math.random()<(ARMOR_DROP.w[table]||0)&&ARMOR_DROP.ids.some(i=>!own.includes(i))?ARMOR_DROP.ids:GEAR_POOL).filter(i=>!own.includes(i));item=pool.length?pool[Math.floor(Math.random()*pool.length)]:null;if(!item){this.spawnDrop('soulshard',null,x,y);return}}
   this.spawnDrop(k==='gear'?'gear':k,item,x,y)}
  spawnDrop(kind,item,x,y){const d={id:'d'+(++this.dropN)+'_'+Math.floor(Math.random()*1e4),kind,item,x,y:y-4,vy:-110,vx:rnd(-40,40),t:0};this.drops.push(d);if(NET.host())NET.send({t:'drop',d});return d}
  updateLoot(dt){const P=this.player;for(const k in this.buffs)this.buffs[k]=Math.max(0,this.buffs[k]-dt);
@@ -1746,7 +1746,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(n>=s.length&&Math.sin(this.t*8)>0)drawText(g,'>',300,162,0xffe2a8);drawText(g,(M.page+1)+'/'+L.length,16,162,0x6b67a0);return}
   if(M.mode==='shop'){const L=this.shopList();box(6,14,308,160);drawText(g,KEEPER.name+' - WARES',12,19,0xffb04a);drawText(g,'SOULS '+this.souls,230,19,0x9fd8ff);
    L.forEach(([id,price],i)=>{const ps=String(price),px0=136-textW(ps);let nm=itemName(id);while(nm.length>3&&12+10+textW(nm)>px0-4)nm=nm.slice(0,-1);if(nm!==itemName(id))nm=nm.replace(/\s+$/,'')+'.';/* r9: names never run into the price */row(nm,12,32+i*9,M.sel===i,this.souls>=price?0xb8b4d8:0x6b4a4a);drawText(g,ps,px0,32+i*9,this.souls>=price?0x9fd8ff:0x6b4a4a)});row('LEAVE',12,32+L.length*9,M.sel===L.length);
-   const it=L[M.sel];if(it){g.fillStyle(0x7a5a24);g.fillRect(140,30,1,94);descLines(it[0]).forEach((s,i)=>drawText(g,s,12,127+i*8,0xd8c8b0));const m=MIRACLES[it[0]],wp=WEAPONS[it[0]],am=ARMORS[it[0]];drawText(g,m?'MIRACLE':wp?(wp.hand==='off'?'OFF HAND':'WEAPON'):am?'ARMOR':'',146,32,0xffe2a8);const info=m?['REQ FTH '+m.fth,'FP '+m.fp,'KEY '+m.key]:wp?['REQ '+RPG.reqs(wp),RPG.letters(wp)||(wp.mir?'POWERS MIRACLES':'CASTS SORCERY'),'WEIGHT '+wp.w]:am?['WEIGHT '+am.w,'POISE '+am.poise,'ABSORB '+Math.round(am.abs*100)+'%']:['ONE MORE FLASK','AT EVERY REST'];info.forEach((s,i)=>drawText(g,s,146,44+i*9,0x8a86c0))}
+   const it=L[M.sel];if(it){g.fillStyle(0x7a5a24);g.fillRect(140,30,1,94);descLines(it[0]).forEach((s,i)=>drawText(g,s,12,127+i*8,0xd8c8b0));const m=MIRACLES[it[0]],wp=WEAPONS[it[0]],am=ARMORS[it[0]]||(typeof GEAR!=='undefined'&&GEAR[it[0]]);drawText(g,m?'MIRACLE':wp?(wp.hand==='off'?'OFF HAND':'WEAPON'):am?'ARMOR':'',146,32,0xffe2a8);const info=m?['REQ FTH '+m.fth,'FP '+m.fp,'KEY '+m.key]:wp?['REQ '+RPG.reqs(wp),RPG.letters(wp)||(wp.mir?'POWERS MIRACLES':'CASTS SORCERY'),'WEIGHT '+wp.w]:am?['WEIGHT '+am.w,'POISE '+am.poise,'ABSORB '+Math.round(am.abs*100)+'%']:['ONE MORE FLASK','AT EVERY REST'];info.forEach((s,i)=>drawText(g,s,146,44+i*9,0x8a86c0))}
    drawText(g,M.say||'',12,160,0xd8c8b0)}}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
