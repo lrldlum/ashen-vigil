@@ -27,8 +27,13 @@ await pg.screenshot({path:'screenshots/ow1/room_after_slide.png'});
 // parked enemies keep their state (roomState) and wake when you come back
 const pk=await S(async()=>{const e=s.enemies.find(e=>!e.dead&&e.b.x>s.room.x1+100);const hp=e.hp=e.hp-1;const rr=s.rooms.find(r=>e.b.x>=r.x0&&e.b.x<r.x1);
  const park=!!e.parked&&!e.b.body.enable;s.pb.setPosition(e.b.x-40,e.b.y);await new Promise(r=>setTimeout(r,500));const wake=!e.parked&&e.b.body.enable&&e.hp===hp;
- s.pb.setPosition(s.rooms[0].x0+200,s.pb.y);await new Promise(r=>setTimeout(r,500));return{park,wake,again:!!e.parked,rs:!!(s.roomState[rr.id]&&s.roomState[rr.id].enemies)}});
+ s.pb.setPosition(s.rooms[0].x0+200,s.pb.y);e.state='idle';await new Promise(r=>setTimeout(r,900));return{park,wake,again:!!e.parked,rs:!!(s.roomState[rr.id]&&s.roomState[rr.id].enemies)}});
 ok('enemies_parked_outside_room',pk.park&&pk.again,pk);ok('room_state_persists_on_return',pk.wake&&pk.rs,pk);
+// r14: a chaser near the cut is never parked: it follows you through it (only calm enemies more than a screen away park)
+const ch=await S(async()=>{const r1=s.rooms[1],cut=r1.x1;s.enemies.forEach(e=>{if(!e.dead&&Math.abs(e.b.x-cut)<500){e.dead=true;e.b.body.enable=false}});s.player.hp=9999;s.player.inv=99;
+ s.pb.setPosition(cut-30,148);s.pb.setVelocity(0,0);await new Promise(r=>setTimeout(r,600));const e=s.spawnEnemy('hollow',cut-70,148);e.temp=1;e.state='chase';await new Promise(r=>setTimeout(r,200));
+ s.pb.setPosition(cut+28,148);await new Promise(r=>setTimeout(r,200));const p0=!!e.parked,x0=e.b.x;await new Promise(r=>setTimeout(r,2500));return{room:s.room.id,parked:p0||!!e.parked,moved:Math.round(e.b.x-x0),ex:Math.round(e.b.x),cut}});
+ok('chaser_not_parked_and_follows_through_cut',!ch.parked&&ch.moved>20,ch);await pg.screenshot({path:'screenshots/ow1/chaser_follows.png'});
 // vertical scroll inside a room
 const vy=await S(async()=>{const y0=s.cam.scrollY;s.pb.setPosition(s.pb.x,-120);s.pb.setVelocity(0,0);await new Promise(r=>setTimeout(r,800));return{y0,y1:s.cam.scrollY}});
 ok('vertical_scroll_in_room',vy.y1<vy.y0-40,vy);
@@ -44,12 +49,15 @@ const mig=await S(()=>{const out={};const lordOrder=['warden','cantor','king','t
  localStorage.clear();localStorage.setItem('ashenVigil.save.v1.s3',JSON.stringify({cls:'knight',stage:'ramparts',ng:1,lords:lordOrder,bossDown:true,bonfire:true,souls:5}));const n=Save.load(2);
  out.ngplus={ng:n.ng,ab:n.abilities.length,visited:Object.keys(n.rooms.visited).length,bon:n.bonfires.length};
  // a second load reads v2 (no re-migration); the game's writes don't touch v1
- n.souls=777;Save.use(2);Save.write(n);out.reload=Save.load(2).souls===777&&JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).souls===5;Save.use(0);return out});
-const bad=Object.entries(mig).filter(([k,d])=>k.length>6&&k!=='ngplus'&&k!=='reload'||['ramparts','keep','spire','throne'].includes(k)).filter(([k,d])=>!(d.v===2&&d.inRegion&&d.bon>=1&&d.souls&&d.lords&&d.v1kept&&d.v2&&d.stain));
-ok('migrate_each_of_10_stages',bad.length===0&&Object.keys(mig).length===12,bad);
+ n.souls=777;Save.use(2);Save.write(n);out.reload=Save.load(2).souls===777&&JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).souls===5;
+ // r14: an old tab rewriting v1 after the migration must not replace the v2 progress
+ localStorage.setItem('ashenVigil.save.v1.s3',JSON.stringify({cls:'knight',stage:'ramparts',souls:7}));out.v1later=Save.load(2).souls;Save.use(0);return out});
+const bad=Object.entries(mig).filter(([k,d])=>k.length>6&&k!=='ngplus'&&k!=='reload'&&k!=='v1later'||['ramparts','keep','spire','throne'].includes(k)).filter(([k,d])=>!(d.v===2&&d.inRegion&&d.bon>=1&&d.souls&&d.lords&&d.v1kept&&d.v2&&d.stain));
+ok('migrate_each_of_10_stages',bad.length===0&&Object.keys(mig).filter(k=>k!=='v1later').length===12,bad);
 ok('migrate_lords_grant_abilities',mig.throne.ab.length===6&&mig.cathedral.ab.join()==='dash',{t:mig.throne.ab,c:mig.cathedral.ab});
 ok('migrate_ngplus',mig.ngplus.ng===1&&mig.ngplus.ab===6&&mig.ngplus.visited>40&&mig.ngplus.bon>=10,mig.ngplus);
 ok('v1_backup_untouched_v2_reloads',mig.reload,mig.reload);
+ok('v1_rewrite_after_migration_ignored',mig.v1later===777,{v1later:mig.v1later});
 // ---- clip: walk Ramparts room to room ----
 if(CLIP){await pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts');await ready();await S(()=>{s.player.inv=1e9;s.player.hp=s.player.hpMax=9999;s.pb.setPosition(300,140);let t=0;window.__inp=()=>(t++,{r:1,jump:t%70<10})});await W8(9000);await S(()=>{window.__inp=null})}
 ok('no_page_errors',errs.length===0,errs);console.log(JSON.stringify({pass,fail}));

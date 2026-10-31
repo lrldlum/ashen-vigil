@@ -336,3 +336,9 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Frost Ringer mini-boss (Artist's strip): swings across the middle of the shaft on its rope (amplitude 120), drops swing_drop icicles, 40 HP, stays dead (sv.mbDead.bt_ringer), gives 2 Ember Shards. The ground Ringer at 1960 moved into the shaft.
 - Spell HUD sits below the bells counter / buff timers.
 - test/btregion.mjs 15/15; clip clips/btregion.mp4 (test/clipBT.mjs, bot climbs ~16 ledges through tolls).
+
+## r14 fixes (Bell Tower + OW1)
+- Frost Ringer swings 10-18 px above a wide catch ledge (row 16, 312 px) and dwells at the swing ends; a knight on the catch ledge can melee it (test).
+- Room parking: only calm enemies more than a screen (W+40) away park; chasers and anything near the hero never park and follow through cuts; re-checked every 0.5 s (test).
+- Shaft: dark stone back wall (depth .5, under the ledges) and walls inside the 1660-2020 bounds; ledge 28 removed; no toll knock on the belfry floor; KNOCKED pops higher; BARRED - DROP BELOW hides while E Inspect is up (tests).
+- Save: once v2 has migratedFrom, later v1 writes are ignored (test).

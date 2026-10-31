@@ -697,7 +697,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    g.fillStyle(0x4a4250);g.fillRect(x-3,GY-38,18,3);const dh=Math.round(34*(1-c.t));if(dh>0){g.fillStyle(0x2a2430);g.fillRect(x,GY-35+(34-dh),12,dh);g.fillStyle(0x7a6a50);for(let y=GY-32+(34-dh);y<GY;y+=8)g.fillRect(x,y,12,1);g.fillStyle(0xb89a60);g.fillRect(x+8,GY-18,2,3)}
    else{g.fillStyle(0x0a080c);g.fillRect(x,GY-35,12,35)}
    const lx=c.lever,ang=c.open?.7:-.7;g.fillStyle(0x3a3240);g.fillRect(lx-3,GY-4,7,4);line(g,lx,GY-4,Math.round(lx+Math.sin(ang)*10),Math.round(GY-4-Math.cos(ang)*10),0x8a7a60);g.fillStyle(c.open?0x9fe86a:0xd8402a);g.fillRect(Math.round(lx+Math.sin(ang)*10)-1,Math.round(GY-4-Math.cos(ang)*10)-1,3,3);
-   const P=this.player;if(!c.open&&Math.abs(P.y-GY)<24){if(Math.abs(P.x-c.lever)<14&&P.x>c.x)this.keyGlyph(g,lx-14,GY-22,'Pull');else if(P.x<c.x&&P.x>c.x-60)drawText(g,'BARRED - DROP BELOW',x-110,GY-46,0xd8c8b0)}}
+   const P=this.player;if(!c.open&&Math.abs(P.y-GY)<24){if(Math.abs(P.x-c.lever)<14&&P.x>c.x)this.keyGlyph(g,lx-14,GY-22,'Pull');else if(P.x<c.x&&P.x>c.x-60&&!(Math.abs(P.x-(c.x-6))<16))/* r14: the E Inspect prompt shows instead when it is up */drawText(g,'BARRED - DROP BELOW',x-110,GY-46,0xd8c8b0)}}
   for(const ch of this.chs)for(const gt of ch.gateObjs){if(!gt.closed)continue;const[x0,y0,x1,y1]=gt.r;g.fillStyle(0x2a2245);g.fillRect(x0,y0,x1-x0,y1-y0);g.fillStyle(0x8b86a8);for(let x=x0+1;x<x1;x+=3)g.fillRect(x,y0,1,y1-y0);for(let y=y0+4;y<y1;y+=10)g.fillRect(x0,y,x1-x0,1);
    const c=ch.type==='timer'?C.ice2:C.f2;for(let y=y0+6;y<y1;y+=14)px(ga,x0+4,y+((t*20)|0)%4,c,.8);this.light((x0+x1)/2,(y0+y1)/2,20,c,.3)}
   for(const c of this.cages){if(c.freed)continue;const x=Math.round(c.x),y=Math.round(c.y),bob=Math.round(Math.sin(t*3+c.bob)),ey=y-7+bob;

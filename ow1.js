@@ -29,7 +29,8 @@ Object.assign(Save,{
  key(){return slotKey2(this.slot)},
  load(i=this.slot){try{const s1=localStorage.getItem(slotKey(i)),s2=localStorage.getItem(slotKey2(i));let d=s2?JSON.parse(s2):null;
    // v1 present and not yet migrated (or replaced since): migrate it; the v1 key itself is never touched
-   if(s1&&(!d||d.fromV1!==hashS(s1))){d=migrateV1(JSON.parse(s1));d.fromV1=hashS(s1);localStorage.setItem(slotKey2(i),JSON.stringify(d));return d}
+   if(s1&&!(d&&d.migratedFrom)&&(!d||d.fromV1!==hashS(s1))){// r14: once v2 exists from a migration, later v1 writes (an old tab) are ignored
+   d=migrateV1(JSON.parse(s1));d.fromV1=hashS(s1);localStorage.setItem(slotKey2(i),JSON.stringify(d));return d}
    return d?saveV2(d):null}catch(e){return null}},
  write(d){try{localStorage.setItem(this.key(),JSON.stringify(saveV2(d)))}catch(e){}},
  clear(i=this.slot){localStorage.removeItem(slotKey2(i));localStorage.removeItem(slotKey(i))}});
@@ -48,10 +49,13 @@ if(typeof NET!=='undefined'){const sh=NET.startHost.bind(NET),sj=NET.startJoin.b
  SP.roomBounds=function(r){this.cam.setBounds(r.x0,r.top,r.x1-r.x0,r.bottom-r.top)};
  // enemies belong to the room they stand in when you leave it; parked ones keep hp/dead/pos in roomState
  SP.parkEnemies=function(r){if(NET.guest()||(NET.linked&&NET.linked())){for(const e of this.enemies)if(e.parked){e.parked=0;e.b.body.enable=!e.dead}return}// co-op: partners may be in different rooms until OW7's room following
+ const P=this.player,AGG=['idle','patrol','sleep','walk',undefined];
  for(const e of this.enemies){const inR=e.b.x>=r.x0-8&&e.b.x<r.x1+8;
-  if(!inR&&!e.parked&&!e.dead){e.parked=1;e.room=roomAt(this.sid,e.b.x).id;e.b.body.enable=false;e.b.setVelocity(0,0);if(e.spr)e.spr.setVisible(false);
+  // r14: never park a chaser or anything near the hero - only enemies more than a screen away and not aggroed
+  const far=!P||Math.abs(e.b.x-P.x)>W+40||Math.abs(e.b.y-P.y)>H,calm=AGG.includes(e.state)&&!(e.swing);
+  if(!inR&&!e.parked&&!e.dead&&far&&calm){e.parked=1;e.room=roomAt(this.sid,e.b.x).id;e.b.body.enable=false;e.b.setVelocity(0,0);if(e.spr)e.spr.setVisible(false);
    const RS=this.roomState[e.room]=this.roomState[e.room]||{};(RS.enemies=RS.enemies||{})[this.enemies.indexOf(e)]={hp:e.hp,x:Math.round(e.b.x),y:Math.round(e.b.y)}}
-  else if(inR&&e.parked){e.parked=0;e.b.body.enable=true;e.state='idle'}}
+  else if(e.parked&&(inR||!far)){e.parked=0;e.b.body.enable=true;e.state='idle'}}
   for(const e of this.enemies)if(e.dead){const id=roomAt(this.sid,e.x0).id;const RS=this.roomState[id]=this.roomState[id]||{};(RS.dead=RS.dead||{})[this.enemies.indexOf(e)]=1}};
  SP.enterRoom=function(r,instant){const prev=this.room;this.room=r;this.parkEnemies(r);const sv=this.sv;if(sv){saveV2(sv);sv.region=this.sid;sv.room=r.id;sv.rooms.visited[r.id]=1}
   if(instant||!prev){this.roomBounds(r);return}
@@ -63,7 +67,7 @@ if(typeof NET!=='undefined'){const sh=NET.startHost.bind(NET),sj=NET.startJoin.b
  SP.roomStep=function(dt){if(!this.rooms||this.cine||this.bossState==='fight')return;const S=this.roomSlide;
   if(S){S.t+=dt;const k=Math.min(1,S.t/ROOM_SLIDE),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;this.cam.scrollX=Math.round(S.from+(S.to-S.from)*e);
    if(k>=1){this.roomSlide=null;this.roomBounds(S.r);this.cam.startFollow(this.pb,true,.12,0,Math.round(this.camOff||0),0)}return}
-  const P=this.player,r=this.room;if(!r||P.x>=r.x0&&P.x<r.x1)return;this.enterRoom(roomAt(this.sid,P.x))};
+  const P=this.player,r=this.room;if(r&&!(NET.linked&&NET.linked())){this.parkT=(this.parkT||0)-dt;if(this.parkT<=0){this.parkT=.5;this.parkEnemies(r)}}if(!r||P.x>=r.x0&&P.x<r.x1)return;this.enterRoom(roomAt(this.sid,P.x))};
  const up=SP.update;SP.update=function(t,dms){const r=up.call(this,t,dms);if(this.player&&this.rooms&&NET.linked&&NET.linked()&&this.enemies.some(e=>e.parked))this.parkEnemies(this.room);if(this.player&&this.rooms)this.roomStep(Math.min(.05,(dms||16)/1000));return r};
  // parked enemies sit out the AI and the draw
  const ue=SP.updateEnemies;SP.updateEnemies=function(dt){if(!this.enemies.some(e=>e.parked))return ue.call(this,dt);const all=this.enemies;this.enemies=all.filter(e=>!e.parked);try{return ue.call(this,dt)}finally{const act=this.enemies;this.enemies=all;for(const e of act)if(!all.includes(e))all.push(e)}};
