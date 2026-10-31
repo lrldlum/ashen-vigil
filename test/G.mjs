@@ -86,7 +86,8 @@ await A.pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000}).cat
 const atk=await ev(async()=>{const s=S(),B=s.boss,o={};const force=async n=>{B.state='walk';B.cd=-1;s.pickLord=()=>n;await new Promise(r=>setTimeout(r,1400))};
   {let n=0;const ob0=s.flames.push.bind(s.flames);s.flames.push=(...a)=>{n+=a.filter(f=>f.ice).length;return ob0(...a)};await force('toll');s.flames.push=ob0;o.toll=n}await force('requiem');o.ice=s.shots.filter(q=>q.c==='ice').length;
   B.hp=B.hpMax*.6;await new Promise(r=>setTimeout(r,400));o.p2=B.phase;await new Promise(r=>setTimeout(r,1500));B.hp=B.hpMax*.3;await new Promise(r=>setTimeout(r,400));o.p3=B.phase;await new Promise(r=>setTimeout(r,1500));
-  let tolls=0;const ob=s.flames.push.bind(s.flames);s.flames.push=(...a)=>{tolls+=a.length;return ob(...a)};await force('peal');await new Promise(r=>setTimeout(r,800));o.peal=tolls;delete s.pickLord;return o});
+  let tolls=0;const ob=s.flames.push.bind(s.flames);s.flames.push=(...a)=>{tolls+=a.length;return ob(...a)};for(let i=0;i<50&&(B.state==='roar'||B.state==='cast'||B.state==='wind');i++)await new Promise(r=>setTimeout(r,100));// let the phase-3 roar / any cast finish so the forced pick is taken
+  tolls=0;await force('peal');for(let i=0;i<60&&tolls<6;i++)await new Promise(r=>setTimeout(r,100));o.peal=tolls;o.pealState=B.state;delete s.pickLord;return o});
 await shot('g08_toller_peal_phase3');
 ok('toller_cinematic_and_three_phases',cine.c&&cine.kind==='toller'&&atk.p2===2&&atk.p3===3,{cine,atk});
 ok('toller_attacks_toll_icicles_peal',atk.toll>=2&&atk.ice>=5&&atk.peal>=6,atk);
