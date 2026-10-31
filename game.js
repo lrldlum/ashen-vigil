@@ -1758,7 +1758,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const L=['ARROWS / WASD  MOVE      SPACE / Z  JUMP','X / J  WEAPON (TAP LIGHT, HOLD HEAVY)','C / K  MAGIC (SELECTED SPELL)   Q  NEXT SPELL','SHIFT / L  DODGE      V / U  PARRY','F / R  FLASK          E / UP  INTERACT','TAB / I  INVENTORY    ESC / P  PAUSE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME','PAD: A JUMP/USE  B DODGE  X ATTACK  Y HEAVY','LB PARRY  RB MAGIC  VIEW FLASK  START PAUSE'];
   // r9: on touch there are no keys - show only the tappable rows (sound, text size) and how to resume; no key/pad hints
   if(this.touch){const T=[null,null,null,null,null,null,'SOUND '+(this.sound.mute?'OFF':'ON')+'  (TAP)','TEXT SIZE '+(TXT.big?'LARGE':'SMALL')+'  (TAP)','TAP PAUSE AGAIN TO RESUME'];T.forEach((s,i)=>s&&drawText(g,s,20,40+i*12,i===6||i===7?0x9fd8ff:0xd8d0ee));return}
-  L.forEach((s,i)=>drawText(g,s,20,40+i*12,i===6||i===7?0x9fd8ff:0xd8d0ee))}
+  L.forEach((s,i)=>drawText(g,s,20,38+i*(TXT.big?10:11),i===6||i===7?0x9fd8ff:0xd8d0ee))}/* tighter rows leave room for the road (objective.js) */
  drawVictory(g,ga){const V=this.victory,a=Math.min(1,V.t/.6);g.fillStyle(0x05040b,.78*a);g.fillRect(0,0,W,H);
   g.fillStyle(0x7a5a24,a);g.fillRect(60,30,200,1);g.fillRect(60,150,200,1);
   const hd=V.clear?'STAGE CLEAR':'VICTORY ACHIEVED';drawText(g,hd,Math.round(W/2-textW(hd,2)/2),40,0xffe2a8,2,0x1a0d22,a);glow(ga,W/2,46,50,C.f2,.08*a);

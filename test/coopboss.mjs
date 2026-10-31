@@ -57,6 +57,7 @@ ok('same_next_area',hn2.sid!=='ramparts'&&gn2.sid===hn2.sid&&gn2.linked&&hn2.lin
 ok('same_position',Math.abs(hn2.x-gn2.x)<48&&Math.abs(hn2.y-gn2.y)<48,{h:[hn2.x,hn2.y],g:[gn2.x,gn2.y]});
 // still in sync: the guest sees the host's enemies and remote position
 const sync=await G.ev(()=>({r:!!NET.remote,rx:NET.remote&&Math.round(NET.remote.x),n:S().enemies.length}));const hx=await H.ev(()=>({x:Math.round(S().player.x),n:S().enemies.length}));
+{const ho=await H.ev(()=>S().objText()),go=await G.ev(()=>S().objText());ok('objective_follows_host',ho===go&&/CATHEDRAL|CANTOR/.test(go),{ho,go})}
 ok('not_desynced',sync.r&&Math.abs(sync.rx-hx.x)<24&&sync.n===hx.n,{sync,hx});
 // a lord falls while one partner is down: the downed one is raised, shares the kill, souls, drop and victory, and both move on together
 const fight=async()=>{await H.ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(ARENA_L+40)});await G.ev(()=>{tp(ARENA_L+30)});await until(H,r=>r.cine,6000);await wait(900);await H.pg.keyboard.press('Enter');await until(H,r=>r.bs==='fight',3000);await until(G,r=>r.bs==='fight',3000)};

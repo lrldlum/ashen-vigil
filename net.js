@@ -35,7 +35,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   this.lostAt=performance.now()},
  me(){const S=this.scene;if(!S||!S.player)return null;const P=S.player,h=S._hero||{};return{x:Math.round(P.x),y:Math.round(P.y),f:P.f,st:h.st||P.state,fr:h.fr||0,c:P.combo,hv:h.hv?1:0,fl:P.flash>0?1:0,hp:Math.round(P.hp),hm:P.hpMax,dead:P.dead?1:0,ar:S.sv&&S.sv.eq&&S.sv.eq.armor,hd:S.sv&&S.sv.eq&&S.sv.eq.head,hn:S.sv&&S.sv.eq&&S.sv.eq.hands,lg:S.sv&&S.sv.eq&&S.sv.eq.legs,
   cls:S.sv.cls,main:S.sv.eq.main,arm:S.sv.eq.armor,lv:S.lvl,sid:S.sid}},
- prog(S){const sv=S.sv;return{bells:sv.bells||[],chests:sv.chests||[],freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked,seed:sv.seed||0,shortcuts:sv.shortcuts||[]}},
+ prog(S){const sv=S.sv;return{lords:sv.lords||[],bells:sv.bells||[],chests:sv.chests||[],freed:sv.freed,found:sv.found,chDone:sv.chDone,broken:sv.broken,bossDown:S.bossState==='dead',bonfire:S.bonfire.lit,picked:sv.picked,seed:sv.seed||0,shortcuts:sv.shortcuts||[]}},
  helloTo(){const S=this.scene;if(!S||!S.sv||!this.linked())return;this.send({t:'hello',sid:S.sid,prog:this.prog(S),ng:S.ng})},
  // ---------- called from Stage ----------
  onStage(S){this.scene=S;if(this.host())this.helloTo();if(this.guest()){this.send({t:'ready',p:this.me()});S.enemies.forEach(e=>{e.b.body.moves=false})}},
@@ -85,7 +85,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  follow(sid,prog){const S=this.scene;if(!S)return;if(this._following===sid)return;this._following=sid;const sv=S.sv||{};
   Save.write({...sv,stage:sid,souls:S.souls,bonfire:!!(prog&&prog.bonfire),bossDown:!!(prog&&prog.bossDown),stain:null});setTimeout(()=>{this._following=null},1500);
   if(S.scene.key==='stage')S.scene.restart({fresh:false});else S.scene.start('stage',{fresh:false})},
- applyProg(S,p){if(!p)return;const sv=S.sv;
+ applyProg(S,p){if(!p)return;const sv=S.sv;if(p.lords)S.hostLords=p.lords.slice();/* objective line follows the host's progress */
   for(const c of S.cages)if(p.freed.includes(c.id)&&!c.freed){c.freed=true;S.fx.spark(c.x,c.y-8,14,C.f1,120);S.fx.ember(c.x,c.y-8,16,1.6)}
   for(const c of S.covers)if(p.found.includes(c.id)&&!c.found){c.found=true}
   for(const k of S.breakables)if(p.broken.includes(k.id)&&k.hp>0){k.hp=0;try{k.body.body.enable=false;k.body.destroy()}catch(e){}}
