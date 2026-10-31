@@ -128,11 +128,27 @@ const AUTOTILE=(()=>{
  function decoratePlats(scene){if(!ON||!scene.sid)return;const sid=scene.sid,key='plat'+(sid==='ramparts'?'':'_'+sid);let n=0;
   for(const o of scene.children.list.slice()){const tk=o.displayTexture||o.texture;if(o.type!=='TileSprite'||!tk||tk.key!==key)continue;const k=`atp_${sid}_${o.x|0}_${o.y|0}_${o.width|0}`;
    if(!scene.textures.exists(k)){const cv=platCanvas(sid,o.width,(o.x|0)*7+(o.y|0));if(!cv)continue;scene.textures.addCanvas(k,cv)}
-   const P=(scene.textures.get(k).getSourceImage().pad)|0;o.setVisible(false);scene.add.image(o.x-P,o.y-P,k).setOrigin(0).setDepth(o.depth);n++}
+   const P=(scene.textures.get(k).getSourceImage().pad)|0;o.setVisible(false);o.__atpSrc=1;scene.add.image(o.x-P,o.y-P,k).setOrigin(0).setDepth(o.depth).__atp=1;n++}
   stats[sid+'_plats']=n}
- let wrapped=false;function wrapStage(){if(wrapped||typeof Stage==='undefined')return;wrapped=true;const SP=Stage.prototype,cr=SP.create;SP.create=function(...a){const r=cr.apply(this,a);try{decoratePlats(this)}catch(e){console.warn('autotile plats',e)}return r}}
- // Boot preload hook: reads assets/art/tiles/index.json, then queues each listed stage's manifest + PNG atlases
- function preload(load){if(!ON)return;wrapStage();TM=load.textureManager||TM;load.json('tiles_index','assets/art/tiles/index.json');
-  load.once('filecomplete-json-tiles_index',(k,t,data)=>{((data&&data.stages)||[]).forEach(sid=>{const base=`assets/art/tiles/${sid}/`;load.json('tm_'+sid,base+'manifest.json');
-   load.once('filecomplete-json-tm_'+sid,(k2,t2,man)=>{if(!man)return;ART[sid]={man};delete SET[sid];load.image('at_'+sid+'_tiles',base+(man.tiles||'tiles.png'));if(man.oneway!==null)load.image('at_'+sid+'_oneway',base+(man.oneway||'oneway.png'));if(man.decor)load.image('at_'+sid+'_decor',base+man.decor)})})})}
- return{ON,platCanvas,decoratePlats,BLOB,FRAME,ST,CELL,PAD,VAR,apply,preload,stats,set,reset(){for(const k in SET)delete SET[k]},atlas:sid=>set(sid)}})();
+ // Lazy atlas loading (r20 P3-2): nothing is fetched at boot. The title queues all listed atlases ~1 s after it is ready
+ // (idle), and a stage that starts before its atlas arrived paints the code fallback, then repaints itself when it lands.
+ // scene-independent (fetch + Image -> global texture manager), so a title->stage switch never aborts a load
+ let IDXP=null;const LOADED={},PROM={};
+ const img=(k,u)=>new Promise(r=>{if(TM.exists(k))return r();const im=new Image();im.onload=()=>{if(!TM.exists(k))TM.addImage(k,im);r()};im.onerror=()=>r();im.src=u});
+ function loadSid(sid){return PROM[sid]||(PROM[sid]=(async()=>{const base=`assets/art/tiles/${sid}/`;try{const man=await(await fetch(base+'manifest.json')).json();
+   await Promise.all([img('at_'+sid+'_tiles',base+(man.tiles||'tiles.png')),man.oneway!==null?img('at_'+sid+'_oneway',base+(man.oneway||'oneway.png')):0,man.decor?img('at_'+sid+'_decor',base+man.decor):0]);ART[sid]={man}}catch(e){console.warn('autotile atlas',sid,e)}
+   LOADED[sid]=1;delete SET[sid]})())}
+ function ensure(scene,want,done){if(!ON)return;TM=(scene&&scene.textures)||TM;
+  IDXP=IDXP||fetch('assets/art/tiles/index.json').then(r=>r.json()).then(d=>(d&&d.stages)||[]).catch(()=>[]);
+  return IDXP.then(list=>Promise.all(list.filter(s=>want==='all'||want.includes(s)).map(loadSid))).then(()=>done&&done())}
+ // redraw the baked level, hidden-room covers and plats of a running stage after its atlas arrived (render only)
+ function repaint(s){const sid=s.sid,lv=s.lv;if(!lv||!s.sys||!s.sys.isActive())return;const redo=(key,cv)=>{if(!s.textures.exists(key))return;const tx=s.textures.get(key),src=tx.getSourceImage(),c=src.getContext&&src.getContext('2d');if(!c)return;c.clearRect(0,0,src.width,src.height);c.drawImage(cv,0,0);tx.refresh&&tx.refresh()};
+  redo('lvl_'+sid,lv.paint());for(const c of(s.def.covers||[]))redo('cov_'+c.id,lv.paint(c.r,true));
+  for(const o of s.children.list.slice())if(o.__atp){o.destroy()}for(const o of s.children.list.slice())if(o.__atpSrc){o.setVisible(true);o.__atpSrc=0}
+  for(const k of s.textures.getTextureKeys())if(k.startsWith(`atp_${sid}_`))s.textures.remove(k);decoratePlats(s)}
+ let wrapped=false;function wrapStage(){if(wrapped||typeof Stage==='undefined')return;wrapped=true;const SP=Stage.prototype,cr=SP.create;SP.create=function(...a){const r=cr.apply(this,a);try{decoratePlats(this);const sid=this.sid;const stale=()=>ART[sid]&&stats[sid]&&stats[sid].src!=='png';if(ON&&!LOADED[sid]){busy++;ensure(this,[sid],()=>{if(stale())repaint(this)}).finally(()=>busy--)}else if(stale())repaint(this)}catch(e){console.warn('autotile',e)}return r};
+  if(typeof Title!=='undefined'){const TP=Title.prototype,tc=TP.create;TP.create=function(...a){const r=tc.apply(this,a);try{this.time.delayedCall(1000,()=>{if(this.sys.isActive())ensure(this,'all')})}catch(e){console.warn('autotile title',e)}return r}}}
+ // Boot preload hook: only installs the scene hooks (no network at boot)
+ function preload(load){if(!ON)return;wrapStage();TM=load.textureManager||TM}
+ let busy=0;const pending=()=>busy;
+ return{ON,pending,ensure,repaint,LOADED,platCanvas,decoratePlats,BLOB,FRAME,ST,CELL,PAD,VAR,apply,preload,stats,set,reset(){for(const k in SET)delete SET[k]},atlas:sid=>set(sid)}})();

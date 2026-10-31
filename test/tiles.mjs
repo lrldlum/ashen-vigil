@@ -7,11 +7,11 @@ const B=`http://127.0.0.1:${process.env.PORT||8437}/`,EV=process.env.EVID||'scre
 let pass=0,fail=0;const ok=(c,m)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+m)};
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});
 const H=s=>createHash('md5').update(s).digest('hex').slice(0,12);
-async function run(st,q,route){const pg=await br.newPage({viewport:{width:960,height:540}});const errs=[];pg.on('pageerror',e=>errs.push(e.message));
+async function run(st,q,route){const pg=await br.newPage({viewport:{width:960,height:540}});const errs=[];pg.on('pageerror',e=>errs.push(e.message));const reqs=[];pg.on('request',r=>{if(r.url().includes('/assets/art/tiles/'))reqs.push(performance.now())});
  if(route)await route(pg);
  await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());
  await pg.goto(B+`?play&mute&novideo&slot=1&class=knight&stage=${st}&seed=0${q}`);
- await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:40000});await pg.waitForTimeout(700);
+ await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:40000});await pg.waitForFunction(()=>typeof AUTOTILE==='undefined'||AUTOTILE.pending()===0,null,{timeout:20000});await pg.waitForTimeout(700);
  const r=await pg.evaluate(()=>{const s=__G.scene.getScene('stage'),lv=s.lv,sid=s.sid;
   const bodies=(s.physics.world.staticBodies.entries||[...s.physics.world.staticBodies]).map(b=>[b.x,b.y,b.width,b.height,b.checkCollision.up,b.checkCollision.down].join(',')).sort().join(';');
   const rects=[1,2,3,4].map(k=>JSON.stringify(lv.rects(k))).join('|');
@@ -50,4 +50,9 @@ for(const st of stages){
  ok(P.r.k===Q.r.k&&P.r.bodies===Q.r.bodies,`png loader: collision unchanged with PNG atlas`);
  ok(P.r.stats.props>Q.r.stats.props,`png loader: manifest decorDensity honoured (${P.r.stats.props} > ${Q.r.stats.props} props)`);
  ok(P.errs.length===0,'png loader: no page errors '+P.errs.join('|'));await P.pg.close();await Q.pg.close()}
+// r20 P3-2: no tile art is requested before the title is ready; it arrives lazily after
+{const pg=await br.newPage();const rq=[];pg.on('request',r=>{if(r.url().includes('/assets/art/tiles/'))rq.push(r.url())});await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());
+ await pg.goto(B+'?mute');await pg.waitForFunction(()=>performance.getEntriesByName('title-ready').length,null,{timeout:20000});const atReady=rq.length;
+ await pg.waitForFunction(()=>Object.keys(AUTOTILE.LOADED).length>=10,null,{timeout:20000}).catch(()=>{});const later=await pg.evaluate(()=>Object.keys(AUTOTILE.LOADED).length);
+ ok(atReady===0,`lazy: no tile-art requests before title-ready (${atReady})`);ok(later>=10,`lazy: title idles in all atlases afterwards (${later} stages, ${rq.length} requests)`);await pg.close()}
 await br.close();console.log(`\nTILES ${pass}/${pass+fail}`);process.exit(fail?1:0)
