@@ -390,8 +390,8 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
 }
 // ---- r10b: regen rings (ring slots ring1/ring2, rings.js). Each player's ring runs on their own character (each side simulates
 // its own stamina / FP / HP); NET.me sends rg (ring ids) so the partner/host sees them (NET.remote.rg). They live in sv.inv / sv.eq,
-// so they survive save/load and NG+ like every ring. Icons in assets/rings/ring_<id>(@2x).png are PLACEHOLDERS (recoloured
-// existing ring art) until the Artist draws them. All three are sold by the wandering merchant (every stage from the Ramparts on).
+// so they survive save/load and NG+ like every ring. Icons in assets/rings/ring_<id>(@2x).png are the Artist's
+// (ashen-vigil-ss-art/rings_regen, rings_regen.json). All three are sold by the wandering merchant (every stage from the Ramparts on).
 ARS.RRING={
  second_wind:{name:'SECOND WIND RING',st:.35,delay:.3,price:1600,desc:'+35% STAMINA REGEN, -30% DELAY',lines:['+35% STAMINA REGEN.','STAMINA RETURNS 30% SOONER','AFTER AN ACTION. A RING.']},
  deep_well:{name:'DEEP WELL RING',fp:.75,price:1800,desc:'+75% FP REGEN',lines:['+75% FP REGEN.','FOR SORCERY AND MIRACLES.','A RING.']},
