@@ -14,7 +14,7 @@ const relayInit=()=>{const h=new Map();window.__fake=(remote)=>{const ev={};cons
 const mk=async(rec)=>{const ctx=await br.newContext({viewport:{width:1280,height:720}});
  await ctx.exposeBinding('__relaySend',(src,s)=>{const d=JSON.parse(s);pages[d.from]=src.page;const p=pages[d.to];if(!p)return;q[d.to]=(q[d.to]||Promise.resolve()).then(()=>p.evaluate(x=>window.__relayRecv&&__relayRecv(x),d)).catch(()=>{})});await ctx.addInitScript(relayInit);
  const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));pg.on('request',r=>{const u=r.url();if(!u.startsWith(B)&&!/^(data|blob):/.test(u))ext.add(new URL(u).host)});
- pg.on('close',()=>{for(const[id,p] of Object.entries(pages))if(p===pg)delete pages[id]});
+ pg.on('close',()=>{for(const[id,p] of Object.entries(pages))if(p===pg){delete pages[id];for(const op of Object.values(pages))op.evaluate(x=>window.__relayRecv&&__relayRecv(x),{from:id,close:1}).catch(()=>{})}});// a closed page drops its link, like a real disconnect
  if(rec){const FR=FRS[rec]=[],VD2=VD+'/'+rec;fs.mkdirSync(VD2,{recursive:true});const s=await ctx.newCDPSession(pg);s.on('Page.screencastFrame',f=>{fs.writeFileSync(`${VD2}/${String(FR.length).padStart(5,'0')}.jpg`,Buffer.from(f.data,'base64'));FR.push(Date.now());s.send('Page.screencastFrameAck',{sessionId:f.sessionId}).catch(()=>{})});await s.send('Page.startScreencast',{format:'jpeg',quality:80,maxWidth:640,maxHeight:360,everyNthFrame:2})}
  const ev=(f,a)=>pg.evaluate(f,a);
  const go=async q=>{await pg.goto(B+q.replace('?','?seed=0&'));await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(700);
@@ -58,6 +58,11 @@ ok('same_position',Math.abs(hn2.x-gn2.x)<48&&Math.abs(hn2.y-gn2.y)<48,{h:[hn2.x,
 // still in sync: the guest sees the host's enemies and remote position
 const sync=await G.ev(()=>({r:!!NET.remote,rx:NET.remote&&Math.round(NET.remote.x),n:S().enemies.length}));const hx=await H.ev(()=>({x:Math.round(S().player.x),n:S().enemies.length}));
 ok('not_desynced',sync.r&&Math.abs(sync.rx-hx.x)<24&&sync.n===hx.n,{sync,hx});
+// r11: the host drops while the guest is on the read-only card -> the card unlocks and the guest can choose
+await H.ev(()=>{tp(ARENA_L+40)});await G.ev(()=>{tp(ARENA_L+30)});await until(H,r=>r.cine,5000);await wait(900);await H.pg.keyboard.press('Enter');await until(H,r=>r.bs==='fight',3000);
+await H.ev(()=>{S().boss.hp=1;S().damageBoss(10)});const gr=await until(G,r=>r.vg,12000);ok('guest_readonly_card_boss2',gr.vg,gr);
+await H.pg.close();const gl=await until(G,r=>!r.vg&&r.role==='lost',8000);await G.shot('c7_guest_card_unlocked');ok('host_drop_unlocks_guest_card',gl.vic&&!gl.vg,gl);
+await wait(900);await G.ev(()=>{S().victory.sel=0});await G.pg.keyboard.press('Enter');const gm=await until(G,r=>r.sid!==gl.sid&&!r.vic,10000);ok('guest_chooses_after_host_drop',gm.sid!==gl.sid,{from:gl.sid,to:gm.sid});
 ok('no_page_errors',errs.length===0,errs.slice(0,3));
 if(process.env.CLIP&&FRS.host){for(const n of['host','guest']){const FR=FRS[n],d=VD+'/'+n;fs.writeFileSync(d+'/l.txt',FR.map((t,i)=>`file '${d}/${String(i).padStart(5,'0')}.jpg'\nduration ${(((FR[i+1]||t+50)-t)/1000).toFixed(3)}`).join('\n'));
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${d}/l.txt -vf "scale=640:360,fps=30,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${n==='host'?'P1 HOST':'P2 GUEST'}':x=8:y=8:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5" -c:v libx264 -pix_fmt yuv420p -crf 26 ${d}.mp4`)}
