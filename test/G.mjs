@@ -85,7 +85,8 @@ await A.pg.waitForFunction(()=>S().cine,null,{timeout:15000}).catch(()=>{});awai
 await A.pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000}).catch(()=>{});await wait(400);
 const atk=await ev(async()=>{const s=S(),B=s.boss,o={};const force=async n=>{B.state='walk';B.cd=-1;s.pickLord=()=>n;await new Promise(r=>setTimeout(r,1400))};
   {let n=0;const ob0=s.flames.push.bind(s.flames);s.flames.push=(...a)=>{n+=a.filter(f=>f.ice).length;return ob0(...a)};await force('toll');s.flames.push=ob0;o.toll=n}await force('requiem');o.ice=s.shots.filter(q=>q.c==='ice').length;
-  B.hp=B.hpMax*.6;await new Promise(r=>setTimeout(r,400));o.p2=B.phase;await new Promise(r=>setTimeout(r,1500));B.hp=B.hpMax*.3;await new Promise(r=>setTimeout(r,400));o.p3=B.phase;await new Promise(r=>setTimeout(r,1500));
+  const ph=async n=>{for(let i=0;i<40&&B.phase<n;i++)await new Promise(r=>setTimeout(r,100));return B.phase};// poll (up to 4 s) instead of a fixed 400 ms: under load the phase change can land late
+  B.hp=B.hpMax*.6;o.p2=await ph(2);await new Promise(r=>setTimeout(r,1500));B.hp=B.hpMax*.3;o.p3=await ph(3);await new Promise(r=>setTimeout(r,1500));
   let tolls=0;const ob=s.flames.push.bind(s.flames);s.flames.push=(...a)=>{tolls+=a.length;return ob(...a)};for(let i=0;i<50&&(B.state==='roar'||B.state==='cast'||B.state==='wind');i++)await new Promise(r=>setTimeout(r,100));// let the phase-3 roar / any cast finish so the forced pick is taken
   tolls=0;await force('peal');for(let i=0;i<60&&tolls<6;i++)await new Promise(r=>setTimeout(r,100));o.peal=tolls;o.pealState=B.state;delete s.pickLord;return o});
 await shot('g08_toller_peal_phase3');
