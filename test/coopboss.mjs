@@ -45,7 +45,7 @@ ok('guest_skip_request_skips_both',hs.bs==='fight'&&gs.bs==='fight'&&!gs.cine,{h
 await H.ev(()=>{S().boss.hp=3});await G.ev(()=>{S().damageBoss(10)});const hd=await until(H,r=>r.bs==='dead',8000),gd=await until(G,r=>r.bs==='dead',8000);
 ok('boss_dies_on_both',hd.bs==='dead'&&gd.bs==='dead',{hd:hd.bs,gd:gd.bs});
 const sig=await H.ev(()=>Object.keys(SIGNATURE||{}).length?SIGNATURE.warden:null).catch(()=>null);
-await wait(2500);const hv=await st(H),gv=await st(G);await H.shot('c3_host_victory');await G.shot('c4_guest_victory');
+await wait(2500);/* r9: the boss-weapon drop + banner play before the host's card */await until(H,r=>r.vic,9000);await until(G,r=>r.vic,3000);const hv=await st(H),gv=await st(G);await H.shot('c3_host_victory');await G.shot('c4_guest_victory');
 ok('both_get_boss_drop',sig?hv.inv.includes(sig)&&gv.inv.includes(sig):hv.inv.length>0&&JSON.stringify(hv.inv.filter(i=>!gv.inv.includes(i)))==='[]',{sig,h:hv.inv,g:gv.inv});
 ok('guest_sees_readonly_victory',hv.vic&&gv.vic&&gv.vg,{hv:hv.vic,gv:gv.vic});
 // the guest tries to pick something else (Down + Enter = rest at the shrine): ignored; the host picks ONWARD and both go
