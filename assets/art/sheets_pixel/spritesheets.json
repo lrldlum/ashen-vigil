@@ -1,0 +1,94 @@
+{
+ "hero": {
+  "primary": true,
+  "combined": "sheets_pixel/hero_strip.png",
+  "frameWidth": 46,
+  "frameHeight": 46,
+  "totalFrames": 30,
+  "origin": [
+   0.5,
+   0.90625
+  ],
+  "facing": "right",
+  "scale": 1,
+  "filter": "NEAREST",
+  "anims": {
+   "idle": {
+    "start": 0,
+    "count": 8
+   },
+   "run": {
+    "start": 8,
+    "count": 8
+   },
+   "attack": {
+    "start": 16,
+    "count": 8
+   },
+   "hit": {
+    "start": 24,
+    "count": 6
+   }
+  },
+  "fps": {
+   "idle": 8,
+   "run": 12,
+   "move": 8,
+   "attack": 16,
+   "hit": 14
+  },
+  "perAnimSheets": {
+   "idle": "sheets_pixel/hero_idle.png",
+   "run": "sheets_pixel/hero_run.png",
+   "attack": "sheets_pixel/hero_attack.png",
+   "hit": "sheets_pixel/hero_hit.png"
+  },
+  "hiresSource": "sheets/hero_strip.png"
+ },
+ "bell_acolyte": {
+  "primary": true,
+  "combined": "sheets_pixel/bell_acolyte_strip.png",
+  "frameWidth": 51,
+  "frameHeight": 51,
+  "totalFrames": 30,
+  "origin": [
+   0.5,
+   0.90625
+  ],
+  "facing": "left",
+  "scale": 1,
+  "filter": "NEAREST",
+  "anims": {
+   "idle": {
+    "start": 0,
+    "count": 8
+   },
+   "move": {
+    "start": 8,
+    "count": 8
+   },
+   "attack": {
+    "start": 16,
+    "count": 8
+   },
+   "hit": {
+    "start": 24,
+    "count": 6
+   }
+  },
+  "fps": {
+   "idle": 8,
+   "run": 12,
+   "move": 8,
+   "attack": 16,
+   "hit": 14
+  },
+  "perAnimSheets": {
+   "idle": "sheets_pixel/bell_acolyte_idle.png",
+   "move": "sheets_pixel/bell_acolyte_move.png",
+   "attack": "sheets_pixel/bell_acolyte_attack.png",
+   "hit": "sheets_pixel/bell_acolyte_hit.png"
+  },
+  "hiresSource": "sheets/bell_acolyte_strip.png"
+ }
+}

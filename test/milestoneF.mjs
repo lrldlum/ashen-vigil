@@ -52,7 +52,7 @@ const vis=await H.ev(()=>{const r=NET.remote;return{rx:Math.round(r.rx),sid:r.si
 await H.pg.screenshot({path:S+'host_sees_guest.png'});await G.pg.screenshot({path:S+'guest_sees_host.png'});
 // r6: colour by role (P2 guest teal on BOTH screens, P1 host in its own colours on both)
 const hook=()=>{window.__hc=[];const o=window.drawHero;window.drawHero=function(g,x,...a){__hc.push([Math.round(x),HC.b]);return o.call(this,g,x,...a)}};await H.ev(hook);await G.ev(hook);await wait(500);
-const roleCol=async(p)=>p.ev(()=>{const s=S(),lx=Math.round(s.player.x),rx=Math.round(NET.remote.rx),L=__hc.slice(-40);return{local:[...new Set(L.filter(c=>Math.abs(c[0]-lx)<3).map(c=>c[1]))],remote:[...new Set(L.filter(c=>Math.abs(c[0]-rx)<3).map(c=>c[1]))],teal:NET.TINT.b}});
+const roleCol=async(p)=>p.ev(()=>{const s=S(),lx=Math.round(s.player.x),rx=Math.round(NET.remote.rx),L=__hc.slice(-40);const px=s.pxc&&s.pxc.hero&&s.pxc.hero.visible;return{local:px?[s.pxc.hero.isTinted?s.pxc.hero.tintTopLeft:'base']:[...new Set(L.filter(c=>Math.abs(c[0]-lx)<3).map(c=>c[1]))],remote:[...new Set(L.filter(c=>Math.abs(c[0]-rx)<3).map(c=>c[1]))],teal:NET.TINT.b}});
 const ch=await roleCol(H),cg=await roleCol(G);require_shots:{await H.pg.screenshot({path:'screenshots/r6/host_view_roles.png'});await G.pg.screenshot({path:'screenshots/r6/guest_view_roles.png'})}
 ok('r6_role_colours',ch.remote.length&&ch.remote.every(c=>c===ch.teal)&&ch.local.length&&ch.local.every(c=>c!==ch.teal)&&cg.local.length&&cg.local.every(c=>c===cg.teal)&&cg.remote.length&&cg.remote.every(c=>c!==cg.teal),{ch,cg});
 ok('players_visible_tinted',Math.abs(vis.rx-300)<12&&Math.abs(visG.rx-260)<12&&vis.tint&&vis.tint.b===0x3ab0a0,{vis,visG});
