@@ -43,6 +43,8 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  tick(S,dt){if(!this.on())return;const now=performance.now();
   if(this.linked()&&now-this.last>7000)this.dropped('timeout');
   this.sendT-=dt;if(this.sendT<=0&&this.linked()){this.sendT=.05;this.send({t:'p',p:this.me()})}
+  // bug fix: push bell/sigil/lens/bloom/relic state to the guest the moment it changes (it used to wait for the 1 s full snapshot, so a guest's strike looked unanswered)
+  if(this.host()&&this.linked()&&S.sv){const bk=(S.sv.bells||[]).join();if(bk!==this._bk){this._bk=bk;this.send({t:'bells',bells:S.sv.bells||[]})}}
   if(this.host()&&this.linked()){this.snapT-=dt;if(this.snapT<=0){this.snapT=1/15;this.snapN++;const bk=(S.sv&&S.sv.bells||[]).join();const bc=bk!==this._bk;this._bk=bk;this.send(this.snap(S,bc||this.snapN%15===1))}}
   const R=this.remote;if(R){R.rx=R.rx==null?R.x:lerp(R.rx,R.x,Math.min(1,dt*14));R.ry=R.ry==null?R.y:lerp(R.ry,R.y,Math.min(1,dt*14))}},
  snap(S,full){const m={t:'s',sid:S.sid,bs:S.bossState,
@@ -74,6 +76,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    if(live&&S.sid!==d.sid)this.follow(d.sid,d.prog);else if(live)this.applyProg(S,d.prog);return}
   if(!live)return;
   if(d.t==='s'){if(d.sid!==S.sid){this.follow(d.sid,d.prog);return}this.applySnap(S,d)}
+  else if(d.t==='bells')this.applyBells(S,d.bells);
   else if(d.t==='souls')S.gainSouls(d.n,1);
   else if(d.t==='hurt'){}// guest takes damage locally from the host's state
   else if(d.t==='picked'){const i=S.items.findIndex(x=>x.id===d.id);const it=i>=0?S.items[i]:{id:d.id,item:d.item,x:S.player.x,y:S.player.y};S.takeItem(it,1)}
@@ -85,6 +88,9 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  follow(sid,prog){const S=this.scene;if(!S)return;if(this._following===sid)return;this._following=sid;const sv=S.sv||{};
   Save.write({...sv,stage:sid,souls:S.souls,bonfire:!!(prog&&prog.bonfire),bossDown:!!(prog&&prog.bossDown),stain:null});setTimeout(()=>{this._following=null},1500);
   if(S.scene.key==='stage')S.scene.restart({fresh:false});else S.scene.start('stage',{fresh:false})},
+ applyBells(S,ids){const sv=S.sv;ids=ids||[];if(!sv.bells)sv.bells=[];
+  for(const b of S.bells||[])if(ids.includes(b.id)&&!b.rung){b.rung=true;b.sw=1;if(!sv.bells.includes(b.id))sv.bells.push(b.id)}// mirror (order puzzles: host already validated)
+  for(const b of S.bells||[])if(b.rung&&!ids.includes(b.id)){b.rung=false;sv.bells=sv.bells.filter(i=>i!==b.id)}},
  applyProg(S,p){if(!p)return;const sv=S.sv;if(p.lords)S.hostLords=p.lords.slice();/* objective line follows the host's progress */
   for(const c of S.cages)if(p.freed.includes(c.id)&&!c.freed){c.freed=true;S.fx.spark(c.x,c.y-8,14,C.f1,120);S.fx.ember(c.x,c.y-8,16,1.6)}
   for(const c of S.covers)if(p.found.includes(c.id)&&!c.found){c.found=true}
@@ -94,8 +100,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   S.items=S.items.filter(it=>!p.picked.includes(it.id));
   if(p.bonfire)S.bonfire.lit=true;if(p.bossDown&&S.bossState!=='dead'){S.bossState='dead';S.boss=null}
   // milestone G: bells + chests
-  for(const b of S.bells||[])if((p.bells||[]).includes(b.id)&&!b.rung){b.rung=true;b.sw=1;if(!sv.bells.includes(b.id))sv.bells.push(b.id)}// mirror (order puzzles: host already validated)
-  for(const b of S.bells||[])if(b.rung&&!(p.bells||[]).includes(b.id)){b.rung=false;sv.bells=sv.bells.filter(i=>i!==b.id)}
+  this.applyBells(S,p.bells);
   // r7: the guest adopts the host's mimic roll and opened shortcuts
   if(p.seed!=null&&p.seed!==sv.seed){sv.seed=p.seed;const m=mimicIds(S.sid,p.seed);for(const c of S.chests||[])if(c.st==='shut')c.mimic=m.has(c.id)?1:0}
   for(const c of S.shortcuts||[])if((p.shortcuts||[]).includes(c.id)&&!c.open)S.openShortcut(c,1);
