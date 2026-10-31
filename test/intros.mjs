@@ -26,7 +26,7 @@ for(const[stage,kind] of Object.entries(BOSSES).filter(([k])=>!process.env.ONLY|
  const k=keys[ki++%keys.length];
  if(kind==='astronomer'){await S(()=>{window.__padOn=true});await wait(150);await S(()=>{__pad.buttons[0]={pressed:true,value:1}});await wait(200);await S(()=>{__pad.buttons[0]={pressed:false,value:0}})}
  else await pg.keyboard.press(k);
- const b=await until(r=>r.bs==='fight'&&!r.cine,2500);ok(`${kind}_intro_skips(${kind==='astronomer'?'pad A':k})`,b.bs==='fight'&&!b.cine&&!b.vel,b);
+ const b=await until(r=>r.bs==='fight'&&!r.cine,400);ok(`${kind}_intro_skips(${kind==='astronomer'?'pad A':k})`,b.bs==='fight'&&!b.cine&&!b.vel,b);
  await S(()=>{window.__padOn=false})}
 // unskipped in-engine intro runs to the fight on its own
 await load('belltower');await enter();const u=await until(r=>r.bs==='fight',9000);ok('toller_intro_runs_to_fight',u.bs==='fight'&&!u.cine,u);
@@ -34,8 +34,8 @@ await load('belltower');await enter();const u=await until(r=>r.bs==='fight',9000
 await load('cathedral');await enter();await until(r=>r.cine);await pg.keyboard.press('Escape');await until(r=>r.bs==='fight');
 const seen=await S(()=>Save.load().seenIntro);await S(()=>{const s=__G.scene.getScene('stage');s.hurtPlayer(9999,s.player.x+10)});await pg.waitForFunction(()=>__G.scene.getScene('stage').player.dead,null,{timeout:5000}).catch(()=>{});
 await S(()=>__G.scene.getScene('stage').respawn());await wait(1200);await enter();
-const r2=await until(r=>r.cine);const r3=await until(r=>r.bs==='fight',2500);
-ok('no_replay_after_death',seen&&seen.cantor&&r2.short&&!r2.vel&&r3.bs==='fight',{seen,r2,r3});
+const r3=await until(r=>r.bs==='fight',400);
+ok('no_replay_after_death',seen&&seen.cantor&&!r3.cine&&!r3.vel&&r3.bs==='fight',{seen,r3});
 ok('esc_does_not_pause_during_intro',!(await S(()=>__G.scene.getScene('stage').paused)));
 ok('no_page_errors',errs.length===0,errs.slice(0,3));
 console.log(`${pass} passed, ${fail} failed`);await br.close();process.exit(fail?1:0);

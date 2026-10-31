@@ -1370,7 +1370,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const K=BD.kind,SI=this.sv.seenIntro=this.sv.seenIntro||{},seen=!!(SI[K]||(window.__seenIntro||{})[K])&&!Q.has('intro');(window.__seenIntro=window.__seenIntro||{})[K]=1;
   if(!seen){SI[K]=1;if(!NET.guest())Save.write(this.sv)}
   this.cine={t:0,kind:K,short:seen,pad:this.padSnap()};this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,seen?300:900,'Sine.easeInOut');
-  if(seen){this.cine.t=3.2;Object.assign(this.cine,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});this.bars=1}
+  if(seen){this.cine.t=4.2;Object.assign(this.cine,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});this.bars=1}
   else if(BOSS_VIDEO[K]&&!Q.has('novideo')&&!DEMO)this.playVideo(BOSS_VIDEO[K])}
  padSnap(){try{return Array.from((navigator.getGamepads&&navigator.getGamepads())||[]).map(g=>g?g.buttons.map(b=>typeof b==='object'?b.pressed||b.value>.5:b>.5):[])}catch(e){return[]}}
  padEdge(c){const now=this.padSnap(),pv=c.pad||[];c.pad=now;return now.some((bs,i)=>bs.some((b,j)=>b&&!(pv[i]&&pv[i][j])))}
@@ -1382,7 +1382,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   document.body.appendChild(v);c.video=v;c.vt=0;window.__bossVideo={src:V.mp4,state:'playing'};
   go(muted?V.muted:V.mp4,muted).catch(()=>go(V.muted,true).catch(done))}
  endVideo(){const c=this.cine,v=c&&c.video||document.getElementById('bossVideo');if(v){try{v.pause()}catch(e){}v.remove()}if(c&&c.video){c.video=null;c.t=.9;if(window.__bossVideo)window.__bossVideo.state='done'}}
- skipCine(){const c=this.cine;if(!c||c.skipT>this.t-.15)return;c.skipT=this.t;c.skipped=1;window.__introSkipped=(window.__introSkipped||0)+1;if(c.video){this.endVideo();c.t=3.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});return}if(c.t<3.8){c.t=3.8;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1})}}
+ skipCine(){const c=this.cine;if(!c||c.skipT>this.t-.15)return;c.skipT=this.t;c.skipped=1;window.__introSkipped=(window.__introSkipped||0)+1;if(c.video){this.endVideo();c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});return}if(c.t<4.2){c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1})}}
  updateCine(dt){const c=this.cine;if(!c)return;const B=this.boss;if(this.padEdge(c))this.skipCine();if(c&&NET.guest()&&this.bossState==='fight'&&this.cine){this.endVideo();c.t=Math.max(c.t,4.2)}// co-op guest: the host's fight has begun
   if(c.video){c.vt+=dt;this.bars=1;if(c.vt>25)this.endVideo();return}c.t+=dt;this.bars=c.short?Math.max(this.bars,1):Math.min(1,c.t/.5);
   const K=B.kind;
@@ -1393,6 +1393,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(K==='marshal'){if(!c.said){c.said=1;this.say('A WAR HORN SOUNDS FROM THE RUINED KEEP',1.6);this.sfx('charge',.6)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('slam',.5);this.cam.shake(300,.014);for(let i=0;i<5;i++)this.fx.shard(ARENA_L+40+i*70,GY-60,6,80)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('clang',.7);this.flashA=.15}if(c.t<1.8&&Math.random()<.4)this.fx.dust(B.x+rnd(-30,30),GY,2)}
   if(K==='abbess'){if(!c.said){c.said=1;this.say('THE WATER REMEMBERS A HYMN',1.6);this.sfx('chime',.6)}if(c.t>.7&&!c.h1){c.h1=1;this.splash(B.x,GY-2,20)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('chime',.8);this.flashA=.18;this.tideFlash=1}if(c.t<1.8&&Math.random()<.5)this.bubbles.push({x:B.x+rnd(-30,30),y:GY-2,t:0,top:GY-90})}
   if(K==='smith'){if(!c.said){c.said=1;this.say('AN ANVIL RINGS IN THE BURNING DARK',1.6);this.sfx('clang',.6)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('clang',.7);this.fx.spark(B.x,GY-4,16,C.f1,140)}if(c.t>1.2&&!c.t2){c.t2=1;this.sfx('clang',.8);this.flashA=.2;this.cam.shake(300,.016)}if(c.t<1.8&&Math.random()<.5)this.fx.ember(B.x+rnd(-40,40),GY-rnd(0,20),1,1.6)}
+  if(K==='warden'){if(!c.said){c.said=1;this.say('FROST CREEPS OVER THE RAMPARTS',1.6);this.sfx('bell',.5)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('slam',.4);this.cam.shake(220,.008);for(let i=0;i<6;i++)this.fx.shard(ARENA_L+40+i*55,GY-2,4,90)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('bell',.7);this.flashA=.16}if(c.t<1.8&&Math.random()<.5)this.fx.add({k:'snow',x:B.x+rnd(-60,60),y:this.cam.scrollY,vx:rnd(-10,-2),vy:rnd(25,45),l:0,m:rnd(2,4),ph:rnd(0,6)})}
+  if(K==='king'){if(!c.said){c.said=1;this.say('THE DEEP BURNS AWAKE',1.6);this.sfx('thunder',.5)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('slam',.6);this.cam.shake(320,.014);for(let i=0;i<6;i++)this.fx.ember(ARENA_L+30+i*55,GY-4,6,2)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('fanfare',.45);this.flashA=.18}}
   if(K==='cantor'){if(!c.said){c.said=1;this.say('A HYMN RISES FROM THE PALE CHOIR',1.6);this.sfx('chime',.6)}if(c.t>1.2&&!c.t2){c.t2=1;this.sfx('bell',.6);this.flashA=.15}}
   if(K==='toller'){if(!c.said){c.said=1;this.say('A BELL TOLLS IN THE FROZEN DARK',1.6);this.sfx('bell',.6)}if(c.t>1.2&&!c.t2){c.t2=1;this.sfx('bell',.7);this.flashA=.18}}
   if((K==='cantor'||K==='toller')&&c.t<1.8&&Math.random()<.4)this.fx.add({k:'snow',x:B.x+rnd(-40,40),y:this.cam.scrollY,vx:rnd(-6,6),vy:rnd(20,40),l:0,m:rnd(2,4),ph:rnd(0,6)});
