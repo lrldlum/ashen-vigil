@@ -167,7 +167,7 @@ ok('p2_4_env_ignores_guard',T15.drown>0&&T15.spike>0&&T15.front===0&&T15.envBloc
 ok('p2_5_guard_break_punishes',T15.gb.lost===T15.gb.base&&T15.gb.base>0&&T15.gb.state==='hurt'&&!T15.gb.heldGuard&&T15.gb.again,T15.gb);
 ok('p2_6_hud_full_mag_top_right',T15.hud&&/MAG 1\/1/.test(T15.hud.s)&&T15.hud.y===22,T15.hud);
 ok('p2_7_balance',JSON.stringify(T15.bal)===JSON.stringify({rune:[.6,7],bb:[.9,.22],fl:1,whip:[22,20],hal:1.6,scy:{str:'B',dex:'C'}}),T15.bal);
-ok('p3_labels_pause_merch_infuse_pad_reload',T15.keys.every(k=>!/^[GTR]$/.test(k))&&T15.pause===3&&T15.pauseR<=T15.W&&/PISTOL SHOT/.test(T15.merch)&&T15.inf&&T15.inf.x+T15.inf.w<=312&&/12 PISTOL/.test(T15.desc)&&T15.padMoving===0&&T15.reloadAfterSwap===0&&T15.runeFired===1,{k:T15.keys,p:T15.pause,m:T15.merch,i:T15.inf,pm:T15.padMoving,r:T15.reloadAfterSwap,rf:T15.runeFired});
+ok('p3_labels_pause_merch_infuse_pad_reload',T15.keys.every(k=>!/^[GTR]$/.test(k))&&T15.pause===4&&T15.pauseR<=T15.W&&/PISTOL SHOT/.test(T15.merch)&&T15.inf&&T15.inf.x+T15.inf.w<=312&&/12 PISTOL/.test(T15.desc)&&T15.padMoving===0&&T15.reloadAfterSwap===0&&T15.runeFired===1,{k:T15.keys,p:T15.pause,m:T15.merch,i:T15.inf,pm:T15.padMoving,r:T15.reloadAfterSwap,rf:T15.runeFired});
 
 // ---------- 15. PixelFX (MIT, vendored subset): loads, bakes per stage palette, renders on shots / blasts / impacts / spells
 mark('pfx');
