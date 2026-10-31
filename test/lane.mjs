@@ -45,10 +45,10 @@ ok('ring_effects_all_feed_the_build',Object.entries(R).every(([k,v])=>v===true||
 const M0=await ev(()=>{const s=S();clear();s.souls=s.sv.souls=9000;const m=s.merch;if(!m)return{m:false};tp(m.x-6,m.y);return{m:true,x:m.x,bx:s.bonfire.x}});await wait(300);
 const M1=await ev(()=>{const s=S();const ok0=s.interact();const rows0=s.merchRows().map(r=>r[0]);const buy=id=>{s.menu.sel=s.merchRows().findIndex(r=>r[0]===id);s.menuKey('ok')};
  const e0=s.sv.embers||0,so0=s.souls;buy('shard');const e1=s.sv.embers,so1=s.souls;buy('ring_life');const inv=s.sv.inv.includes('ring_life'),gone=!s.merchRows().some(r=>r[0]==='ring_life');
- s.player.hp=10;buy('ember');const hp=s.player.hp;return{open:ok0&&s.menu&&s.menu.mode==='lmerch',rows0,shard:e1===e0+1&&so1===so0-800,inv,gone,heal:hp>10,souls:s.souls}});
+ s.player.hp=10;const lt0=s.sv.looted||0;buy('ember');const hp=s.player.hp,lt=(s.sv.looted||0)-lt0;return{lt,open:ok0&&s.menu&&s.menu.mode==='lmerch',rows0,shard:e1===e0+1&&so1===so0-800,inv,gone,heal:hp>10,souls:s.souls}});
 await shot('lane01_merchant');await ev(()=>{S().menu=null});
 await go('?play&mute&novideo&slot=1&continue');const M2=await ev(()=>({emb:S().sv.embers,inv:S().sv.inv.includes('ring_life'),souls:S().souls}));
-ok('merchant_in_level_buy_and_save',M0.m&&M0.x>M0.bx&&M1.open&&M1.shard&&M1.inv&&M1.gone&&M1.heal&&M2.inv&&M2.emb>=1&&M2.souls===M1.souls,{M0,M1,M2});
+ok('merchant_in_level_buy_and_save',M0.m&&M0.x>M0.bx&&M1.open&&M1.shard&&M1.inv&&M1.gone&&M1.heal&&M1.lt===0&&M2.inv&&M2.emb>=1&&M2.souls===M1.souls,{M0,M1,M2});
 // ---------- 3. Ember Shards from drops and lords add to the same sv.embers
 const E=await ev(()=>{const s=S(),e0=s.sv.embers||0;s.takeDrop({kind:'embershard',x:s.player.x,y:s.player.y});const e1=s.sv.embers;const so=s.souls;return{drop:e1===e0+1,noSouls:s.souls===so,inTables:['common','elite','chest'].every(t=>DROP_TABLES[t].some(r=>r[0]==='embershard'))}});
 ok('ember_shards_from_drops',E.drop&&E.inTables,E);
@@ -82,12 +82,28 @@ await wait(800);const HS=await H.ev(()=>({souls:S().souls,emb:S().sv.embers||0})
 ok('coop_guest_merchant_buy_is_local',GM.m&&GM.emb===1&&GM.souls===4200&&HS.emb===0,{GM,HS});
 await H.ev(()=>{clear();const s=S();s.player.hp=s.player.hpMax=9999;s.pb.setPosition(3020,140)});await G.ev(()=>{S().player.hp=S().player.hpMax=9999;S().pb.setPosition(2990,140)});
 await H.pg.waitForFunction(()=>{const c=S().cine;if(c&&c.video)S().skipCine();return S().bossState==='fight'},null,{timeout:25000}).catch(()=>{});await wait(800);
-const ge0=await G.ev(()=>S().sv.embers||0);
+const ge0=await G.ev(()=>S().sv.embers||0),HE0=await H.ev(()=>S().sv.embers||0);
 await H.ev(()=>{const s=S();if(s.boss){s.boss.state='walk';s.boss.hp=1;s.damageBoss(5)}});await wait(4500);
-const CR=[await H.ev(()=>({ring:S().sv.inv.includes('choir_ring'),w:S().sv.inv.includes('requiemspear')})),await G.ev(e0=>({ring:S().sv.inv.includes('choir_ring'),w:S().sv.inv.includes('requiemspear'),emb:(S().sv.embers||0)-e0}),ge0)];
+const he0=HE0;const CR=[await H.ev(e0=>({ring:S().sv.inv.includes('choir_ring'),w:S().sv.inv.includes('requiemspear'),emb:(S().sv.embers||0)-e0}),he0),await G.ev(e0=>({ring:S().sv.inv.includes('choir_ring'),w:S().sv.inv.includes('requiemspear'),emb:(S().sv.embers||0)-e0}),ge0)];
 await G.shot('lane05_coop_guest_lord_ring');
-ok('coop_both_players_get_lord_ring',CR[0].ring&&CR[1].ring&&CR[1].w&&CR[1].emb===2,{CR});
+ok('coop_both_players_get_lord_ring',CR[0].ring&&CR[1].ring&&CR[1].w,{CR});
+ok('coop_each_player_keeps_two_lord_shards',CR[0].emb===2&&CR[1].emb===2,{CR});// decided: both players keep +2 per lord
 await H.ctx.close();await G.ctx.close();
+// ---------- 7. co-op ring chest + ring-holding mimic (catacomb: ch_f5 holds the EMBER SIGNET; the test stages ch_f4, a mimic, with the RIME BAND)
+{const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&stage=catacomb&class=knight');
+await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000}).catch(()=>{});const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;
+const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?seed=0&mute&class=pyromancer&join='+code);
+await G.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(1500);
+await G.ev(()=>{window.S=()=>__G.scene.getScene('stage')});
+const linked=await G.ev(()=>NET.linked()&&S().sid)==='catacomb';
+await H.ev(()=>{clear();const s=S(),c=s.chests.find(c=>c.id==='ch_f5');c.mimic=0;s.openChest(c)});await wait(2500);
+const RC=[await H.ev(()=>S().sv.inv.includes('ember_signet')),await G.ev(()=>({ring:S().sv.inv.includes('ember_signet'),st:S().chests.find(c=>c.id==='ch_f5').st}))];
+ok('coop_ring_chest_both_players',linked&&RC[0]&&RC[1].ring,{linked,RC});
+await H.ev(async()=>{const s=S();RING_CHEST.catacomb.ch_f4='rime_band';const c=s.chests.find(c=>c.id==='ch_f4');c.mimic=1;s.openChest(c);for(let i=0;i<30&&c.st!=='awake';i++)await new Promise(r=>setTimeout(r,100));for(let i=0;i<40&&c.st==='awake';i++){s.hitMimic(c,9999);await new Promise(r=>setTimeout(r,100))}});await wait(2500);
+const RM=[await H.ev(()=>({ring:S().sv.inv.includes('rime_band'),st:S().chests.find(c=>c.id==='ch_f4').st})),await G.ev(()=>({ring:S().sv.inv.includes('rime_band'),st:S().chests.find(c=>c.id==='ch_f4').st}))];
+await G.shot('lane06_coop_guest_mimic_ring');
+ok('coop_ring_mimic_both_players',RM[0].ring&&RM[0].st==='dead'&&RM[1].ring,{RM});
+await H.ctx.close();await G.ctx.close()}
 ok('no_errors',errs.length===0,errs);
 try{let s='';FR.forEach((t,i)=>{s+=`file '${VD}/${String(i).padStart(5,'0')}.jpg'\nduration ${Math.min(.5,((FR[i+1]||t+100)-t)/1000).toFixed(3)}\n`});fs.writeFileSync(VD+'/l.txt',s);
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${VD}/l.txt -vf "scale=640:360,fps=30" -t 45 -c:v libx264 -pix_fmt yuv420p -crf 27 clips/lane.mp4`);console.error('clip ok')}catch(e){console.error('clip fail',e.message)}
