@@ -76,7 +76,7 @@ async function stage(sid){const T=ST[sid],p=T.pre,sh=(n)=>pg.screenshot({path:`$
  r.fx=await ev(()=>{const s=S();s.cam.scrollX=s.def.theme==='cathedral'?s.def.shafts[1]-100:s.def.spikes[1][0]-160;return{theme:s.def.theme}});
  await ev(x=>{tp(x,156);idle()},sid==='cathedral'?1000:1500);await wait(800);await sh('08_atmosphere');
  // lord: intro cinematic + 3 phases + stage clear
- await ev(()=>{const s=S();s.pb.setPosition(3020,140);s.player.inv=999;idle()});await pg.waitForFunction(()=>S().cine&&S().cine.t>2.4,null,{timeout:15000});
+ await ev(()=>{const s=S();s.pb.setPosition(3020,140);s.player.inv=999;idle()});await pg.waitForFunction(()=>{const c=S().cine;if(c&&c.video)S().skipCine();return c&&c.t>2.4},null,{timeout:15000});// the Cantor's pre-rendered intro video is skipped here (test/intros.mjs covers it)
  r.cine=await ev(()=>({bars:S().bars,kind:S().boss.kind,name:S().def.boss.name,rise:+S().boss.rise.toFixed(2)}));await sh('09_lord_intro');
  await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:8000});
  // stop: optional early exit once a phase-3 signature attack shows (the pick is random, ~3 picks per 14 s made this flaky)

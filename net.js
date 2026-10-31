@@ -112,6 +112,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
   S.shots=d.sh.map(([x,y,vx,vy,c,dmg,g,delay])=>({x,y,vx,vy,c:c||undefined,dmg,g:g||undefined,delay,t:0,net:1}));
   d.g.forEach((gs,i)=>{const ch=S.chs[i];if(ch)ch.gateObjs.forEach((g,j)=>{const c=!!gs[j];if(g.closed!==c){g.closed=c;g.body.body.enable=c}})});
   d.ch.forEach(([a,tt,w],i)=>{const ch=S.chs[i];if(ch){ch.active=a;ch.t=tt;ch.wave=w;ch.netLive=1}});
+  if(d.bs==='cine'&&S.bossState==='sleep'&&S.def.boss){S.bossState='cine';S.startCine()}// co-op: the partner sees (and can skip) the boss intro too
   if(d.b){if(!S.boss)S.boss={...d.b,flashCd:0,eyeFlash:0};else Object.assign(S.boss,d.b);if(d.bs==='fight'&&S.bossState!=='dead')S.bossState='fight';if(d.bs==='dying')S.bossState='dying'}
   else if(S.boss&&d.bs!=='fight'){S.boss=null}},
  // guest-side local simulation: smooth enemies toward host positions, take damage from host enemies/boss locally

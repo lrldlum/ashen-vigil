@@ -87,7 +87,7 @@ ok('item_pickups_persist',R.pick.inv.includes('bow')&&R.pick.saved.includes('bow
 // 9. armor look per set + distinct lord arenas
 await ev(()=>{arena();S().pb.setPosition(1580,148);equip({main:'greatsword',armor:'iron'})});await wait(500);await shot('d12_iron_greatsword_look');
 R.arenas={};for(const st of ['cathedral','cinderdeep']){await pg.goto(B+`?play&mute&slot=3&stage=${st}`);await ready();
- await ev(()=>{const s=S();s.pb.setPosition(3020,140);s.player.inv=999});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000});await wait(1500);
+ await ev(()=>{const s=S();s.pb.setPosition(3020,140);s.player.inv=999});await pg.waitForFunction(()=>{const c=S().cine;if(c&&c.video)S().skipCine();return S().bossState==='fight'},null,{timeout:15000});await wait(1500);
  R.arenas[st]=await ev(()=>S().oneways.filter(o=>o.body.x>2980).length);await shot('d13_arena_'+st)}
 ok('distinct_lord_arenas',R.arenas.cathedral>=2&&R.arenas.cinderdeep>=2,R.arenas);
 ok('no_page_errors',errs.length===0,errs);ok('no_external_requests',ext.length===0,ext);

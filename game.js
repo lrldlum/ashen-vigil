@@ -20,6 +20,7 @@ const lerp=(a,b,t)=>a+(b-a)*t, ease=t=>1-Math.pow(1-t,3);
 // ---------- save ----------
 // 3 save slots (milestone D). Slot 1 keeps the original key so older saves still load.
 const slotKey=i=>i?'ashenVigil.save.v1.s'+(i+1):'ashenVigil.save.v1';
+const BOSS_VIDEO={cantor:{mp4:'assets/cine/cantor.mp4',muted:'assets/cine/cantor_muted.mp4'}};
 const Save={slot:Q.has('slot')?clamp((+Q.get('slot')||1)-1,0,2):clamp(+(localStorage.getItem('ashenVigil.slot')||0),0,2),
  key(){return slotKey(this.slot)},use(i){this.slot=i;try{localStorage.setItem('ashenVigil.slot',String(i))}catch(e){}},
  load(i=this.slot){try{return JSON.parse(localStorage.getItem(slotKey(i)))||null}catch(e){return null}},
@@ -489,6 +490,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.cam=this.cameras.main;this.cam.setBounds(0,D.top,WORLD,D.bottom-D.top);this.camY=clamp(GY-156,D.top,D.bottom-H);this.camTY=this.camY;this.cam.scrollY=this.camY;this.cam.startFollow(this.pb,true,.12,0,0,0);this.camOff=0;
   this.keys=this.input.keyboard.addKeys('LEFT,RIGHT,UP,DOWN,Z,X,C,V,S,E,A,D,Q,F,W,G,T,R,SPACE,SHIFT,ENTER,J,K,L,U,I,H,TAB');this.kHold={};
   // r6: Phaser drops JustDown when a key goes down and up inside one frame; latch presses so a quick tap (e.g. Up at the keeper) still counts
+  // boss intros: any confirm key or Esc skips (touch: tap); pads are polled in updateCine
+  this.input.keyboard.on('keydown',e=>{if(this.cine&&!e.repeat&&['Enter',' ','z','Z','x','X','j','J','Escape'].includes(e.key))this.skipCine()});this.input.on('pointerdown',()=>{if(this.cine)this.skipCine()});this.events.once('shutdown',()=>this.endVideo());
   this.kl={};this.input.keyboard.on('keydown',e=>{if(!this.menu&&!e.repeat)this.kl[e.keyCode]=1});
   this.input.keyboard.on('keydown',e=>{const V=this.victory;if(V&&V.t>=.8){const n=V.phase==='choose'?2:this.victoryOpts().length;if(e.key==='ArrowUp')V.sel=(V.sel+n-1)%n;if(e.key==='ArrowDown')V.sel=(V.sel+1)%n;if(['Enter',' ','z','x','Z','X'].includes(e.key))this.victoryGo();return}// r5: a key tapped faster than one frame still moves the menu cursor (edge detection alone could miss it)
   if(this.menu&&!this.paused){const m={ArrowUp:['up','up'],ArrowDown:['down','dn'],ArrowLeft:['left','l'],ArrowRight:['right','r'],w:['up','up'],s:['down','dn'],a:['left','l'],d:['right','r'],W:['up','up'],S:['down','dn'],A:['left','l'],D:['right','r']}[e.key];if(m&&!e.repeat){if(this.menu.t<.15)return;this.menuKey(m[0]);if(this.menu)this.menu.prev[m[1]]=1;return}
@@ -520,7 +523,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  pop(s,x,y,c=0xffe2a8){this.pops.push({s,x,y,c,t:0})}
  sfx(k,v=.35){try{this.sound.play(k,{volume:v})}catch(e){}}
  light(x,y,r,c,a){this.lights.push({x,y,r,c,a})}
- togglePause(){if(this.victory||this.player.dead)return;this.paused=!this.paused;this.paused?this.physics.pause():this.physics.resume()}
+ togglePause(){if(this.victory||this.player.dead||this.cine)return;this.paused=!this.paused;this.paused?this.physics.pause():this.physics.resume()}
  gainSouls(n,noShare){if(NET.host()&&!noShare)NET.send({t:'souls',n});n=Math.round(n*(this.build?this.build.soulMul:1));this.souls+=n;this.soulPop={n:(this.soulPop&&this.soulPop.t>0?this.soulPop.n:0)+n,t:1.4}}
  spawnEnemy(k,x,gy=GY){const base=EBASE[k]||k;const b=this.physics.add.image(x,gy-20,'px').setVisible(false);const S=ESIZE[base];b.body.setSize(S[0],S[1]);b.setCollideWorldBounds(true);
   if(base==='wraith'){b.body.setAllowGravity(false);b.y=gy-40}else{this.physics.add.collider(b,this.solids);this.physics.add.collider(b,this.oneways)}
@@ -1363,8 +1366,25 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(const fl2 of this.flames){const fx=Math.round(fl2.x);glow(ga,fx,GY-6,10,C.f2,.3);this.light(fx,GY-8,30,C.f2,.7);for(let k=0;k<4;k++){ga.fillStyle(k<2?C.f1:C.f2,.8);ga.fillRect(fx-2+k,GY-4-k*3-((t*30+k*5)%4),2,4)}}}
  damageBoss(n,fromNet){if(NET.guest()&&!fromNet){const B=this.boss;if(B){B.flash=2;this.fx.spark(B.x,B.y-18,6,0xffd04a,80)}this.sfx('hit',.3);NET.send({t:'bdmg',n});return}const B=this.boss;if(!B||this.bossState!=='fight')return;if(B.state==='roar'){this.fx.spark(B.x,B.y-18,6,0xffffff,80);return}B.hp-=n;if(B.flashCd<=0){B.flash=2;B.flashCd=.15}this.fx.spark(B.x,B.y-18,12,B.kind==='king'||B.kind==='smith'?C.f1:C.ice1,130,30);this.sfx('hit',.35)}
  startCine(){this.gateL.body.enable=true;for(const e of this.enemies)if(!e.dead&&e.b.x<ARENA_L){e.dead=true;e.deadT=1;e.b.body.enable=false}this.shots.length=0;const BD=this.def.boss,hp=(BD.hp||40)*this.ngMul;this.flames=[];this.boss={kind:BD.kind,phase:1,x:ARENA_R-60,y:GY,f:-1,hp,hpMax:hp,t:0,state:'rise',cd:1.5,flash:0,flashCd:0,eyeFlash:0,step:0,eyes:0,rise:0,wt:.7};
-  this.cine={t:0};this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,900,'Sine.easeInOut')}
- updateCine(dt){const c=this.cine;if(!c)return;c.t+=dt;const B=this.boss;this.bars=Math.min(1,c.t/.5);
+  // intros play in full once per save (and per session for co-op guests); on later attempts (after a death) only a short beat
+  const K=BD.kind,SI=this.sv.seenIntro=this.sv.seenIntro||{},seen=!!(SI[K]||(window.__seenIntro||{})[K])&&!Q.has('intro');(window.__seenIntro=window.__seenIntro||{})[K]=1;
+  if(!seen){SI[K]=1;if(!NET.guest())Save.write(this.sv)}
+  this.cine={t:0,kind:K,short:seen,pad:this.padSnap()};this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,seen?300:900,'Sine.easeInOut');
+  if(seen){this.cine.t=3.2;Object.assign(this.cine,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});this.bars=1}
+  else if(BOSS_VIDEO[K]&&!Q.has('novideo')&&!DEMO)this.playVideo(BOSS_VIDEO[K])}
+ padSnap(){try{return Array.from((navigator.getGamepads&&navigator.getGamepads())||[]).map(g=>g?g.buttons.map(b=>typeof b==='object'?b.pressed||b.value>.5:b>.5):[])}catch(e){return[]}}
+ padEdge(c){const now=this.padSnap(),pv=c.pad||[];c.pad=now;return now.some((bs,i)=>bs.some((b,j)=>b&&!(pv[i]&&pv[i][j])))}
+ // pre-rendered intro (Pale Cantor): a <video> over the canvas; sound first, muted file if autoplay with sound is refused
+ playVideo(V){const c=this.cine,cv=this.sys.game.canvas,v=document.createElement('video'),r=cv.getBoundingClientRect();
+  v.id='bossVideo';v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';v.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;background:#000;object-fit:contain;z-index:20;pointer-events:none`;
+  const muted=Q.has('mute')||this.sound.mute;const go=(src,m)=>{v.muted=m;v.src=src;return v.play()};
+  const done=()=>{if(c.video===v)this.endVideo()};v.onended=done;v.onerror=()=>{if(!v.muted)go(V.muted,true).catch(done);else done()};
+  document.body.appendChild(v);c.video=v;c.vt=0;window.__bossVideo={src:V.mp4,state:'playing'};
+  go(muted?V.muted:V.mp4,muted).catch(()=>go(V.muted,true).catch(done))}
+ endVideo(){const c=this.cine,v=c&&c.video||document.getElementById('bossVideo');if(v){try{v.pause()}catch(e){}v.remove()}if(c&&c.video){c.video=null;c.t=.9;if(window.__bossVideo)window.__bossVideo.state='done'}}
+ skipCine(){const c=this.cine;if(!c||c.skipT>this.t-.15)return;c.skipT=this.t;c.skipped=1;window.__introSkipped=(window.__introSkipped||0)+1;if(c.video){this.endVideo();c.t=3.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});return}if(c.t<3.8){c.t=3.8;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1})}}
+ updateCine(dt){const c=this.cine;if(!c)return;const B=this.boss;if(this.padEdge(c))this.skipCine();if(c&&NET.guest()&&this.bossState==='fight'&&this.cine){this.endVideo();c.t=Math.max(c.t,4.2)}// co-op guest: the host's fight has begun
+  if(c.video){c.vt+=dt;this.bars=1;if(c.vt>25)this.endVideo();return}c.t+=dt;this.bars=c.short?Math.max(this.bars,1):Math.min(1,c.t/.5);
   const K=B.kind;
   if(K==='king'&&c.t>.3&&c.t<1.6&&Math.random()<.5)this.fx.fire(ARENA_L+rnd(20,340),GY,3,3,1.6);
   if(K==='heir'){if(!c.said){c.said=1;this.say('SIX OATHS STIR IN THE ASH',1.6);this.sfx('bell',.5)}const ec=[0xd8f2ff,0xffa060,0x9ff0e8,0xe8d8b8,0xd8d0ff,0xc8e890];for(let i=0;i<6;i++)if(c.t>.3+i*.22&&!(c['e'+i])){c['e'+i]=1;this.fx.spark(ARENA_L+30+i*60,GY-70,8,ec[i],80);this.sfx('chime',.25)}if(c.t>1.7&&!c.t2){c.t2=1;this.sfx('fanfare',.4);this.cam.shake(260,.012);this.flashA=.15}}
@@ -1373,6 +1393,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(K==='marshal'){if(!c.said){c.said=1;this.say('A WAR HORN SOUNDS FROM THE RUINED KEEP',1.6);this.sfx('charge',.6)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('slam',.5);this.cam.shake(300,.014);for(let i=0;i<5;i++)this.fx.shard(ARENA_L+40+i*70,GY-60,6,80)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('clang',.7);this.flashA=.15}if(c.t<1.8&&Math.random()<.4)this.fx.dust(B.x+rnd(-30,30),GY,2)}
   if(K==='abbess'){if(!c.said){c.said=1;this.say('THE WATER REMEMBERS A HYMN',1.6);this.sfx('chime',.6)}if(c.t>.7&&!c.h1){c.h1=1;this.splash(B.x,GY-2,20)}if(c.t>1.3&&!c.t2){c.t2=1;this.sfx('chime',.8);this.flashA=.18;this.tideFlash=1}if(c.t<1.8&&Math.random()<.5)this.bubbles.push({x:B.x+rnd(-30,30),y:GY-2,t:0,top:GY-90})}
   if(K==='smith'){if(!c.said){c.said=1;this.say('AN ANVIL RINGS IN THE BURNING DARK',1.6);this.sfx('clang',.6)}if(c.t>.6&&!c.h1){c.h1=1;this.sfx('clang',.7);this.fx.spark(B.x,GY-4,16,C.f1,140)}if(c.t>1.2&&!c.t2){c.t2=1;this.sfx('clang',.8);this.flashA=.2;this.cam.shake(300,.016)}if(c.t<1.8&&Math.random()<.5)this.fx.ember(B.x+rnd(-40,40),GY-rnd(0,20),1,1.6)}
+  if(K==='cantor'){if(!c.said){c.said=1;this.say('A HYMN RISES FROM THE PALE CHOIR',1.6);this.sfx('chime',.6)}if(c.t>1.2&&!c.t2){c.t2=1;this.sfx('bell',.6);this.flashA=.15}}
   if(K==='toller'){if(!c.said){c.said=1;this.say('A BELL TOLLS IN THE FROZEN DARK',1.6);this.sfx('bell',.6)}if(c.t>1.2&&!c.t2){c.t2=1;this.sfx('bell',.7);this.flashA=.18}}
   if((K==='cantor'||K==='toller')&&c.t<1.8&&Math.random()<.4)this.fx.add({k:'snow',x:B.x+rnd(-40,40),y:this.cam.scrollY,vx:rnd(-6,6),vy:rnd(20,40),l:0,m:rnd(2,4),ph:rnd(0,6)});
   if(c.t>.9&&c.t<1.6){B.rise=ease((c.t-.9)/.7);if(Math.random()<.9){if(K==='king'||K==='smith')this.fx.fire(B.x+rnd(-16,16),GY,3,4,1.5);else if(K==='cantor')this.fx.star(B.x+rnd(-14,14),GY-rnd(10,60),0xb8a8ff);else this.fx.shard(B.x+rnd(-14,14),GY,2,80)}if(!c.shk){c.shk=1;this.cam.shake(700,.012);this.sfx(K==='cantor'?'bonfire':'charge',.5)}}
