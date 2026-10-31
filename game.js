@@ -319,10 +319,11 @@ class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.
      else if(v===K_ONEWAY){const ix=TM.one(X,Y,u,vv);c=(vv>5&&ix===0)?0:TM.c[ix]}
      else if(bk&&!(v===K_CHAIN||v===K_SPIKE))c=TM.c[TM.back(X,Y)]}
     if(c)d[(Y-j0*TS)*w+(X-i0*TS)]=c}}
+  if(typeof AUTOTILE!=='undefined')AUTOTILE.apply(this,d,w,h,i0,j0,i1,j1,force);// autotile pass: edges/corners/variants/decor, render-only
   ctx.putImageData(img,0,0);return cv}}
 // ===================================================================
 class Boot extends Phaser.Scene{constructor(){super('boot')}
- preload(){if(typeof PIXCH!=='undefined')PIXCH.preload(this.load);['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry','menu','pickup','chime','crumble','clang','slam','lava','heal','thunder','buff','talk','fanfare','bell'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
+ preload(){if(typeof PIXCH!=='undefined')PIXCH.preload(this.load);if(typeof AUTOTILE!=='undefined')AUTOTILE.preload(this.load);['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry','menu','pickup','chime','crumble','clang','slam','lava','heal','thunder','buff','talk','fanfare','bell'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
  create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(Q.get('ending'))return this.scene.start('ending',{kind:Q.get('ending'),final:Q.has('final')});if(Q.get('join'))return this.scene.start('title');if(Q.has('host')){NET.startHost(Q.get('room')||undefined);return this.scene.start('stage',{fresh:!Q.has('continue')})}if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
 // shared parallax
 function makeBG(scene,sx=''){const L=[['sky',0],['far',.15],['near',.4]].map(([k,f])=>[scene.add.tileSprite(0,0,W,H,k+sx).setOrigin(0).setScrollFactor(0).setDepth(-10+f),f]);

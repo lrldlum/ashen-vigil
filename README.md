@@ -29,3 +29,6 @@ You can play with the keyboard or an **Xbox controller**. Other pads that use th
 **Smith infusions:** at the smith, select a weapon and press Right (D-pad Right) to infuse it (heavy/sharp: 1 Ember Shard + 1000 souls; fire/frost/lightning: 2 + 2000; dark/holy: 3 + 3000).
 
 **Context A:** when you stand on the ground next to something usable (bonfire, the Ash Keeper, a chest, a lever, a lore stone, a door/gate/lift/stair), an on-screen prompt shows the button (`A Rest`, `A Talk`, `A Open`; a boxed E key glyph without a pad) and A uses it instead of jumping. Step away to jump; D-pad Up always interacts and never jumps. Loot is picked up by walking over it.
+
+## Foreground autotiles
+`autotile.js` adds render-only edges, corners, variants and decor on top of the `tiles.js` materials, with 47 blob frames per stage. Collision is unchanged. `?tiles=0` turns it off. To add Artist PNG atlases, put them in `assets/art/tiles/<stage>/` with a `manifest.json` and list the stage in `assets/art/tiles/index.json`. See `test/tiles.mjs`.
