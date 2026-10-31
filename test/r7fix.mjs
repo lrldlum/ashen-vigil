@@ -55,7 +55,7 @@ ok('swing_hollow_does_not_run_away',sw.a.st!=='swing'&&sw.a.vx===0&&Math.abs(sw.
 // ---------- P2 #4: specials scale from the held weapon (capped), cost 14+ FP and have a 1.5 s cooldown
 const sp=await ev(async()=>{const s=S(),P=s.player,o={};for(const w of['longsword','greatsword','frostbrand','ashmaul']){s.sv.eq.main=w;s.applyBuild&&s.applyBuild();s.build=RPG.derive(s.sv.stats,s.sv.eq);o[w]={pw:+s.specialPower(WEAPONS[w]).toFixed(2),ar:+s.build.ar.toFixed(2)}}
  s.sv.eq.main='frostbrand';s.build=RPG.derive(s.sv.stats,s.sv.eq);clear();tp(500);P.f=1;P.fp=P.fpMax=99;P.spCd=0;s.stats.specials=0;s.weaponSpecial(WEAPONS.frostbrand);const fp1=P.fp;s.weaponSpecial(WEAPONS.frostbrand);o.second=s.stats.specials;o.cost=99-fp1;while(s.t<=P.spCd+.05)await sl(50);s.weaponSpecial(WEAPONS.frostbrand);o.third=s.stats.specials;return o});
-ok('special_scales_from_held_weapon_with_cap_cost_cooldown',sp.longsword.pw!==sp.greatsword.pw&&sp.frostbrand.pw<=.5*sp.frostbrand.ar+.01&&sp.cost>=14&&sp.second===1&&sp.third===2,sp);
+ok('special_scales_from_held_weapon_with_cap_cost_cooldown',sp.longsword.pw!==sp.greatsword.pw&&Math.abs(sp.frostbrand.pw-.8/*r9: signature specials use their own spMul, the r7 cap is gone*/*sp.frostbrand.ar)<.02&&sp.cost>=14&&sp.second===1&&sp.third===2,sp);
 // ---------- P2 #5: hazards bite: wind shoves 40+ px/s, spores kill below 25%, thorn hedges block the road
 await go('?play&mute&slot=1&class=knight&stage=keep');
 const wd=await ev(async()=>{const s=S(),z=s.def.wind.find(w=>w.ground);clear();await new Promise(r=>{const f=()=>s.gustOn(z)&&((s.t+(z.off||0))%z.period)<.3?r():setTimeout(f,30);f()});tp(z.r[0]+30);hold({});await sl(60);const x0=s.player.x;await sl(1000);return{dx:Math.round(s.player.x-x0),dir:z.dir}});

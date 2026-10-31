@@ -929,17 +929,17 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(let i=-6;i<L;i++){const px0=Math.round(x+cx*i),py0=Math.round(y+sy*i);g.fillStyle(i<0?0x8a5a24:i>L-6&&(W0.type==='hammer'||W0.type==='axe')?0xd8d0ee:0xe8ecff);g.fillRect(px0-1,py0-1,i>L-6&&(W0.type==='hammer'||W0.type==='axe')?4:2,i>L-6&&(W0.type==='hammer'||W0.type==='axe')?4:2)}
   g.fillStyle(0xffd04a);g.fillRect(Math.round(x-sy*3)-1,Math.round(y+cx*3)-1,3,3);g.fillRect(Math.round(x+sy*3)-1,Math.round(y-cx*3)-1,3,3)}
  drawSigBanner(g){const b=this.sigBanner;if(!b)return;const a=Math.min(1,b.t*4,(2.6-b.t)*3),W0=WEAPONS[b.w]||{name:b.w};if(a<=0)return;
-  const t1=(b.had?'BOSS WEAPON (ALREADY OWNED)':'BOSS WEAPON ACQUIRED'),t2=W0.name,w=Math.max(textW(t1),textW(t2))+40,x=Math.round(W/2-w/2),y=48;
+  const t1=b.title||(b.had?'BOSS WEAPON (ALREADY OWNED)':'BOSS WEAPON ACQUIRED'),t2=W0.name,w=Math.max(textW(t1),textW(t2))+40,x=Math.round(W/2-w/2),y=48;
   g.fillStyle(0x07050f,.9*a);g.fillRect(x,y,w,30);g.fillStyle(0xffd04a,a);g.fillRect(x,y,w,2);g.fillRect(x,y+28,w,2);g.fillRect(x,y,2,30);g.fillRect(x+w-2,y,2,30);
   drawText(g,t1,Math.round(W/2-textW(t1)/2),y+6,0xffd04a,1,0x07050f,a);drawText(g,t2,Math.round(W/2-textW(t2)/2),y+17,0xffffff,1,0x07050f,a)}
  // lord weapons: the heavy attack triggers the weapon's special (costs FP)
  // milestone H: every signature special shares one power budget, independent of catalysts and of the wielded weapon's stat requirements:
  // pw = half the attack rating FROSTBRAND would have for this build; each special strikes every target it reaches ONCE for ~4*pw (toll 3.5*pw + stun)
  // r7 P2 #4: a special scales from the HELD weapon's own attack rating, capped near 1.4x that weapon's light DPS (special ~2.5 pw per 1.5 s cooldown)
- specialPower(wp){const ar=this.build.ar||1,L=(wp||WEAPONS[this.sv.eq.main]||{}).light||{t:.34,mul:1,n:1},lightDps=ar*(L.mul||1)*Math.min(2,L.n||1)/(L.t||.34);return Math.min(.5*ar,.84*lightDps)}
- weaponSpecial(wp){const P=this.player,sp=wp.special,f=P.f,pw=this.specialPower(wp),hitSet=new Set(),cost=Math.max(14,wp.spFp||8);if((P.spCd||0)>this.t){this.pop('NOT READY',P.x,P.y-24,0x6ab8ff);return}if(P.fp<cost){this.pop('NO FP',P.x,P.y-24,0x6ab8ff);return}P.fp-=cost;P.spCd=this.t+1.5;this.stats.specials=(this.stats.specials||0)+1;
+ specialPower(wp){const ar=this.build.ar||1;if(wp&&wp.spMul)return ar*wp.spMul;const L=(wp||WEAPONS[this.sv.eq.main]||{}).light||{t:.34,mul:1,n:1},lightDps=ar*(L.mul||1)*Math.min(2,L.n||1)/(L.t||.34);return Math.min(.5*ar,.84*lightDps)}
+ weaponSpecial(wp){const P=this.player,sp=wp.special,f=P.f,pw=this.specialPower(wp),hitSet=new Set(),cost=Math.max(14,wp.spFp||8);if((P.spCd||0)>this.t){this.pop('NOT READY',P.x,P.y-24,0x6ab8ff);return}if(P.fp<cost){this.pop('NO FP',P.x,P.y-24,0x6ab8ff);return}P.fp-=cost;P.spCd=this.t+(wp.spMul?1.1:1.5);this.stats.specials=(this.stats.specials||0)+1;const SR=wp.spR||1;if(wp.spMul){this.cam.shake(180,.012);this.novas.push({dome:1,owner:'p',harmless:1,x:P.x,y:P.y,R:34*SR,grow:.18,t:0,m:.35});this.fx.spark(P.x,P.y-12,30,0xffe2a8,170)}
   // each target is struck once per special (no multi-hit stacking); lords take the frost-row share (60%)
-  const hitR=(x,y,R,n)=>{for(const e of this.enemies)if(!e.dead&&!hitSet.has(e)&&Math.abs(e.b.x-x)<R&&Math.abs(e.b.y-y)<R){hitSet.add(e);this.damageEnemy(e,n,Math.sign(e.b.x-P.x)||f)}const B=this.boss;if(B&&!hitSet.has(B)&&this.bossState==='fight'&&Math.abs(B.x-x)<R+8&&Math.abs(B.y-16-y)<R+16){hitSet.add(B);this.damageBoss(n*.6)}
+  const hitR=(x,y,R0,n)=>{const R=R0*SR;for(const e of this.enemies)if(!e.dead&&!hitSet.has(e)&&Math.abs(e.b.x-x)<R&&Math.abs(e.b.y-y)<R){hitSet.add(e);this.damageEnemy(e,n,Math.sign(e.b.x-P.x)||f)}const B=this.boss;if(B&&!hitSet.has(B)&&this.bossState==='fight'&&Math.abs(B.x-x)<R+8&&Math.abs(B.y-16-y)<R+16){hitSet.add(B);this.damageBoss(n*.6)}
    for(const c of this.chests)if(c.st==='awake'&&!hitSet.has(c)&&Math.abs(c.hx-x)<R){hitSet.add(c);this.hitMimic(c,n)}};
   if(sp==='frost'){this.castIce(P.x+f*16,f,'p',GY,4*pw,hitSet);this.sfx('bonfire',.3)}
   else if(sp==='hymn'){for(let i=0;i<8;i++){const a=i/8*6.283;this.fx.star(P.x+Math.cos(a)*30,P.y-10+Math.sin(a)*20,0xb8a8ff)}this.novas.push({x:P.x,y:P.y-10,t:0,m:.5,parry:1});hitR(P.x,P.y-10,44,4*pw);this.sfx('parry',.35)}
