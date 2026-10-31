@@ -25,8 +25,10 @@ const MERCH_STOCK=[['ember',150],['bluesap',150],['rimesalt',250],['cinderleaf',
 if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  const give=function(id,why){const sv=this.sv;if(!id||sv.inv.includes(id))return false;sv.inv.push(id);Save.write(sv);this.sigBanner={w:id,t:0,title:why||'RING FOUND'};this.sfx('fanfare',.3);this.stats.ringsGot=(this.stats.ringsGot||0)+1;return true};
  SP.ringGive=give;
- const oc=SP.openChest;SP.openChest=function(c,fromNet){const was=c.st;const r=oc.call(this,c,fromNet);if(was==='shut'&&c.st==='open'&&(!NET.guest()||fromNet))this.ringGive((RING_CHEST[this.sid]||{})[c.id]);return r};
- const hm=SP.hitMimic;SP.hitMimic=function(c,ar,fromNet){const was=c.st;const r=hm.call(this,c,ar,fromNet);if(was==='awake'&&c.st==='dead'&&!NET.guest())this.ringGive((RING_CHEST[this.sid]||{})[c.id]);return r};
+ const oc=SP.openChest;SP.openChest=function(c,fromNet){const was=c.st;const r=oc.call(this,c,fromNet);if(was==='shut'&&c.st==='open'&&!NET.guest()){const id=(RING_CHEST[this.sid]||{})[c.id];this.ringGive(id);if(id&&NET.host())NET.send({t:'ring',id,why:'RING FOUND'})}return r};// co-op: the guest usually sees the chest open via the snapshot (no openChest call), so the host sends the ring explicitly
+ const hm=SP.hitMimic;SP.hitMimic=function(c,ar,fromNet){const was=c.st;const r=hm.call(this,c,ar,fromNet);if(was==='awake'&&c.st==='dead'&&!NET.guest()){const id=(RING_CHEST[this.sid]||{})[c.id];this.ringGive(id);if(id&&NET.host())NET.send({t:'ring',id,why:'RING FOUND'})}return r};
+ // co-op: the guest only sees a mimic die through the snapshot, so the host sends the ring explicitly
+ const nr=NET.recv;NET.recv=function(d){if(d&&d.t==='ring'&&this.guest()){const S=this.scene;if(S&&S.sys&&S.sys.isActive()&&S.ringGive&&GEAR[d.id])S.ringGive(d.id,d.why);return}return nr.call(this,d)};
  // lord rings arrive after the weapon banner
  const fb=SP.finishBoss;SP.finishBoss=function(B){const r=fb.call(this,B);const id=RING_BOSS[B&&B.kind];if(id&&!NET.guest()){this.sv.inv.includes(id)||(this.sv.inv.push(id),Save.write(this.sv));this.time.delayedCall(2900,()=>{if(!this.sigBanner)this.sigBanner={w:id,t:0,title:'LORD\'S RING'}})}return r};
  // co-op fix: the guest's lord kill arrives as {t:'bossdead'} -> awardSignature only (finishBoss runs on the host), so the guest never got the lord's ring
@@ -49,7 +51,7 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
   if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='back'||(k==='ok'&&M.sel===R.length))this.menu=null;
   else if(k==='ok'){const[id,price]=R[M.sel];if(this.souls<price){M.say='YOU LACK THE SOULS.';this.sfx('clang',.2);return}this.souls-=price;sv.souls=this.souls;
    if(id==='shard'){sv.embers=(sv.embers||0)+1;/* one currency: sv.embers (the smith's) */M.say='AN EMBER SHARD. FOR THE SMITH.'}else if(GEAR[id]){sv.inv.push(id);M.say=GEAR[id].name+' - WEAR IT FROM THE INVENTORY.'}
-   else{this.takeDrop({kind:id,x:this.player.x,y:this.player.y});M.say=CONSUMABLES[id].name+' - USED.'}Save.write(sv);this.sfx('pickup',.4);this.stats.merchBuys=(this.stats.merchBuys||0)+1;M.sel=Math.min(M.sel,this.merchRows().length)}};
+   else{const lt=sv.looted;this.takeDrop({kind:id,x:this.player.x,y:this.player.y});sv.looted=lt;/* a purchase is not loot */M.say=CONSUMABLES[id].name+' - USED.'}Save.write(sv);this.sfx('pickup',.4);this.stats.merchBuys=(this.stats.merchBuys||0)+1;M.sel=Math.min(M.sel,this.merchRows().length)}};
  const dm=SP.drawMenu0;SP.drawMenu0=function(g,ga){const M=this.menu;if(M.mode!=='lmerch')return dm.call(this,g,ga);const R=this.merchRows();
   g.fillStyle(0x07050f,1);g.fillRect(6,10,308,164);g.fillStyle(0x7a5a24);g.fillRect(6,10,308,1);g.fillRect(6,173,308,1);g.fillRect(6,10,1,164);g.fillRect(313,10,1,164);
   drawText(g,'WANDERING MERCHANT',12,15,0xffb04a);drawText(g,'SOULS '+this.souls,232,15,0x9fd8ff);this.mLayout=[];
