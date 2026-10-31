@@ -9,20 +9,21 @@ const PIXCH=(()=>{
  const DIR='assets/art/sheets_pixel/';
  const AN={idle:[0,8,8],run:[8,8,12],move:[8,8,8],attack:[16,8,16],hit:[24,6,14]};
  const OLC=0xf3e2b8;
- function preload(L){if(!ON())return;if(typeof ARMORL!=='undefined')ARMORL.preload(L);L.spritesheet('av_hero',DIR+'hero_strip.png',{frameWidth:46,frameHeight:46});L.spritesheet('av_acolyte',DIR+'bell_acolyte_strip.png',{frameWidth:51,frameHeight:51})}
+ function preload(L){if(!ON())return;if(typeof ARMORL!=='undefined')ARMORL.preload(L);if(typeof WEAPART!=='undefined')WEAPART.preload(L);L.spritesheet('av_hero',DIR+'hero_strip.png',{frameWidth:46,frameHeight:46});L.spritesheet('av_acolyte',DIR+'bell_acolyte_strip.png',{frameWidth:51,frameHeight:51})}
  // r9 readability: crisp 1px outline (4 tint-filled copies offset +-1px, behind) + soft additive lift copy (above)
  function edge(s,d){return{ol:[[1,0],[-1,0],[0,1],[0,-1]].map(o=>{const q=s.add.sprite(0,0,'av_hero',0).setOrigin(.5,58/64).setDepth(d-.01).setTintFill(OLC).setAlpha(.9).setVisible(false);q.o=o;return q}),
   lift:s.add.sprite(0,0,'av_hero',0).setOrigin(.5,58/64).setDepth(d+.0005).setBlendMode(Phaser.BlendModes.ADD).setAlpha(.28).setVisible(false)}}
  function edgeVis(E,v){E.lift.setVisible(v);for(const q of E.ol)q.setVisible(v)}
- function edgeSync(E,sp,tc){for(const q of E.ol)q.setFrame(sp.frame.name).setFlipX(sp.flipX).setPosition(sp.x+q.o[0],sp.y+q.o[1]).setTintFill(tc);E.lift.setFrame(sp.frame.name).setFlipX(sp.flipX).setPosition(sp.x,sp.y)}
+ function edgeSync(E,sp,tc){for(const q of E.ol)q.setTexture(sp.texture.key,sp.frame.name).setFlipX(sp.flipX).setPosition(sp.x+q.o[0],sp.y+q.o[1]).setTintFill(tc);E.lift.setTexture(sp.texture.key,sp.frame.name).setFlipX(sp.flipX).setPosition(sp.x,sp.y)}
  function setup(s){s.pxc=null;if(!ON()||!s.textures.exists('av_hero'))return;
   const c=s.pxc={t:0,drawn:0,foes:new Map(),hero:s.add.sprite(0,0,'av_hero',0).setOrigin(.5,58/64).setDepth(3.1).setVisible(false),aco:s.sid==='cathedral'&&s.textures.exists('av_acolyte')};
   const AR=typeof ARMORL!=='undefined';c.rig=AR?ARMORL.rig(s,c.hero):null;
   c.rem=s.add.sprite(0,0,'av_hero',0).setOrigin(.5,58/64).setDepth(3.08).setVisible(false);c.rrig=AR?ARMORL.rig(s,c.rem):null;
   c.he=edge(s,3.1);c.re=edge(s,3.08);
   s.events.on('postupdate',()=>{if(s.pxc!==c)return;c.t+=(s.dt||1/60);if(c.drawn)c.ld=c.t;if(c.rdrawn)c.lr=c.t;const hv=c.t-(c.ld??-9)<.12,rv=c.t-(c.lr??-9)<.12;c.hero.setVisible(hv);c.rem.setVisible(rv);edgeVis(c.he,hv);edgeVis(c.re,rv);
-   if(c.rig){if(hv)ARMORL.dress(s,c.rig,s.sv&&s.sv.eq,c.fl,c.tint);else ARMORL.hide(c.rig)}
-   if(c.rrig){if(rv)ARMORL.dress(s,c.rrig,c.req,c.rfl,c.rtint);else ARMORL.hide(c.rrig)}c.drawn=0;c.rdrawn=0});
+   const WA=typeof WEAPART!=='undefined';
+   if(c.rig){if(hv)ARMORL.dress(s,c.rig,s.sv&&s.sv.eq,c.fl,c.tint);else ARMORL.hide(c.rig);if(WA)WEAPART.wield(s,c.rig,hv&&s.sv&&s.sv.eq&&s.sv.eq.main,c.fl,c.tint)}
+   if(c.rrig){if(rv)ARMORL.dress(s,c.rrig,c.req,c.rfl,c.rtint);else ARMORL.hide(c.rrig);if(WA)WEAPART.wield(s,c.rrig,rv&&c.rmain,c.rfl,c.rtint)}c.drawn=0;c.rdrawn=0});
   s.events.once('shutdown',()=>{s.pxc=null})}
  function pick(c,st,a){if(st.a!==a){st.a=a;st.t0=c.t}const [s0,n,fps]=AN[a],k=Math.floor((c.t-st.t0)*fps);return s0+(a==='attack'||a==='hit'?Math.min(n-1,k):k%n)}
  // returns true when the pixel hero was drawn (caller then skips the old hero + its rim)
@@ -32,12 +33,14 @@ const PIXCH=(()=>{
   else fr=pick(c,c.hs,a);
   const sp=c.hero;sp.setFrame(fr).setPosition(Math.round(x),Math.round(y)).setFlipX(f<0);
   c.fl=P.flash>0&&Math.floor(c.t*30)%2;c.tint=typeof NET!=='undefined'&&NET.guest()&&NET.linked()?NET.TINT.b:null;
-  if(c.fl)sp.setTintFill(0xffffff);else if(c.tint!=null)sp.setTint(c.tint);else sp.clearTint();edgeSync(c.he,sp,c.tint??OLC);return true}
+  if(c.fl)sp.setTintFill(0xffffff);else if(c.tint!=null)sp.setTint(c.tint);else sp.clearTint();edgeSync(c.he,sp,c.tint??OLC);
+  // boss weapon heavy look: one burst per heavy swing, at the start of the damage window
+  if(P.state==='atk'&&P.heavy&&typeof WEAPART!=='undefined'){if(!c.hvF&&P.t>=s.move().h0){c.hvF=1;c.hvLast=WEAPART.heavy(s,s.sv.eq.main,x+f*6,y,f)}}else c.hvF=0;return true}
  // co-op partner: pixel hero + their armor (equip ids come over NET.me(): ar/hd/hn/lg). Role colour: the guest is teal on both screens
  function remote(s,R,x,y,rh){const c=s.pxc;if(!c)return false;c.rdrawn=1;c.rs=c.rs||{};const st=R.st;
   const a=st==='hurt'?'hit':st==='atk'?'attack':(st==='run'||st==='roll'||st==='jump'||st==='fall')?'run':'idle';
   const fr=a==='attack'?16+Math.min(7,(R.fr|0)*2):pick(c,c.rs,a);c.rem.setFrame(fr).setPosition(x,y).setFlipX(R.f<0);
-  c.req={armor:R.ar,head:R.hd,hands:R.hn,legs:R.lg};c.rfl=!!R.fl&&Math.floor(c.t*30)%2;c.rtint=rh?null:NET.TINT.b;
+  c.req={armor:R.ar,head:R.hd,hands:R.hn,legs:R.lg};c.rmain=R.main;c.rfl=!!R.fl&&Math.floor(c.t*30)%2;c.rtint=rh?null:NET.TINT.b;
   if(c.rfl)c.rem.setTintFill(0xffffff);else if(c.rtint!=null)c.rem.setTint(c.rtint);else c.rem.clearTint();edgeSync(c.re,c.rem,c.rtint??OLC);return true}// r6: P2 guest is teal
  // returns true when the enemy was drawn as a Bell Acolyte
  function foe(s,e){const c=s.pxc;if(!c||!c.aco||e.base!=='hollow')return false;let sp=c.foes.get(e);

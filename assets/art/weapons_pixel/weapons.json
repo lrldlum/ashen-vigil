@@ -1,0 +1,302 @@
+{
+ "frameWidth": 46,
+ "frameHeight": 46,
+ "totalFrames": 30,
+ "origin": [
+  0.5,
+  0.90625
+ ],
+ "base": "sheets_pixel/hero_strip.png",
+ "baseNoBlade": "weapons_pixel/hero_strip_noblade.png",
+ "anims": {
+  "idle": [
+   0,
+   8
+  ],
+  "run": [
+   8,
+   8
+  ],
+  "attack": [
+   16,
+   8
+  ],
+  "hit": [
+   24,
+   6
+  ]
+ },
+ "hideDefaultWeapon": true,
+ "drawOrder": "base(noblade) -> armor legs,chest -> weapon -> hand repaint (already baked into weapon strip) -> armor hands, head",
+ "iconSize": [
+  12,
+  12
+ ],
+ "icon2xSize": [
+  24,
+  24
+ ],
+ "weapons": [
+  {
+   "id": "frostbrand",
+   "name": "FROSTBRAND",
+   "type": "sword",
+   "special": "frost",
+   "file": "weapons_pixel/weapon_frostbrand.png",
+   "icon": "weapons_pixel/icon_frostbrand.png",
+   "icon2x": "weapons_pixel/icon_frostbrand@2x.png",
+   "heavyFx": "weapons_pixel/heavy_frostbrand.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#96c8f0",
+    "#e1f5ff"
+   ],
+   "heavyFxDesc": "3 ice spikes rise ahead of the arc",
+   "lengthPx": null
+  },
+  {
+   "id": "requiemspear",
+   "name": "REQUIEM PIKE",
+   "type": "spear",
+   "special": "hymn",
+   "file": "weapons_pixel/weapon_requiemspear.png",
+   "icon": "weapons_pixel/icon_requiemspear.png",
+   "icon2x": "weapons_pixel/icon_requiemspear@2x.png",
+   "heavyFx": "weapons_pixel/heavy_requiemspear.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#aaa0c8",
+    "#ebe6fa"
+   ],
+   "heavyFxDesc": "3 small hymn-note pips drift up",
+   "lengthPx": null
+  },
+  {
+   "id": "crownbreaker",
+   "name": "CROWNBREAKER",
+   "type": "greatsword",
+   "special": "cinder",
+   "file": "weapons_pixel/weapon_crownbreaker.png",
+   "icon": "weapons_pixel/icon_crownbreaker.png",
+   "icon2x": "weapons_pixel/icon_crownbreaker@2x.png",
+   "heavyFx": "weapons_pixel/heavy_crownbreaker.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#c8461e",
+    "#ffaa46"
+   ],
+   "heavyFxDesc": "ember crack line runs along the ground",
+   "lengthPx": null
+  },
+  {
+   "id": "clapper",
+   "name": "TOLLER'S CLAPPER",
+   "type": "axe",
+   "special": "toll",
+   "file": "weapons_pixel/weapon_clapper.png",
+   "icon": "weapons_pixel/icon_clapper.png",
+   "icon2x": "weapons_pixel/icon_clapper@2x.png",
+   "heavyFx": "weapons_pixel/heavy_clapper.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#966e3c",
+    "#e6c88c"
+   ],
+   "heavyFxDesc": "flat toll ring expands on the ground",
+   "lengthPx": null
+  },
+  {
+   "id": "ashmaul",
+   "name": "ASHWROUGHT MAUL",
+   "type": "greatsword",
+   "special": "forge",
+   "file": "weapons_pixel/weapon_ashmaul.png",
+   "icon": "weapons_pixel/icon_ashmaul.png",
+   "icon2x": "weapons_pixel/icon_ashmaul@2x.png",
+   "heavyFx": "weapons_pixel/heavy_ashmaul.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#be3c14",
+    "#ff9632"
+   ],
+   "heavyFxDesc": "3 molten pillars rise (matches game drawForgeCols)",
+   "lengthPx": null
+  },
+  {
+   "id": "tidecrook",
+   "name": "ABBESS'S TIDE-CROOK",
+   "type": "spear",
+   "special": "tide",
+   "file": "weapons_pixel/weapon_tidecrook.png",
+   "icon": "weapons_pixel/icon_tidecrook.png",
+   "icon2x": "weapons_pixel/icon_tidecrook@2x.png",
+   "heavyFx": "weapons_pixel/heavy_tidecrook.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#32788c",
+    "#a0e1e1"
+   ],
+   "heavyFxDesc": "small wave crest rolls forward",
+   "lengthPx": null
+  },
+  {
+   "id": "halberd",
+   "name": "CASTELLAN'S HALBERD",
+   "type": "axe",
+   "special": "bolt",
+   "file": "weapons_pixel/weapon_halberd.png",
+   "icon": "weapons_pixel/icon_halberd.png",
+   "icon2x": "weapons_pixel/icon_halberd@2x.png",
+   "heavyFx": "weapons_pixel/heavy_halberd.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#828796",
+    "#dcdeeb"
+   ],
+   "heavyFxDesc": "ballista bolt silhouette flies forward",
+   "lengthPx": null
+  },
+  {
+   "id": "starlance",
+   "name": "ASTRONOMER\\'S STARLANCE",
+   "type": "spear",
+   "special": "nova",
+   "file": "weapons_pixel/weapon_starlance.png",
+   "icon": "weapons_pixel/icon_starlance.png",
+   "icon2x": "weapons_pixel/icon_starlance@2x.png",
+   "heavyFx": "weapons_pixel/heavy_starlance.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#6e64be",
+    "#faeba0"
+   ],
+   "heavyFxDesc": "4-point star burst",
+   "lengthPx": null
+  },
+  {
+   "id": "thornbrand",
+   "name": "PRIORESS\\'S THORNBRAND",
+   "type": "sword",
+   "special": "bramble",
+   "file": "weapons_pixel/weapon_thornbrand.png",
+   "icon": "weapons_pixel/icon_thornbrand.png",
+   "icon2x": "weapons_pixel/icon_thornbrand@2x.png",
+   "heavyFx": "weapons_pixel/heavy_thornbrand.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#466e3c",
+    "#b43c5a"
+   ],
+   "heavyFxDesc": "4 thorn stalks rise from the ground",
+   "lengthPx": null
+  },
+  {
+   "id": "hollowbrand",
+   "name": "HEIR\\'S HOLLOWBRAND",
+   "type": "greatsword",
+   "special": "echo",
+   "file": "weapons_pixel/weapon_hollowbrand.png",
+   "icon": "weapons_pixel/icon_hollowbrand.png",
+   "icon2x": "weapons_pixel/icon_hollowbrand@2x.png",
+   "heavyFx": "weapons_pixel/heavy_hollowbrand.png",
+   "heavyFxFrame": [
+    48,
+    48
+   ],
+   "heavyFxFrames": 6,
+   "heavyFxFps": 16,
+   "heavyFxOrigin": [
+    0.25,
+    0.75
+   ],
+   "arcTint": [
+    "#503c82",
+    "#d7cdf5"
+   ],
+   "heavyFxDesc": "star ring + bolt together",
+   "lengthPx": null
+  }
+ ],
+ "note": "In-hand overlays: 46x46, 30 frames, same layout/origin as sheets_pixel/hero_strip.png. HIDE THE DEFAULT SWORD: draw baseNoBlade (hero with its blade pixels removed) instead of hero_strip.png when a signature weapon is equipped; the grip hand is repainted inside each weapon strip so the weapon sits in the fist. Weapon length = loot.js swL + 2px grip. Frames 17-23 grip/tip were hand-placed; others auto-tracked from the hero blade. Frames 24-25 (white hit flash) reuse frame 23's pose and get the same flash tint. Icons: 12x12 to match assets/ui/flask_icon.png & souls_icon.png (the only bitmap inventory-size icons in av-art; inventory items are otherwise drawn in code), plus a 24x24 @2x. heavy_<id>.png: 6 frames of 48x48, flat 2-colour arc + one small motif, 1px dark outline, no glow; origin [0.25,0.75] = at the hero's hand, facing right (flip for left)."
+}

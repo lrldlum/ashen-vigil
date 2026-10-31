@@ -67,7 +67,8 @@ const INV_HS=4,INV_HX=52,INV_HY=129;
   if(SPELLS[id]||MIRACLES[id]){const c=MIRACLES[id]?0xffe8a0:id==='bolt'?0xfff08a:0x9fe0ff;R(3,3,12,12,0x1a1630);R(8,4,2,10,c);R(4,8,10,2,c);return}
   if(id==='flask'){R(7,2,4,3,0x8a7a60);R(5,5,8,10,0x3a2a20);R(6,6,6,8,0xff8a2a);R(7,7,2,3,0xffe2a8);if(stats)tinyO(g,'X'+(TUNE.flaskN+(this.sv.flaskBonus||0)),x+s-9,y+s-6,0xffe2a8);return}
   if(W0){const t=W0.type,M=0xc8c8d8,D=0x6a5a48,Gd=0xd8b060;
-   if(t==='sword'){R(8,2,2,11,M);R(5,12,8,1,Gd);R(8,13,2,3,D)}else if(t==='greatsword'){R(7,1,4,12,M);R(4,12,10,2,Gd);R(8,14,2,3,D)}
+   const pxI=s>=12&&typeof WEAPART!=='undefined'&&WEAPART.icon(this,g,id,x,y,s);
+   if(pxI);else if(t==='sword'){R(8,2,2,11,M);R(5,12,8,1,Gd);R(8,13,2,3,D)}else if(t==='greatsword'){R(7,1,4,12,M);R(4,12,10,2,Gd);R(8,14,2,3,D)}
    else if(t==='dagger'){R(8,5,2,7,M);R(6,11,6,1,Gd);R(8,12,2,3,D)}else if(t==='spear'){R(8,1,2,3,M);R(7,3,4,1,M);R(8,4,2,13,D)}
    else if(t==='axe'){R(8,2,2,15,D);R(4,3,4,6,M);R(3,4,1,4,M)}else if(t==='bow'){R(5,2,1,14,D);R(6,1,2,1,D);R(6,16,2,1,D);R(9,2,1,14,0xd8d0ee)}
    else if(t==='staff'){R(8,4,2,13,D);R(7,1,4,4,0x9fe0ff)}else if(t==='wand'){R(8,6,2,10,D);R(8,4,2,2,0xff8a2a)}else if(t==='talisman'){R(5,4,8,9,0xd8b060);R(8,6,2,5,0x3a2a20);R(6,8,6,1,0x3a2a20)}
