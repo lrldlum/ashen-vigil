@@ -2,7 +2,7 @@
 // TODO (later passes, see game_design.md): Pale Choir (frozen) + Cinderdeep (burning) stages, 8 DS3-style classes,
 // leveling at bonfires, weapons/armor/catalyst inventory, PeerJS host/join co-op, 3 save slots, more bosses.
 'use strict';
-const W=320,H=180,GY=156;let WORLD=3360,ARENA_L=2980,ARENA_R=3340;
+const W=320,H=180,GY=156;const TOAST_Y=52;/* toasts sit below the HUD + objective band (y 26-46) */let WORLD=3360,ARENA_L=2980,ARENA_R=3340;
 const Q=new URLSearchParams(location.search);
 const DEMO=Q.has('demo'), START_X=+(Q.get('x')||40);
 // ---------- palette (night-indigo, matched to reference) ----------
@@ -1603,8 +1603,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(this.touch&&!this.paused&&!this.menu&&!this.quitQ)this.drawTouch(g)}
   if(this.msg){this.msg.t-=this.paused?0:this.dt;const m=this.msg,a=clamp(m.t*2,0,1);const BS=(this.def.boss||{}).slain;const big=m.s==='EMBER EXTINGUISHED'||m.s===BS;const sc=big?2:1;
    if(big){g.fillStyle(0x05040b,.6*a);g.fillRect(0,78,W,22)}
-   if(!big){const mw=textW(m.s);g.fillStyle(0x05040b,.6*a);g.fillRect(Math.round(W/2-mw/2)-5,36,mw+10,TXT.big?13:11)}
-   drawText(g,m.s,Math.round(W/2-textW(m.s,sc)/2),big?83:40,big?(m.s===BS?0xffe2a8:0xd8402a):0xd8d0ee,sc,0x05040b,a);if(m.t<=0)this.msg=null}
+   if(!big){const mw=textW(m.s);g.fillStyle(0x05040b,.6*a);g.fillRect(Math.round(W/2-mw/2)-5,TOAST_Y-4,mw+10,TXT.big?13:11)}
+   drawText(g,m.s,Math.round(W/2-textW(m.s,sc)/2),big?83:TOAST_Y,big?(m.s===BS?0xffe2a8:0xd8402a):0xd8d0ee,sc,0x05040b,a);if(m.t<=0)this.msg=null}
   if(this.menu&&!this.victory)this.drawMenu(g,ga);
   if(this.loreView&&!this.victory)this.drawLore(g,ga);
   if(this.paused)this.drawPause(g);
