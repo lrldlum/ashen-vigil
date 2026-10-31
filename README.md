@@ -53,3 +53,9 @@ PixelFX is off (`?pfx=0`) or still loading, it falls back to the game's own spar
 `color` is an element or school name (`fire`, `frost`, `lightning`, `dark`, `holy`, `arcane`), a `'#rrggbb'` string or a
 `0xRRGGBB` number. Leave it out to use the effect's own palette. `o` is `{ f: 1 | -1, scale, depth }`. Each call returns the
 sprite, or `null` when the fallback drew instead. Spells don't use it yet: spell effects are Video Games' code.
+
+## Arsenal r10 notes (Tester r17/r18)
+
+- **Merchants:** one scrollable shop screen for the wandering merchant and the spell merchant (bonfire and shrine pedlar): keys / D-pad, mouse wheel, click-drag and touch drag; details panel; prices with currency; unaffordable rows dimmed.
+- **Combat fixes:** a light chain waits until the current swing's hit window has resolved, and the lunge stops at the foe (the Ashmaul and Clapper now connect); STR boss-weapon bases spread; guard stamina regen 30% (none after 2 s of held guard); every boss attack chips 25% through a 100% shield and costs >= 40% stamina to block.
+- **Drops:** a landed drop drifts to an idle player within 16 px.

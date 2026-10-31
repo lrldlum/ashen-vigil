@@ -139,11 +139,11 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  // ---- shields: guard absorbs hits from the front ----
  const hp0=SP.hurtPlayer,hp=function(n,src,att){return hp0.call(this,n,src,att==='env'?undefined:att)};// 'env' hazards: never parryable either
  SP.hurtPlayer=function(n,src,att){const P=this.player,S=WEAPONS[this.sv.eq&&this.sv.eq.off];
-  if(P&&P.guard&&S&&S.shield&&P.inv<=0&&!P.dead&&!this.arsEnvHit(src,att)&&(Math.sign(src-P.x)||P.f)===P.f&&!(this._inE&&this._eRemote)){const sh=S.shield,bh=this.arsBossHeavy(att),cost=bh?Math.max((n*1.2*(1-sh.stab/100)+4)*3,P.stMax*.55):(n*1.2*(1-sh.stab/100)+4);// r9: a boss heavy costs >=55% stamina: two break any guard
+  if(P&&P.guard&&S&&S.shield&&P.inv<=0&&!P.dead&&!this.arsEnvHit(src,att)&&(Math.sign(src-P.x)||P.f)===P.f&&!(this._inE&&this._eRemote)){const sh=S.shield,bh=this.arsBossHeavy(att),ba=!bh&&this.arsBossAtt(src,att),cost=bh?Math.max((n*1.2*(1-sh.stab/100)+4)*3,P.stMax*.55):ba?Math.max((n*1.2*(1-sh.stab/100)+4)*2.5,P.stMax*ARS.BOSS_BLOCK_ST):(n*1.2*(1-sh.stab/100)+4);// r9: a boss heavy costs >=55% stamina: two break any guard
    this.spend(cost);this.stats.blocks=(this.stats.blocks||0)+1;this.fx.spark(P.x+P.f*8,P.y-10,10,sh.magic?0xb8a8ff:0xffffff,110);this.sfx('parry',.25);this.pb.setVelocityX(-P.f*60);
    if(sh.magic)P.fp=Math.min(P.fpMax,P.fp+n*.3);
    if(P.st<=0){P.guard=false;P.guardLock=1;this.stats.guardBreaks=(this.stats.guardBreaks||0)+1;this.pop('GUARD BROKEN',P.x,P.y-24,0xd8402a);P.inv=0;const r=hp.call(this,n,src,att);if(!P.dead){P.state='hurt';P.t=0;P.gbStag=.7}return r}// r6: full hit + 0.7 s stagger; guard stays down until re-pressed
-   const left=Math.max(n*(1-sh.abs),bh?n*.25:0);if(left<1){P.inv=.25;this.pop('BLOCK',P.x,P.y-24,0x9fb8e8);return false}return hp.call(this,left,src,att)}
+   const left=Math.max(n*(1-sh.abs),bh||ba?n*.25:0);if(left<1){P.inv=.25;this.pop('BLOCK',P.x,P.y-24,0x9fb8e8);return false}return hp.call(this,left,src,att)}
   return hp.call(this,n,src,att)};
  // ---- drawing (after the scene, before lights) ----
  const rl=SP.renderLights;SP.renderLights=function(...a){try{this.arsDraw(this.gn,this.ga)}catch(e){}return rl.apply(this,a)};
@@ -363,8 +363,98 @@ ARS.throwAR=dex=>+(0.9+Math.max(0,(dex||10)-10)*0.045).toFixed(3);
 // P2-2: STR boss-weapon ladder - each region's STR signature weapon ~1.1x+ the last in sustained DPS (crownbreaker -> clapper ->
 // ashmaul -> halberd -> hollowbrand). Base tweaks only (loot.js data is Video Games'; adjusted here, at load).
 ARS.STR_LADDER=['crownbreaker','clapper','ashmaul','halberd','hollowbrand'];
-ARS.LADDER_BASE={clapper:2.6,ashmaul:2.7,halberd:2.8,hollowbrand:3.8};
+ARS.LADDER_BASE={clapper:2.6,ashmaul:3.1,halberd:3.2,hollowbrand:4.6};
 if(typeof WEAPONS!=='undefined'){for(const[id,b]of Object.entries(ARS.LADDER_BASE))if(WEAPONS[id])WEAPONS[id].base=b;if(WEAPONS.ashmaul)WEAPONS.ashmaul.light.t=.56}
 // ladder metric (used by test/arsenal.mjs): light-chain DPS = AR x light.mul / light.t at STR 40
 if(typeof Stage!=='undefined')Stage.prototype.arsThrowAR=function(){return ARS.throwAR(this.sv&&this.sv.stats&&this.sv.stats.dex)};
+
+// ===================== r10: Tester r17 =====================
+// P2-1: a light chain could cancel into the next swing at t=0.2 s, before slow weapons' hit window (h0 0.22-0.26) even opened,
+// so the first swing of every chain whiffed (Ashmaul/Clapper landed 1 of 6). The follow-up now waits until the current swing
+// has resolved (hit landed or the window closed); the press is kept and fires the moment it may.
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ const sa10=SP.startAtk;SP.startAtk=function(hv,combo,on){const P=this.player;if(!hv&&combo>0&&P.state==='atk'&&!P.heavy){const m=this.move();if(!P.hitDone&&!m.arrow&&P.t<(m.h1||0)+.02){P.arsQ=1;return}}P.arsQ=0;return sa10.call(this,hv,combo,on)};
+ // the lunge stops at the foe instead of carrying the player (and the hit box) through and past it
+ SP.arsLungeStop=function(){const P=this.player,b=this.pb;if(!P||P.state!=='atk'||!b||!b.body)return;const vx=b.body.velocity.x;if(!vx||Math.sign(vx)!==P.f)return;
+  const near=(x,w)=>{const d=(x-P.x)*P.f;return d>-2&&d<w/2+16};let hit=false;for(const e of this.enemies)if(!e.dead&&e.b&&e.b.body&&e.b.body.enable&&Math.abs(e.b.y-P.y)<24&&near(e.b.body.center.x,e.b.body.width)){hit=true;break}
+  const B=this.boss;if(!hit&&B&&this.bossState==='fight'&&Math.abs(B.y-P.y)<30&&near(B.x,18))hit=true;if(hit){b.setVelocityX(0);this.stats.arsLungeStop=(this.stats.arsLungeStop||0)+1}};
+ const sa10b=SP.startAtk;SP.startAtk=function(...a){const r=sa10b.apply(this,a);this.arsLungeStop();return r};
+ const up10=SP.update;SP.update=function(...a){const P=this.player;if(P&&P.arsQ){if(P.state!=='atk'||P.heavy)P.arsQ=0;else{const m=this.move();if(P.hitDone||P.t>=(m.h1||0)+.02){P.arsQ=0;P.atkBuf=Math.max(P.atkBuf||0,.25)}}}this.arsLungeStop&&this.arsLungeStop();return up10.apply(this,a)};
+}
+// P2-2: turtling a boss behind a 100% shield. (a) stamina regenerates at 30% while the guard is raised; (b) every boss attack
+// (tagged 'boss', or any non-hazard, non-minion hit while a boss fight is on) chips 25% through the guard, not just heavies.
+ARS.GUARD_REGEN=.3;ARS.GUARD_FATIGUE=2;ARS.BOSS_BLOCK_ST=.4;// (c) a held guard stops regenerating after 2 s; (d) blocking any boss attack costs >=40% stamina
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ SP.arsBossAtt=function(src,att){if(att==='env')return false;if(att==='boss')return true;const B=this.boss;if(!B||this.bossState!=='fight')return false;return!(att&&typeof att==='object'&&att!==B)};
+ const up10g=SP.update;SP.update=function(t,dms){const P=this.player,st0=P&&P.st,g=P&&P.guard;const r=up10g.call(this,t,dms);if(P){P.arsGuardT=P.guard?(P.arsGuardT||0)+(dms||16)/1000:0}if(P&&g&&P.guard&&P.st>st0){P.st=st0+(P.st-st0)*(P.arsGuardT>ARS.GUARD_FATIGUE?0:ARS.GUARD_REGEN);this.stats.arsGuardRegen=(this.stats.arsGuardRegen||0)+1}return r};
+}
+// ---- Merchant shop UI (r10): one renderer for every merchant: the wandering merchant (mode 'lmerch', rings.js, one per
+// non-hub stage) and the spell merchant (mode 'merchant', spells.js: bonfire MERCHANT and the shrine pedlar). The buy logic
+// stays theirs (menuKey 'ok'); this owns layout, scrolling and input. List scrolls with the selection (keys / D-pad), the
+// mouse wheel, click-drag and touch drag; a details panel shows the item; prices and currency are explicit; rows you can't
+// afford are dimmed with a red price. Everything is laid out in the 320x180 game space with measured text, so it can't spill
+// at any window size or text size.
+ARS.SHOP={x0:6,y0:8,x1:314,y1:174,lx0:10,lx1:192,ly0:27,ly1:156,dx0:200,dx1:310};
+ARS.wrap=(t,w)=>{const out=[];for(const para of String(t||'').split('\n')){let line='';for(const wd of para.split(/\s+/).filter(Boolean)){const tr=line?line+' '+wd:wd;if(textW(tr)<=w)line=tr;else{if(line)out.push(line);let x=wd;while(textW(x)>w)x=x.slice(0,-1);line=x}}if(line)out.push(line)}return out};
+ARS.fit=(t,w)=>{t=String(t);if(textW(t)<=w)return t;while(t.length>1&&textW(t+'.')>w)t=t.slice(0,-1);return t.replace(/\s+$/,'')+'.'};
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ SP.shopRows=function(){const M=this.menu,sv=this.sv;if(!M)return[];
+  if(M.mode==='lmerch')return[...this.merchRows().map(([id,price])=>{const G=GEAR[id],C=typeof CONSUMABLES!=='undefined'&&CONSUMABLES[id];
+    const name=id==='shard'?'EMBER SHARD':G?G.name:C?C.name:id;const desc=id==='shard'?['TEMPERS A WEAPON AT THE SMITH\'S ANVIL.']:G?[G.desc+'.',G.slot==='ring'?'A RING. WEAR TWO AT ONCE.':'']:
+     ARS.MTXT[id]?ARS.MTXT[id]:(typeof DESC!=='undefined'&&DESC[id])?DESC[id]:[{heal:'RESTORES HP.',fp:'RESTORES FP.',souls:'SOULS.',guard:'+25% ABSORB FOR 12 S.',stam:'FAST STAMINA FOR 10 S.'}[C&&C.fx]||'','USED ON THE SPOT.'];
+    return{id,name,price,cur:'SOULS',afford:this.souls>=price,owned:G&&G.slot!=='ring'?false:G?sv.inv.includes(id):false,kind:G?(G.slot==='ring'?'RING':'GEAR'):id==='shard'?'MATERIAL':'CONSUMABLE',desc:desc.filter(Boolean),
+     icon:(g,x,y,sz)=>{if(G)this.invIcon(g,id,x,y,sz,false);else{const c=id==='shard'?0xff8a3a:(C&&C.col)||0xd8c8a0;g.fillStyle(c);const q=Math.round(sz/2);g.fillRect(x+q-3,y+q-3,6,6)}}}}),{back:1,name:'LEAVE'}];
+  if(M.mode==='merchant')return this.spShopRows().map(r=>{if(r[0]==='back')return{back:1,name:'LEAVE'};const[k,id,price]=r,S=id&&SPELLBOOK[id];
+    if(k==='shard')return{name:'SPELL SHARD',price,cur:'SOULS',afford:this.souls>=price,kind:'MATERIAL',desc:['EMPOWERS AN ATTUNED SPELL HERE.','THREE SHARDS PER STEP LATER ON.'],icon:(g,x,y,sz)=>{g.fillStyle(0x9fd8ff);const q=Math.round(sz/2);g.fillRect(x+q-2,y+q-3,4,6)}};
+    const emp=k==='empower',lv=(sv.spLv[id]||0)+1;return{name:emp?'EMPOWER '+S.name+' +'+lv:S.name,price,cur:emp?'SHARDS':'SOULS',afford:emp?sv.shards>=price:this.souls>=price,kind:emp?'EMPOWER':'SPELL',
+     desc:[(S.school||'').toUpperCase()+' '+({proj:'PROJECTILE',nova:'NOVA',self:'SELF',heal:'HEALING',beam:'BEAM',zone:'ZONE',chain:'CHAIN'}[S.kind]||'SPELL')+'. COSTS '+(S.fp||0)+' FP.',S.req?'NEEDS '+Object.entries(S.req).map(([a,b])=>a.toUpperCase()+' '+b).join(' '):'',this.spLocked&&this.spLocked(id)?'SORCERER ONLY.':'',emp&&[4,7,10].includes(lv)?'ITS LIGHT CHANGES.':''].filter(Boolean),
+     icon:(g,x,y,sz)=>this.spIcon(g,id,x,y,sz)}});
+  return[]};
+ SP.shopIsOn=function(){const M=this.menu;return!!M&&(M.mode==='lmerch'||M.mode==='merchant')};
+ SP.shopGeom=function(){const L=ARS.SHOP,rh=TXT.big?12:11,vis=Math.floor((L.ly1-L.ly0)/rh);return{...L,rh,vis}};
+ SP.shopClamp=function(follow){const M=this.menu,R=this.shopRows(),G=this.shopGeom(),n=R.length;M.sel=Math.max(0,Math.min(n-1,M.sel|0));const maxTop=Math.max(0,n-G.vis);
+  if(M.top==null)M.top=0;if(follow){if(M.sel<M.top)M.top=M.sel;if(M.sel>=M.top+G.vis)M.top=M.sel-G.vis+1}M.top=Math.max(0,Math.min(maxTop,M.top));
+  if(!follow){if(M.sel<M.top)M.sel=M.top;if(M.sel>=M.top+G.vis)M.sel=M.top+G.vis-1}return{R,G,n,maxTop}};
+ SP.shopScroll=function(d,src){const M=this.menu;if(!this.shopIsOn())return;const{maxTop}=this.shopClamp(true);M.top=Math.max(0,Math.min(maxTop,(M.top||0)+d));this.shopClamp(false);
+  const st=this.stats.shopScroll=this.stats.shopScroll||{};st[src]=(st[src]||0)+1};
+ // keys / D-pad: the merchants' own menuKey moves sel; the list then follows it
+ const mk10=SP.menuKey;SP.menuKey=function(k){const on=this.shopIsOn();const r=mk10.call(this,k);if(on&&this.shopIsOn()){this.shopClamp(true);const st=this.stats.shopScroll=this.stats.shopScroll||{};if(k==='up'||k==='down')st.key=(st.key||0)+1}return r};
+ const dm10=SP.drawMenu0;SP.drawMenu0=function(g,ga){if(!this.shopIsOn())return dm10.call(this,g,ga);const M=this.menu,{R,G,n,maxTop}=this.shopClamp(true),sv=this.sv;
+  // neutralise the old tap tables (rings.js merchTap / spells.js spTap): taps are handled below
+  this.mLayout=[];this.spLayout={x0:-1,x1:999,y0:-1,y1:999,rows:[],rx:0,rw:0};
+  const box=(x0,y0,x1,y1,c)=>{g.fillStyle(c);g.fillRect(x0,y0,x1-x0,1);g.fillRect(x0,y1-1,x1-x0,1);g.fillRect(x0,y0,1,y1-y0);g.fillRect(x1-1,y0,1,y1-y0)};
+  g.fillStyle(0x07050f,1);g.fillRect(G.x0,G.y0,G.x1-G.x0,G.y1-G.y0);box(G.x0,G.y0,G.x1,G.y1,0x7a5a24);
+  const title=M.mode==='lmerch'?'WANDERING MERCHANT':'SPELL MERCHANT';const cur='SOULS '+this.souls+(M.mode==='merchant'?'  SHARDS '+sv.shards:'');
+  const cw=textW(cur);drawText(g,ARS.fit(title,G.x1-G.x0-cw-16),G.x0+6,G.y0+5,0xffb04a);drawText(g,cur,G.x1-6-cw,G.y0+5,0x9fd8ff);g.fillStyle(0x3a2a18);g.fillRect(G.x0+4,G.ly0-4,G.x1-G.x0-8,1);
+  const lay=this.shopLay={rows:[],G};
+  for(let j=0;j<G.vis&&M.top+j<n;j++){const i=M.top+j,r=R[i],y=G.ly0+j*G.rh,on=i===M.sel;lay.rows.push([i,y]);
+   if(on){g.fillStyle(0x2a2245);g.fillRect(G.lx0,y-2,G.lx1-G.lx0,G.rh);g.fillStyle(0xffb04a);g.fillRect(G.lx0,y-2,2,G.rh)}
+   if(r.back){drawText(g,r.name,G.lx0+16,y,on?0xffe2a8:0xa8a0c8);continue}
+   r.icon(g,G.lx0+3,y-2,10);const ps=String(r.price)+(r.cur==='SHARDS'?' SH':''),pw=textW(ps),dim=!r.afford;
+   drawText(g,ARS.fit(r.name,G.lx1-G.lx0-16-pw-8),G.lx0+16,y,dim?(on?0x9a8a9a:0x6a6278):(on?0xffe2a8:0xd8d0ee));drawText(g,ps,G.lx1-3-pw,y,dim?0xd8402a:0x9fd8ff)}
+  // scrollbar
+  if(maxTop>0){const h=G.ly1-G.ly0,th=Math.max(8,Math.round(h*G.vis/n)),ty=G.ly0+Math.round((h-th)*(M.top/maxTop));g.fillStyle(0x2a2440);g.fillRect(G.lx1+2,G.ly0-2,3,h);g.fillStyle(0xffb04a);g.fillRect(G.lx1+2,ty-2,3,th);lay.bar={x:G.lx1+2,th,ty}}
+  // details
+  g.fillStyle(0x7a5a24);g.fillRect(G.dx0-4,G.ly0-2,1,G.ly1-G.ly0);const r=R[M.sel],dw=G.dx1-G.dx0;let dy=G.ly0;lay.detail=[];
+  const put=(t,c)=>{for(const l of ARS.wrap(t,dw)){if(dy+8>G.ly1)return;drawText(g,l,G.dx0,dy,c);lay.detail.push([G.dx0,dy,textW(l)]);dy+=TXT.big?10:8}};
+  if(r&&!r.back){if(r.id&&ARS.MTXT[r.id])this.stats.merchTxt=ARS.MTXT[r.id][0];r.icon(g,G.dx0,dy,24);const pr=r.price+' '+r.cur;drawText(g,r.kind,G.dx0+28,dy+2,0xa8a0c8);drawText(g,ARS.fit(pr,dw-28),G.dx0+28,dy+13,r.afford?0x9fd8ff:0xd8402a);dy+=30;put(r.name,0xffe2a8);dy+=2;put(r.desc.join(' '),0xd8c8b0);if(!r.afford)put(r.cur==='SHARDS'?'NOT ENOUGH SHARDS.':'NOT ENOUGH SOULS.',0xd8402a);if(r.owned)put('OWNED.',0x9fb8e8)}
+  else if(r)put('LEAVE THE MERCHANT.',0xa8a0c8);
+  const foot=M.say||(this.touch?'TAP TO PICK, TAP AGAIN TO BUY. DRAG TO SCROLL.':'OK BUY   BACK LEAVE   WHEEL/DRAG SCROLL');drawText(g,ARS.fit(foot,G.x1-G.x0-12),G.x0+6,G.y1-12,M.say?0xd8c8b0:0x8a86c0);
+  this.stats.shopDraw=(this.stats.shopDraw||0)+1};
+ // pointer: tap = pick / buy, drag = scroll (mouse or touch), wheel = scroll, outside the panel = leave
+ const cr10s=SP.create;SP.create=function(...a){const r=cr10s.apply(this,a);const I=this.input;
+  I.on('pointerdown',p=>{if(!this.shopIsOn())return;this.shopDrag={y0:p.y,top0:this.menu.top||0,moved:0,x:p.x,y:p.y}});
+  I.on('pointermove',p=>{const D=this.shopDrag;if(!D||!this.shopIsOn()||!p.isDown)return;const G=this.shopGeom(),dy=p.y-D.y0;if(Math.abs(dy)>3)D.moved=1;if(D.moved){const{maxTop}=this.shopClamp(true);this.menu.top=Math.max(0,Math.min(maxTop,D.top0-Math.round(dy/G.rh)));this.shopClamp(false);const st=this.stats.shopScroll=this.stats.shopScroll||{};st.drag=(st.drag||0)+1}});
+  I.on('pointerup',p=>{const D=this.shopDrag;this.shopDrag=null;if(!D||D.moved||!this.shopIsOn())return;const G=this.shopGeom(),M=this.menu;
+   if(p.x<G.x0||p.x>G.x1||p.y<G.y0||p.y>G.y1){this.menuKey('back');return}
+   for(const[i,y]of(this.shopLay&&this.shopLay.rows)||[])if(p.y>=y-2&&p.y<y-2+G.rh&&p.x>=G.lx0&&p.x<G.lx1){if(M.sel===i)this.menuKey('ok');else{M.sel=i;this.shopClamp(true)}return}});
+  I.on('wheel',(p,o,dx,dy)=>{if(this.shopIsOn()&&dy)this.shopScroll(Math.sign(dy),'wheel')});return r};
+}
+// ---- r18: landed drops drift to an idle player within 16 px (the pickup box is 10 px and a toss can land just outside it)
+ARS.MAGNET={r:17,v:90};// up to and including 16 px
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ const up18=SP.update;SP.update=function(t,dms){const P=this.player;if(P&&!P.dead&&this.drops&&!this.paused&&!(this.menu&&this.arsInvOpen)){const dt=Math.min(.05,(dms||16)/1000);
+  for(const d of this.drops){if(!d.rest||d.t<=.35)continue;const dx=P.x-d.x;if(Math.abs(dx)>=10&&Math.abs(dx)<ARS.MAGNET.r&&Math.abs(P.y-d.y)<20){d.x+=Math.sign(dx)*Math.min(Math.abs(dx),ARS.MAGNET.v*dt);this.stats.arsMagnet=(this.stats.arsMagnet||0)+1}}}
+  return up18.call(this,t,dms)};
+}
 if(typeof module!=='undefined')module.exports={ARS};

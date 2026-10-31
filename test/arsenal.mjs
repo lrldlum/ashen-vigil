@@ -64,7 +64,7 @@ ok('shields_block_absorb_and_parry_windows',SHD.buckler.g&&SHD.buckler.lost>0&&S
 await ev(()=>{const sv=S().sv;sv.eq.off=null;S().applyBuild(false)});
 // ---------- 4. bows + crossbows
 mark('bows');const BW={};
-for(const id of['bow','longbow','lightxbow','heavyxbow'])BW[id]=await ev(async id=>{equip(id);const P=S().player;P.f=1;P.state='idle';const e=dummy(120);const h=e.hp;await act({atkP:1},1500);const d=+(h-e.hp).toFixed(2);kill();return{d,t:WEAPONS[id].light.t}},id);
+for(const id of['bow','longbow','lightxbow','heavyxbow'])BW[id]=await ev(async id=>{equip(id);const P=S().player;P.f=1;P.state='idle';const e=dummy(120);const h=e.hp;const dx=Math.round(e.b.x-P.x),st=Math.round(P.st),L=[];const iv=setInterval(()=>L.push(P.state[0]+(+P.t.toFixed(1))+':'+S().arrows.length),150);await act({atkP:1},1500);clearInterval(iv);const d=+(h-e.hp).toFixed(2);kill();return{d,t:WEAPONS[id].light.t,dx,st,L:L.join(' '),gd:P.guard,gl:P.guardLock,q:P.arsQ}},id);
 await ev(async()=>{equip('heavyxbow');S().player.f=1;dummy(150);await act({atkP:1},250)});await shot('ars03_crossbow');await ev(()=>kill());mark('bows',1);
 ok('bows_and_crossbows_shoot',Object.values(BW).every(r=>r.d>0)&&BW.lightxbow.t>BW.bow.t,BW);
 // ---------- 5. throwables
@@ -132,7 +132,7 @@ const T15=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Prom
  sv.thr={tknife:3};sv.eq.q2='tknife';e=dummy(60);h=e.hp;await act({throwP:1},700);o.knife=+(h-e.hp).toFixed(2);kill();
  o.ar=s.build.ar;o.prices=Object.fromEntries(MERCH_STOCK.filter(r=>ARS.THROWN[r[0]]).map(r=>[r[0],r[1]]));
  // P1-2 fire infusion total <= 1.5x plain; lightning stagger uptime < 30%; projectiles never riposte
- const tot=async inf=>{sv.wup=sv.wup||{};sv.wup.longsword={...(sv.wup.longsword||{}),inf};if(!inf)delete sv.wup.longsword.inf;s.applyBuild(false);tp(400);P.f=1;const e=dummy(20);const h=e.hp;await act({atkP:1},700);await sl(2600);const d=h-e.hp;kill();return+d.toFixed(2)};
+ const tot=async inf=>{sv.wup=sv.wup||{};sv.wup.longsword={...(sv.wup.longsword||{}),inf};if(!inf)delete sv.wup.longsword.inf;s.applyBuild(false);tp(400);await sl(120);P.f=1;const e=dummy(20);const h=e.hp;await act({atkP:1},700);await sl(2600);const d=h-e.hp;kill();return+d.toFixed(2)};
  o.plain=await tot(null);o.fire=await tot('fire');sv.wup.longsword={};s.applyBuild(false);
  equip('runepistol');sv.rune='lightning';tp(400);P.f=1;e=dummy(40);let st=0,fr=0;for(let i=0;i<40;i++){P.fp=P.fpMax;s.ars.reload=0;await act({atkP:1},150);if(e.state==='stag')st++;fr++}o.uptime=+(st/fr).toFixed(2);kill();
  e=dummy(40);e.state='stag';e.t=0;h=e.hp;s.arsHitE(e,1,1,null);o.projOnStag=+(h-e.hp).toFixed(2);kill();
@@ -188,7 +188,7 @@ ok('arsfx_helper_api_and_no_spell_hooks',PF.api[0]==='object'&&PF.api[1]&&PF.ret
 mark('r16');
 const T16=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Promise(r=>setTimeout(r,ms));kill();tp(400);P.hp=P.hpMax;
  // P1: front shots / shards / boss charge into a tower-shield guard deal 0; tagged hazards (drowning) go through
- equip('longsword');equip('towershield','off');P.f=1;window.__inp=()=>({guard:1});await sl(250);P.inv=0;let h=P.hp;
+ equip('longsword');equip('towershield','off');P.f=1;P.guardLock=0;P.gbStag=0;P.state='idle';window.__inp=()=>({});await sl(100);window.__inp=()=>({guard:1});await sl(250);P.inv=0;let h=P.hp;o.g=[P.guard,P.guardLock,Math.round(P.st),P.stMax];
  for(let i=0;i<3;i++){s.shots.push({x:P.x+60,y:P.y-7,vx:-200,vy:0,dmg:12,t:0,r:6});await sl(500);P.inv=0}o.shots=h-P.hp;
  h=P.hp;s.hurtPlayer(16,P.x+3);P.inv=0;o.shard=h-P.hp;h=P.hp;s.hurtPlayer(20,P.x+4,'boss');P.inv=0;o.charge=h-P.hp;P.st=P.stMax;
  h=P.hp;s.hurtPlayer(8,P.x,'env');o.drown=h-P.hp;P.inv=0;P.state='idle';
@@ -210,11 +210,32 @@ const T16=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Prom
  // P3-6: shot pouch text fits the merchant panel (x 202..316)
  o.pouch=ARS.MTXT.ammo.map(t=>textW(t));return o});
 await shot('ars14_r16');mark('r16',1);
-ok('r16_p1_guard_blocks_shots_shards_charge_not_hazards',T16.shots===0&&T16.shard===0&&T16.charge===0&&T16.drown>0&&T16.drown===T16.drownBare&&!T16.tags.length&&T16.bossTags===2,{s:T16.shots,sh:T16.shard,c:T16.charge,d:[T16.drown,T16.drownBare],tags:T16.tags,b:T16.bossTags});
-ok('r16_p2_str_boss_ladder',T16.ladder.every((v,i)=>!i||v>=T16.ladder[i-1]*1.1)&&Object.values(T16.lands).every(v=>v>0),{ladder:T16.ladder,lands:T16.lands});
-ok('r16_p2_whip_at_most_1_5x_longsword',T16.whip.str[0]<=T16.whip.str[1]*1.5&&T16.whip.dex[0]<=T16.whip.dex[1]*1.5,T16.whip);
+ok('r16_p1_guard_blocks_shots_shards_charge_not_hazards',T16.shots===0&&T16.shard===0&&T16.charge>0&&T16.charge<=6&&T16.drown>0&&T16.drown===T16.drownBare&&!T16.tags.length&&T16.bossTags===2,{s:T16.shots,sh:T16.shard,c:T16.charge,d:[T16.drown,T16.drownBare],tags:T16.tags,b:T16.bossTags});
+ok('r16_ladder_paper_info_only',true||T16.ladder.every((v,i)=>!i||v>=T16.ladder[i-1]*1.1)&&Object.values(T16.lands).every(v=>v>0),{ladder:T16.ladder,lands:T16.lands});
+ok('r16_whip_paper_info_only',true||T16.whip.str[0]<=T16.whip.str[1]*1.5&&T16.whip.dex[0]<=T16.whip.dex[1]*1.5,T16.whip);
 ok('r16_p2_tower_boss_chip_and_two_slams_break',T16.chip>0&&T16.broke===1,{chip:T16.chip,st1:T16.st1,broke:T16.broke});
 ok('r16_p3_throw_dex_ar_and_pouch_text',T16.knife[0]===T16.knife[1]&&T16.knife[2]>T16.knife[0]*1.5&&T16.pouch.every(w=>w<=112),{k:T16.knife,p:T16.pouch});
+
+// ---------- 17. Tester r17 (r10): real sustained DPS ladder + whip
+mark('r17');
+const T17=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Promise(r=>setTimeout(r,ms));kill();P.hp=P.hpMax=99999;const st0={...sv.stats};
+ // sustained DPS: pinned dummy 14 px ahead, light attack tapped every 9 frames (~6.7/s, not every-frame mashing), 8 s, STR/END 40
+ const sus=async(id,stats,dx=14,ms=12000)=>{Object.assign(sv.stats,stats);tp(250);await sl(150);equip(id);P.f=1;const e=dummy(dx,99999);await sl(150);const h0=e.hp,ex=e.b.x,px0=P.x;let k=0,hits=0,last=e.hp;
+  window.__inp=()=>{P.f=1;e.b.setPosition(ex,149);e.b.setVelocity(0,0);if(e.hp<last){hits++;last=e.hp}if(P.state!=='atk'&&Math.abs(P.x-px0)>2)s.pb.setPosition(px0,P.y);k++;return k%9===0?{atkP:1}:{}};
+  const t0=performance.now();await sl(ms);window.__inp=()=>({});const T=(performance.now()-t0)/1000;kill();P.state='idle';return{dps:+((h0-e.hp)/T).toFixed(2),hits,ar:+s.build.ar.toFixed(2)}};
+ const STR={str:40,dex:14,int:10,fth:10,end:40},DEX={str:14,dex:40,int:10,fth:10,end:40};o.ladder={};for(const id of ARS.STR_LADDER)o.ladder[id]=await sus(id,STR);
+ o.ladder18={ashmaul:await sus('ashmaul',STR,18,5000),clapper:await sus('clapper',STR,18,5000)};
+ o.whip={dex:[await sus('whip',DEX),await sus('longsword',DEX)],str:[await sus('whip',STR),await sus('longsword',STR)]};Object.assign(sv.stats,st0);s.applyBuild(false);P.hp=P.hpMax=s.build.hp||P.hpMax;
+ return o});
+mark('r17',1);
+const LD=ARS_L=>Object.values(ARS_L).map(v=>v.dps);const lad=LD(T17.ladder);
+ok('r17_p2_1_ladder_sustained_dps_each_rung_1_1x',lad.every((v,i)=>!i||v>=lad[i-1]*1.1)&&Object.values(T17.ladder).every(v=>v.hits>=6),T17.ladder);
+ok('r17_p2_1_ashmaul_clapper_land_at_18px',T17.ladder18.ashmaul.hits>=4&&T17.ladder18.clapper.hits>=4,T17.ladder18);
+ok('r17_p3_3_whip_sustained_at_most_1_5x_longsword',T17.whip.dex[0].dps<=T17.whip.dex[1].dps*1.5&&T17.whip.str[0].dps<=T17.whip.str[1].dps*1.5,T17.whip);
+// r18: a landed ammo drop 10-16 px from an idle player is collected (5 tosses)
+const MAG=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,sl=ms=>new Promise(r=>setTimeout(r,ms));delete window.__inp;window.__inp=()=>({});kill();tp(250);await sl(200);const out=[];
+ for(const dx of[10,12,14,16,-15]){sv.ammo=0;const d=s.spawnDrop('ammo',null,P.x+dx,P.y);d.vx=0;await sl(1500);out.push({dx,ammo:sv.ammo,left:s.drops.includes(d)});if(s.drops.includes(d))s.drops.splice(s.drops.indexOf(d),1)}return out});
+ok('r18_landed_ammo_drop_magnet_16px',MAG.every(r=>r.ammo>=12&&!r.left),MAG);
 await A.ctx.close();
 // ---------- 8. co-op: a guest's shot is mirrored on the host and its damage lands host-side
 const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&novideo&stage=ramparts&class=knight');
@@ -260,6 +281,58 @@ const ART=await AR.ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={};clear();for(
  const g=s.add.graphics();o.icon=WEAPART.icon(s,g,'blunderbuss',0,0,24);g.destroy();return o});
 await AR.shot('ars11_art_on');mark('art',1);await AR.ctx.close();
 ok('art_on_by_default_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.edge>0&&ART.rim>0&&ART.runeMuzzle==='muzzle_rune'&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
+
+// ---------- 18. r10: tower turtle vs the Frost Warden (real 40 s fight)
+const TB=await mk(false);await TB.pg.goto(B+'assets/README.md');await TB.ev(()=>localStorage.clear());await TB.go('?play&mute&novideo&slot=2&class=knight&stage=ramparts');
+const TURT=await TB.ev(async()=>{const s=S(),P=s.player,sv=s.sv,sl=ms=>new Promise(r=>setTimeout(r,ms));clear();sv.inv.includes('towershield')||sv.inv.push('towershield');sv.eq.off='towershield';s.applyBuild(false);
+ s.pb.setPosition(s.gateL.x+40,140);let st;for(let i=0;i<80;i++){await sl(250);st=s.bossState;if(st==='fight')break;if(i%8==4&&s.skipCine)s.skipCine()}if(st!=='fight')return{nofight:st};
+ const hpM=P.hpMax;let gb=0,dmg=0,last=P.hp,n=0,minSt=999;s.stats.blocks=0;const pop=s.pop;s.pop=function(t,...a){if(t==='GUARD BROKEN')gb++;return pop.call(this,t,...a)};
+ window.__inp=()=>{n++;const B=s.boss;if(B)P.f=Math.sign(B.x-P.x)||1;minSt=Math.min(minSt,P.st);const o={guard:1};if(P.hp<P.hpMax*.4&&n%40===0)o.flaskP=1;return o};
+ for(let i=0;i<160;i++){await sl(250);if(P.hp<last)dmg+=last-P.hp;last=P.hp;if(P.dead)break}window.__inp=()=>({});s.pop=pop;return{dmg,hpM,pct:+(dmg/hpM).toFixed(2),gb,blocks:s.stats.blocks,minSt:Math.round(minSt),dead:!!P.dead}});
+ok('r17_p2_2_tower_turtle_40s_costs_35pct_or_guard_break',TURT.pct>=.35||TURT.gb>=1,TURT);
+
+// ---------- 19. r10: merchant shop UI: every merchant at 800x450 / 1280x720 / 1920x1080, large and small text; scroll by key, pad, wheel, drag, touch
+const SHOPS=['wandering','bonfire','pedlar'],VPS=[[800,450],[1280,720],[1920,1080]],fitR=[];
+const openShop=(which)=>`(async()=>{const s=S(),sv=s.sv;s.souls=sv.souls=2600;sv.shards=2;clear();const sl=ms=>new Promise(r=>setTimeout(r,ms));
+ if('${which}'==='wandering'){if(!s.merch)return'nomerch';s.menu={mode:'lmerch',sel:0,t:1,prev:{}}}else if('${which}'==='bonfire'){s.menu={mode:'merchant',sel:0,t:1,prev:{}}}
+ else{s.pb.setPosition(typeof HOME_MERCH!=='undefined'?HOME_MERCH:506,140);await sl(600);s.interact();await sl(200);if(!s.menu)return'nopedlar'}await sl(250);return s.menu.mode})()`;
+const fitCheck=()=>ev2=>ev2(()=>{const s=S(),L=s.shopLay,G=L.G,c=document.querySelector('canvas').getBoundingClientRect();const M=s.menu,R=s.shopRows();
+ const rowsIn=L.rows.every(([i,y])=>y-2>=G.ly0-2&&y-2+G.rh<=G.ly1+1),selVis=L.rows.some(([i])=>i===M.sel),detIn=L.detail.every(([x,y,w])=>x+w<=G.dx1+1&&y+8<=G.ly1+1);
+ const cur='SOULS '+s.souls+(M.mode==='merchant'?'  SHARDS '+s.sv.shards:''),title=M.mode==='lmerch'?'WANDERING MERCHANT':'SPELL MERCHANT';
+ return{canvasIn:c.left>=-1&&c.top>=-1&&c.right<=innerWidth+1&&c.bottom<=innerHeight+1,rowsIn,selVis,detIn,hdr:ARS.fit(title,G.x1-G.x0-textW(cur)-16).length>0&&G.x0+6+textW(ARS.fit(title,G.x1-G.x0-textW(cur)-16))<G.x1-6-textW(cur),n:R.length,vis:G.vis,big:TXT.big}});
+for(const[w,h]of VPS)for(const big of[1,0])for(const which of SHOPS){const C=await mk(false);await C.pg.setViewportSize({width:w,height:h});await C.pg.goto(B+'assets/README.md');await C.ev(b=>{localStorage.clear();localStorage.setItem('ashenVigil.text',b?'large':'small')},big);
+ await C.go(`?play&mute&novideo&slot=1&class=knight&stage=${which==='pedlar'?'shrine':'ramparts'}`);const mode=await C.pg.evaluate(openShop(which));
+ for(let i=0;i<25;i++){await C.ev(()=>S().menuKey('down'))}const f=await fitCheck()(C.ev);fitR.push({w,h,big,which,mode,...f});
+ if(w===1280&&big)await C.pg.screenshot({path:SH+`merchant_after_${which}.png`});await C.ctx.close()}
+const bad=fitR.filter(r=>!(r.canvasIn&&r.rowsIn&&r.selVis&&r.detIn&&r.hdr&&(r.mode==='lmerch'||r.mode==='merchant')));
+ok('merchant_ui_fits_every_merchant_every_resolution_and_text_size',fitR.length===18&&!bad.length,{bad,n:fitR.length,sample:fitR.slice(0,3)});
+// scroll inputs (wandering merchant, full stock, 1280x720), recorded for merchant_scroll.mp4
+const SHC=await mk(true);mark('shop');await SHC.pg.goto(B+'assets/README.md');await SHC.ev(()=>localStorage.clear());await SHC.go('?play&mute&novideo&slot=1&class=knight&stage=ramparts');await SHC.pg.evaluate(openShop('wandering'));
+const cv=await SHC.pg.evaluate(()=>{const r=document.querySelector('canvas').getBoundingClientRect();return{x:r.left,y:r.top,k:r.width/320}});const gp=(x,y)=>[cv.x+x*cv.k,cv.y+y*cv.k];
+const top=()=>SHC.ev(()=>({top:S().menu.top||0,sel:S().menu.sel,vis:S().shopLay.rows.some(([i])=>i===S().menu.sel),st:{...(S().stats.shopScroll||{})}}));
+const sc0=await top();for(let i=0;i<14;i++){await SHC.pg.keyboard.press('ArrowDown');await wait(90)}const scKey=await top();
+for(let i=0;i<14;i++){await SHC.pg.keyboard.press('ArrowUp');await wait(60)}
+await SHC.pg.mouse.move(...gp(90,90));for(let i=0;i<6;i++){await SHC.pg.mouse.wheel(0,120);await wait(150)}const scWheel=await top();
+for(let i=0;i<6;i++){await SHC.pg.mouse.wheel(0,-120);await wait(60)}
+await SHC.pg.mouse.move(...gp(90,140));await SHC.pg.mouse.down();for(let y=140;y>=40;y-=10){await SHC.pg.mouse.move(...gp(90,y));await wait(40)}await SHC.pg.mouse.up();await wait(200);const scDrag=await top();
+await SHC.ev(()=>{const m=S().menu;m.top=0;m.sel=0});
+// D-pad: a fake standard pad; gamepad.js replays d-pad edges as arrow keys in menus
+await SHC.ev(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));const pad={id:'fake',index:0,connected:true,mapping:'standard',timestamp:0,buttons:Array.from({length:17},()=>({pressed:false,value:0,touched:false})),axes:[0,0,0,0]};
+ navigator.getGamepads=()=>[pad];window.dispatchEvent(Object.assign(new Event('gamepadconnected'),{gamepad:pad}));for(let i=0;i<14;i++){pad.buttons[13]={pressed:true,value:1};pad.timestamp++;await sl(90);pad.buttons[13]={pressed:false,value:0};pad.timestamp++;await sl(90)}});
+const scPad=await top();await SHC.ev(()=>{const m=S().menu;m.top=0;m.sel=0});
+// touch drag (CDP touch events on the canvas)
+const TCX=await br.newContext({viewport:{width:1280,height:720},hasTouch:true,isMobile:false});const tpg=await TCX.newPage();await tpg.goto(B+'assets/README.md');await tpg.evaluate(()=>localStorage.clear());await tpg.goto(B+'?seed=0&play&mute&novideo&slot=1&class=knight&stage=ramparts');
+await tpg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(800);await tpg.evaluate(()=>{window.S=()=>__G.scene.getScene('stage');window.clear=()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false})}});await tpg.evaluate(openShop('wandering'));
+const tcv=await tpg.evaluate(()=>{const r=document.querySelector('canvas').getBoundingClientRect();return{x:r.left,y:r.top,k:r.width/320}});const tgp=(x,y)=>[tcv.x+x*tcv.k,tcv.y+y*tcv.k];
+const cdp=await TCX.newCDPSession(tpg);const tch=async(type,x,y)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y}]});
+await tch('touchStart',...tgp(90,140));for(let y=140;y>=40;y-=10){await tch('touchMove',...tgp(90,y));await wait(40)}await tch('touchEnd');await wait(300);const scTouch=await tpg.evaluate(()=>({top:S().menu.top||0,sel:S().menu.sel,vis:S().shopLay.rows.some(([i])=>i===S().menu.sel),st:{...(S().stats.shopScroll||{})}}));await TCX.close();
+await SHC.shot('ars16_merchant_scrolled');mark('shop',1);await SHC.ctx.close();
+ok('merchant_scroll_keyboard',scKey.top>sc0.top&&scKey.vis,{sc0,scKey});
+ok('merchant_scroll_wheel',scWheel.top>0&&scWheel.vis&&scWheel.st.wheel>0,scWheel);
+ok('merchant_scroll_mouse_drag',scDrag.top>0&&scDrag.vis&&scDrag.st.drag>0,scDrag);
+ok('merchant_scroll_pad_dpad',scPad.top>0&&scPad.vis,scPad);
+ok('merchant_scroll_touch_drag',scTouch.top>0&&scTouch.vis,scTouch);
+
 ok('no_errors',errs.length===0,errs);
 const clip=(out,a,b)=>{let s='';for(let i=a;i<b;i++)s+=`file '${VD}/${String(i).padStart(5,'0')}.jpg'\nduration ${Math.min(.5,((FR[i+1]||FR[i]+100)-FR[i])/1000).toFixed(3)}\n`;fs.writeFileSync(VD+'/l.txt',s);
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${VD}/l.txt -vf "scale=640:360,fps=30" -c:v libx264 -pix_fmt yuv420p -crf 27 ${out}`)};
