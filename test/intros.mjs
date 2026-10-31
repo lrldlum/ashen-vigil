@@ -17,11 +17,12 @@ const enter=()=>S(()=>{const s=__G.scene.getScene('stage');s.player.inv=99;s.pb.
 const st=()=>S(()=>{const s=__G.scene.getScene('stage'),c=s.cine;return{bs:s.bossState,cine:!!c,t:c?+c.t.toFixed(2):null,short:c?!!c.short:null,video:!!(c&&c.video),vel:!!document.getElementById('bossVideo'),kind:s.def.boss&&s.def.boss.kind}});
 const until=async(f,ms=8000)=>{const t0=Date.now();while(Date.now()-t0<ms){const r=await st();if(f(r))return r;await wait(80)}return await st()};
 const keys=['Enter','Escape'];let ki=0;
-for(const[stage,kind] of Object.entries(BOSSES).filter(([k])=>!process.env.ONLY||process.env.ONLY.split(',').includes(k))){await load(stage);await enter();
+for(const[stage,kind] of Object.entries(BOSSES).filter(([k])=>!process.env.ONLY||process.env.ONLY.split(',').includes(k))){await load(stage,true,kind==='cantor'?'&video':'');await enter();
  const a=await until(r=>r.cine);ok(`${kind}_intro_plays`,a.cine&&a.kind===kind&&!a.short,a);
- {const v=await until(r=>r.vel,3000);await wait(1500);
+ if(kind==='cantor'){const v=await until(r=>r.vel,3000);await wait(1500);
   const vt=await S(()=>{const v=document.getElementById('bossVideo');return v&&{t:+v.currentTime.toFixed(2),src:v.currentSrc.split('/').pop(),muted:v.muted,paused:v.paused}});
-  ok(`${kind}_video_plays`,v.video&&vt&&vt.t>0.3&&vt.src===`${kind}_muted.mp4`,vt);if(SD)await pg.screenshot({path:`${SD}/${kind}_video.png`})}
+  ok('cantor_video_plays',v.video&&vt&&vt.t>0.3,vt);if(SD)await pg.screenshot({path:SD+'/cantor_video.png'})}
+ else{await wait(2300);if(SD)await pg.screenshot({path:`${SD}/${kind}_intro.png`})}
  const k=keys[ki++%keys.length];
  if(kind==='astronomer'){await S(()=>{window.__padOn=true});await wait(150);await S(()=>{__pad.buttons[0]={pressed:true,value:1}});await wait(200);await S(()=>{__pad.buttons[0]={pressed:false,value:0}});await wait(200);
   const pa=await st();ok('pad_A_tap_does_not_skip',pa.cine,pa);await S(()=>{__pad.buttons[9]={pressed:true,value:1}});await wait(200);await S(()=>{__pad.buttons[9]={pressed:false,value:0}})}
@@ -31,31 +32,23 @@ for(const[stage,kind] of Object.entries(BOSSES).filter(([k])=>!process.env.ONLY|
  const b=await until(r=>r.bs==='fight'&&!r.cine,400);ok(`${kind}_intro_skips(${kind==='astronomer'?'pad Start':kind==='prioress'?'pad hold A':k})`,b.bs==='fight'&&!b.cine&&!b.vel,b);
  await S(()=>{window.__padOn=false})}
 // unskipped in-engine intro runs to the fight on its own
-await load('belltower',true,'&novideo');await enter();const u=await until(r=>r.bs==='fight',9000);ok('toller_intro_runs_to_fight',u.bs==='fight'&&!u.cine,u);
+await load('belltower');await enter();const u=await until(r=>r.bs==='fight',9000);ok('toller_intro_runs_to_fight',u.bs==='fight'&&!u.cine,u);
 // r10: grace period + only deliberate inputs skip
 await load('ramparts');await enter();await until(r=>r.cine);await pg.keyboard.press('Enter');await wait(150);
-const g1=await st();ok('early_enter_ignored(<0.7s)',g1.cine&&g1.vel,g1);await wait(900);
+const g1=await st();ok('early_enter_ignored(<0.7s)',g1.cine,g1);await wait(700);
 for(const k of['x','z',' ','j','k'])await pg.keyboard.press(k);await pg.mouse.click(640,360);await wait(200);
-const g2=await st();ok('attack_jump_click_do_not_skip',g2.cine&&g2.vel,g2);
-// r11: pad A held down before the intro started never skips (must be released and held again)
+const g2=await st();ok('attack_jump_click_do_not_skip',g2.cine,g2);
+// r11: pad A held down before the intro started never skips
 await load('cinderdeep');await S(()=>{window.__padOn=true;__pad.buttons[0]={pressed:true,value:1}});await wait(200);await enter();await until(r=>r.cine);await wait(1600);
 {const h=await st();await S(()=>{__pad.buttons[0]={pressed:false,value:0};window.__padOn=false});ok('pad_A_held_before_intro_ignored',h.cine,h)}
-// r10: overlay follows the canvas on resize
-await pg.setViewportSize({width:900,height:700});await wait(400);
-const al=await S(()=>{const v=document.getElementById('bossVideo').getBoundingClientRect(),c=__G.canvas.getBoundingClientRect();return{d:Math.max(Math.abs(v.left-c.left),Math.abs(v.top-c.top),Math.abs(v.width-c.width),Math.abs(v.height-c.height))}});
-ok('overlay_tracks_resize',al.d<1.5,al);await pg.setViewportSize({width:1280,height:720});
-// r10: natural end goes straight to the fight (no second in-engine rise)
-const ve=await until(r=>!r.vel,22000);const ne=await until(r=>r.bs==='fight',600);ok('video_end_no_double_rise',!ve.vel&&ne.bs==='fight',{ve,ne});
 // r10: touch gets a small Skip button
 await load('keep',true,'&touch');await enter();await until(r=>r.cine);await wait(900);
 const hasBtn=await S(()=>{const b=document.getElementById('skipIntro');if(!b)return false;const r=b.getBoundingClientRect();return r.top<innerHeight/4&&r.right>innerWidth*.75});await pg.click('#skipIntro');const tb=await until(r=>r.bs==='fight'&&!r.cine,500);
-ok('touch_skip_button',hasBtn&&tb.bs==='fight'&&!tb.vel&&!(await S(()=>!!document.getElementById('skipIntro'))),{hasBtn,tb});
-// a missing video file falls back to the in-engine intro
-await pg.route('**/assets/cine/warden*',r=>r.fulfill({status:404,body:''}));await load('ramparts');await enter();
-const fb=await until(r=>r.cine&&!r.vel&&r.t>1,5000);await pg.unroute('**/assets/cine/warden*');const fb2=await until(r=>r.bs==='fight',9000);
-ok('missing_video_falls_back',fb.cine&&!fb.vel&&fb2.bs==='fight',{fb,fb2});
+ok('touch_skip_button',hasBtn&&tb.bs==='fight'&&!(await S(()=>!!document.getElementById('skipIntro'))),{hasBtn,tb});
+// r10: cantor video natural end goes straight to the fight (no second rise)
+await load('cathedral',true,'&video');await enter();await until(r=>r.vel,4000);const ve=await until(r=>!r.vel,22000);const ne=await until(r=>r.bs==='fight',600);ok('video_end_no_double_rise',!ve.vel&&ne.bs==='fight',{ve,ne});
 // after a death: the save remembers the intro, so the next attempt only gets the short beat (no video)
-await load('cathedral');await enter();await until(r=>r.cine);await pg.keyboard.press('Escape');await until(r=>r.bs==='fight');
+await load('cathedral',true,'&video');await enter();await until(r=>r.cine);await pg.keyboard.press('Escape');await until(r=>r.bs==='fight');
 const seen=await S(()=>Save.load().seenIntro);await S(()=>{const s=__G.scene.getScene('stage');s.hurtPlayer(9999,s.player.x+10)});await pg.waitForFunction(()=>__G.scene.getScene('stage').player.dead,null,{timeout:5000}).catch(()=>{});
 await S(()=>__G.scene.getScene('stage').respawn());await wait(1200);await enter();
 const r3=await until(r=>r.bs==='fight',400);

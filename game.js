@@ -662,6 +662,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  // per-stage atmosphere: stained-glass light shafts (cathedral), lava glow (cinderdeep)
  drawStageFX(g,ga){const D=this.def,t=this.t,cX=this.cam.scrollX,cY=this.cam.scrollY;
   // distinct lord arenas: cathedral rose window + choir balconies, cinder lava falls
+  if(typeof INTROS!=='undefined')INTROS.lair(this,g,cX,cY);
   if(cX>ARENA_L-W){if(D.theme==='cathedral'){const rx=3160,ry=40;for(let a=0;a<48;a++){const an=a/48*6.283;px(ga,rx+Math.cos(an)*34,ry+Math.sin(an)*34,0x9fa8ff,.5)}for(let k=0;k<8;k++){const an=k/8*6.283+t*.05;line(ga,rx,ry,rx+Math.cos(an)*32,ry+Math.sin(an)*32,[0x9fd8ff,0xb8a8ff,0xd8f2ff][k%3],.18)}glow(ga,rx,ry,30,0x9fa8ff,.08);this.light(rx,ry,70,0x9fa8ff,.4)}
    if(D.theme==='cinderdeep'||D.theme==='catacomb'){for(const lx of[ARENA_L+20,ARENA_L+340]){for(let y=Math.max(cY,-60);y<GY;y+=2){const w=3+Math.round(Math.sin(y*.2+t*6));ga.fillStyle((y+Math.floor(t*40))%6<3?C.f1:C.f2,.55);ga.fillRect(lx-w,y,w*2,2)}glow(ga,lx,GY-4,14,C.f2,.3);this.light(lx,GY-20,60,C.f2,.7);if(Math.random()<.5)this.fx.fire(lx,GY-2,2,4,1.4)}}}
   if(D.theme==='belltower')this.drawBelltowerFX(g,ga,cX,cY);
@@ -1403,7 +1404,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(!seen){SI[K]=1;if(!NET.guest())Save.write(this.sv)}
   this.cine={t:0,kind:K,short:seen,pad:this.padSnap(),t0:performance.now()};if(!seen)this.skipBtn(1);this.cam.stopFollow();this.pb.setVelocityX(0);this.player.state='idle';this.cam.pan(ARENA_R-110,90,seen?300:900,'Sine.easeInOut');
   if(seen){this.cine.t=4.2;Object.assign(this.cine,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});this.bars=1}
-  else if(BOSS_VIDEO[K]&&!Q.has('novideo')&&!DEMO)this.playVideo(BOSS_VIDEO[K])}
+  else if(BOSS_VIDEO[K]&&Q.has('video')&&!DEMO)this.playVideo(BOSS_VIDEO[K]);else if(typeof INTROS!=='undefined')INTROS.start(this,this.cine)}// r12: in-engine element entrances replace the video (?video keeps the old file)
  padSnap(){try{return Array.from((navigator.getGamepads&&navigator.getGamepads())||[]).map(g=>g?g.buttons.map(b=>typeof b==='object'?b.pressed||b.value>.5:b>.5):[])}catch(e){return[]}}
  padEdge(c){const now=this.padSnap(),pv=c.pad||[];c.pad=now;return now.some((bs,i)=>bs.some((b,j)=>j===9&&b&&!(pv[i]&&pv[i][j])))}// r11: Start only (A is jump)
  // r11: or hold A for 0.6 s (a ring fills top-right); A already held when the intro began must be released first
@@ -1423,7 +1424,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(window.__bossVideo)window.__bossVideo.state='done'}}
  skipCine(){const c=this.cine;if(!c||c.skipT>this.t-.15||performance.now()-(c.t0||0)<700)return;if(NET.guest()&&NET.linked()){c.skipT=this.t;NET.send({t:'skipreq'});return}/* co-op: the host owns the intro; a guest skip is a request */c.skipT=this.t;c.skipped=1;window.__introSkipped=(window.__introSkipped||0)+1;if(c.video){this.endVideo();c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1});return}if(c.t<4.2){c.t=4.2;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(this.boss,{rise:1,eyes:1})}}
  updateCine(dt){const c=this.cine;if(!c)return;const B=this.boss;if(this.padEdge(c)||this.padHoldA(c,dt)){const r=document.getElementById('skipRing');if(r)r.remove();c.aHold=0;c.aArm=false;this.skipCine()}if(c&&NET.guest()&&this.bossState==='fight'&&this.cine){this.endVideo();c.t=Math.max(c.t,4.2)}// co-op guest: the host's fight has begun
-  if(c.video){c.vt+=dt;this.bars=1;if(c.vt>25)this.endVideo();return}c.t+=dt;this.bars=c.short?Math.max(this.bars,1):Math.min(1,c.t/.5);
+  if(c.video){c.vt+=dt;this.bars=1;if(c.vt>25)this.endVideo();return}
+  if(c.it!=null&&c.it<INTROS.len&&c.t<4.2){c.it+=dt;this.bars=1;INTROS.update(this,c,dt);if(c.it>=INTROS.len){c.t=1.6;Object.assign(c,{said:1,t2:1,h1:1,shk:1,ign:1});Object.assign(B,{rise:1,eyes:1})}return}c.t+=dt;this.bars=c.short?Math.max(this.bars,1):Math.min(1,c.t/.5);
   const K=B.kind;
   if(K==='king'&&c.t>.3&&c.t<1.6&&Math.random()<.5)this.fx.fire(ARENA_L+rnd(20,340),GY,3,3,1.6);
   if(K==='heir'){if(!c.said){c.said=1;this.say('SIX OATHS STIR IN THE ASH',1.6);this.sfx('bell',.5)}const ec=[0xd8f2ff,0xffa060,0x9ff0e8,0xe8d8b8,0xd8d0ff,0xc8e890];for(let i=0;i<6;i++)if(c.t>.3+i*.22&&!(c['e'+i])){c['e'+i]=1;this.fx.spark(ARENA_L+30+i*60,GY-70,8,ec[i],80);this.sfx('chime',.25)}if(c.t>1.7&&!c.t2){c.t2=1;this.sfx('fanfare',.4);this.cam.shake(260,.012);this.flashA=.15}}
@@ -1491,7 +1493,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   for(const a of this.arrows){const x=Math.round(a.x),y=Math.round(a.y),d=Math.sign(a.vx);if(a.ls){for(let k=0;k<14;k++)px(ga,x-d*k,y+((k*7+Math.floor(this.t*30))%3)-1,k<3?0xffffff:0xffe08a);g.fillStyle(0xfff4c0);g.fillRect(Math.min(x,x-d*12),y,12,1);glow(ga,x,y,6,0xffd870,.35);this.light(x,y,30,0xffd870,.7);continue}g.fillStyle(0x8a6a4a);g.fillRect(Math.min(x,x-d*6),y,6,1);px(g,x,y,0xd8d0ee);px(g,x-d*6,y-1,0xd8d0ee);px(g,x-d*6,y+1,0xd8d0ee);if(a.pierce){glow(ga,x,y,4,C.f1,.3);px(ga,x+d,y,0xffffff)}}
   for(const it of this.items){const y=Math.round(it.y-4+Math.sin(this.t*3+it.bob)*1.5);g.fillStyle(0x2a2245);g.fillRect(it.x-4,it.y-2,9,2);glow(ga,it.x,y,7+Math.sin(this.t*6+it.bob),0xffe2a8,.2);sparkle(ga,it.x,y,1+(Math.floor(this.t*4+it.bob)%2),0xffe2a8);this.light(it.x,y,26,C.f1,.45)}
   for(const e of this.enemies){if(!(this.pxc&&PIXCH.foe(this,e)))this.drawEnemy(g,ga,e)}
-  if(this.boss)this.drawBoss(g,ga,this.boss);
+  {const c=this.cine,ins=c&&c.it!=null&&c.it<INTROS.len&&c.t<4.2;if(ins)INTROS.draw(this,g,'back');if(this.boss){if(ins)INTROS.drawBoss(this,g,ga,this.boss);else this.drawBoss(g,ga,this.boss)}if(ins)INTROS.draw(this,g,'front')}
   this.drawPlayer(g,ga);
   if(this.waters&&this.waters.length)this.drawWaters(g,ga);
   this.fx.draw(ga,g);

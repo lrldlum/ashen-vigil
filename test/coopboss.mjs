@@ -35,7 +35,8 @@ const gh=()=>G.ev(()=>{window.S=()=>__G.scene.getScene('stage');window.tp=(x,y=1
 ok('linked_in_ramparts',(await st(G)).sid==='ramparts'&&(await st(G)).linked,await st(G));
 // both walk into the arena; the host starts the intro and the guest mirrors it
 await H.ev(()=>{tp(ARENA_L+40)});await G.ev(()=>{tp(ARENA_L+30)});const hc=await until(H,r=>r.cine,5000),gc=await until(G,r=>r.cine,5000);
-ok('intro_mirrored_on_guest',hc.cine&&gc.cine,{hc,gc});await H.shot('c1_host_intro');await G.shot('c2_guest_intro');
+ok('intro_mirrored_on_guest',hc.cine&&gc.cine,{hc,gc});
+{const it=await Promise.all([H,G].map(p=>p.ev(()=>{const c=S().cine;return c&&c.it!=null&&!document.getElementById('bossVideo')})));ok('in_engine_scene_on_host_and_guest',it[0]&&it[1],it)}await H.shot('c1_host_intro');await G.shot('c2_guest_intro');
 // guest skip input does not end the host's intro on the guest alone (it is a request to the host, past the 0.7 s guard)
 await wait(900);await G.pg.keyboard.press('x');await G.pg.keyboard.press(' ');await wait(200);const ga=await st(G),ha=await st(H);
 ok('guest_attack_jump_do_not_skip',ga.cine&&ha.cine,{ga,ha});
