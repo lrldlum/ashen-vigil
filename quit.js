@@ -25,7 +25,7 @@ const quitToast=m=>{try{let el=document.getElementById('quitToast');if(!el){el=d
    if(y>=96&&y<112){if(x>=104&&x<152)this.quitPick(true);else if(x>=168&&x<216)this.quitPick(false)}});
   return r};
  const dp=SP.drawPause;SP.drawPause=function(g){dp.call(this,g);const pad=typeof PAD!=='undefined'&&PAD.connected();
-  {const ql=(pad?'A':'ENTER')+'  QUIT TO MENU',qw=textW(ql);QUIT_ROW.x=W-6-qw;QUIT_ROW.w=qw;drawText(g,ql,QUIT_ROW.x,QUIT_ROW.y,0xffb04a)}const Q=this.quitQ;if(!Q)return;
+  {const ql=this.touch&&!pad?'QUIT TO MENU':(pad?'A':'ENTER')+'  QUIT TO MENU',qw=textW(ql);QUIT_ROW.x=W-6-qw;QUIT_ROW.w=qw;drawText(g,ql,QUIT_ROW.x,QUIT_ROW.y,0xffb04a)}const Q=this.quitQ;if(!Q)return;
   g.fillStyle(0x05040b,.9);g.fillRect(0,0,W,H);g.fillStyle(0x07050f);g.fillRect(80,62,160,58);g.fillStyle(0x7a5a24);g.fillRect(80,62,160,1);g.fillRect(80,119,160,1);g.fillRect(80,62,1,58);g.fillRect(239,62,1,58);
   const t1='QUIT TO THE MAIN MENU?',t2='PROGRESS IS SAVED'+(NET.host()&&NET.linked()?' - YOUR COMPANION LEAVES':'');drawText(g,t1,Math.round(W/2-textW(t1)/2),70,0xffe2a8);drawText(g,t2.length>36?'PROGRESS IS SAVED':t2,Math.round(W/2-textW(t2.length>36?'PROGRESS IS SAVED':t2)/2),82,0x8a86c0);
   [['YES',104],['NO',168]].forEach(([s,x],i)=>{const on=Q.sel===i;g.fillStyle(on?0x3a2e58:0x15112a);g.fillRect(x,96,48,16);if(on){g.fillStyle(0xffe2a8);g.fillRect(x,96,48,1);g.fillRect(x,111,48,1)}drawText(g,s,x+24-Math.round(textW(s)/2),100,on?0xffe2a8:0xa8a0c8)});

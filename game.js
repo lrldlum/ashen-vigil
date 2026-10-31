@@ -54,10 +54,16 @@ function properNouns(){if(PROPER)return PROPER;PROPER=new Set();const add=n=>{if
  for(const w of['ASHEN','KEEPER','VIGIL','FLAME','CASTELLAN','ASTRONOMER','PRIORESS','HEIR','WARDEN','SHRINE'])PROPER.add(w);return PROPER}
 const NICE=new Map();
 // fewer all-caps blocks: short labels become Title Case, sentences become sentence case (names, acronyms and key letters stay capitalised)
-function nice(s){if(!/[A-Z]{2}/.test(s)||/[a-z]/.test(s))return s;let r=NICE.get(s);if(r!==undefined)return r;const P=properNouns(),words=s.trim().split(/\s+/).length,title=words<=4&&!/[.!?,]\s|[.!?]$/.test(s.trim());
- let start=true;r=s.replace(/[A-Z][A-Z']*/g,(w,i)=>{const pre=s.slice(0,i);if(w.length===1||ACR.has(w))return w;const sent=start||/[.!?:]\s+$|[-(]\s*$/.test(pre);start=false;
- const lw=w.toLowerCase(),cap=lw[0].toUpperCase()+lw.slice(1);
-  if(P.has(w)&&(title||!COMMONW.has(w)||P.has((s.slice(i+w.length).match(/^\s+([A-Z']+)/)||[])[1])))return cap;if(title)return sent||!SMALLW.has(lw)?cap:lw;return sent?cap:lw});
+// r9 P3: sentence case everywhere; only whole names from an allow-list (stages, bosses, the keeper, classes, a few titles) keep capitals
+let NAMES=null;
+function nameList(){if(NAMES)return NAMES;const L=new Set(['ASHEN ONE','FIRST FLAME','VIGIL','EMBER KNIGHT','ASHEN VIGIL']);const add=n=>{if(typeof n==='string'&&n.trim())L.add(n.trim().replace(/^THE\s+/,''))};
+ try{for(const k in WEAPONS)add(WEAPONS[k].name)}catch(e){}try{for(const k in STAGE_DEFS){const d=STAGE_DEFS[k];add(d.name);if(!d.boss||d.boss.name!==d.name){const w=(d.name||'').replace(/^THE\s+/,'').split(/\s+/);if(w.length>=3&&!/ OF /.test(d.name))add(w.slice(1).join(' '))}add(d.bonfireName);if(d.boss){add(d.boss.name)}}}catch(e){}try{add(KEEPER.name)}catch(e){}try{for(const k in CLASSES)add(CLASSES[k].name)}catch(e){}
+ NAMES=[...L].filter(n=>n.length>2).sort((x,y)=>y.length-x.length).map(n=>({re:new RegExp('\\b'+n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+')+'\\b','gi'),to:n.toLowerCase().replace(/(^|[\s-])([a-z])/g,(m,p,c)=>p+c.toUpperCase()).replace(/\b(Of|The|And|In)\b/g,w=>w.toLowerCase())}));return NAMES}
+// description blocks are cased as one text, so a line that continues a sentence starts lower-case
+const DESC_N=new Map();function descLines(id){const a=(typeof DESC!=='undefined'&&DESC[id])||[];if(!TXT.big)return a;let r=DESC_N.get(id);if(!r){r=nice(a.join(' \n ')).split(' \n ');DESC_N.set(id,r)}return r}
+function nice(s){if(!/[A-Z]{2}/.test(s)||/[a-z]/.test(s))return s;let r=NICE.get(s);if(r!==undefined)return r;
+ let start=true;r=s.replace(/[A-Z][A-Z']*/g,(w,i)=>{const pre=s.slice(0,i);if(w.length===1&&w!=='A'||ACR.has(w))return w;const sent=start||/[.!?:]\s+$|[(]\s*$/.test(pre);start=false;const lw=w.toLowerCase();return sent?lw[0].toUpperCase()+lw.slice(1):lw});
+ for(const N of nameList())r=r.replace(N.re,(m,off)=>{const t=N.to;return off===0||/[.!?:]\s+$/.test(r.slice(0,off))?t[0].toUpperCase()+t.slice(1):t});
  if(NICE.size>4000)NICE.clear();NICE.set(s,r);return r}
 function textW(s,sc=1){return sc===1&&TXT.big?s.length*6-1:s.length*4*sc-sc}
 function drawText(g,s,x,y,col,sc=1,shadow=0x07050f,alpha=1){s=String(s);const big=sc===1&&TXT.big;
@@ -499,7 +505,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const M=this.menu;if(!e.repeat&&['Enter','z','Z','x','X','j','J',' '].includes(e.key)&&M.t>.3){M.kOk=this.time.now;this.menuKey('ok');return}}if(this.menu&&e.key==='Escape'){this.menuKey('back');if(this.menu&&this.menu.mode==='main')this.menu=null;return}if(e.key==='Escape'||e.key==='p'||e.key==='P')this.togglePause();if(e.key==='m'||e.key==='M')this.sound.mute=!this.sound.mute;if(this.paused&&(e.key==='t'||e.key==='T'))TXT.set(!TXT.big,this.sv)});
   this.touch=Q.has('touch')||!!(this.sys.game.device.input.touch);this.tPrev={};this.tTap={};
   if(this.touch)this.input.addPointer(4);
-  this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.paused&&Math.abs(p.y-(40+7*12+3))<6){TXT.set(!TXT.big,this.sv);return}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
+  this.input.on('pointerdown',p=>{if(this.victory)return this.victoryTap(p);if(!this.touch)return;if(this.menu||this.quitQ)return;if(this.paused&&Math.abs(p.y-(40+6*12+3))<6){this.sound.mute=!this.sound.mute;return}for(const b of TBTN){const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(b.r+4)*(b.r+4))this.tTap[b.k]=1}if(this.paused&&Math.abs(p.y-(40+7*12+3))<6){TXT.set(!TXT.big,this.sv);return}if(this.tTap.pause){this.tTap.pause=0;this.togglePause()}});
   this.inp={};this.hs=0;this.msg=null;this.t=0;this.flashA=0;this.ai={t:0,roll:2.5,bolt:3};this.stats={dodged:0,parries:0,ripostes:0,flasks:0};
   this.cam.fadeIn(500,7,5,15);
   if(DEMO&&Q.has('boss')){this.pb.x=ARENA_L-60}
@@ -851,7 +857,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(M.mode==='items'){const L=this.itemList(),n=L.length;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='ok'||k==='back'){M.mode='main';M.sel=2}return}
   if(M.mode==='keeper'){if(k==='up')M.sel=(M.sel+2)%3;else if(k==='down')M.sel=(M.sel+1)%3;else if(k==='ok'){if(M.sel===0){M.mode='talk';M.page=0;M.t=0;sv.met=1;this.sfx('talk',.3)}else if(M.sel===1){M.mode='shop';M.sel=0;M.say=KEEPER.shop}else{this.menu=null;this.pop(KEEPER.bye,this.def.keeper,GY-34,0xd8c8b0)}}else if(k==='back')this.menu=null;return}
   if(M.mode==='talk'){const L=this.keeperLines();if(k==='ok'||k==='back'){if(M.t*45<L[M.page].length&&k==='ok'){M.t=99;return}M.page++;M.t=0;this.sfx('talk',.3);if(M.page>=L.length||k==='back'){sv.heard=Math.max(sv.heard||0,this.keeperTier()+1);Save.write(sv);M.mode='keeper';M.sel=1}}return}
-  if(M.mode==='shop'){const L=this.shopList(),n=L.length+1;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='back'||(k==='ok'&&M.sel===L.length)){M.mode='keeper';M.sel=1}
+  if(M.mode==='shop'){const L=this.shopList(),n=L.length+1;if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='back'||(k==='ok'&&M.sel===L.length)){if(M.pedlar){this.menu=null;return}M.mode='keeper';M.sel=1}
    else if(k==='ok'){const[id,price]=L[M.sel];if(this.souls<price){M.say='YOU LACK THE SOULS, ASHEN ONE.';this.sfx('clang',.2)}else{this.souls-=price;sv.souls=this.souls;if(id==='flask'){sv.flaskBonus=(sv.flaskBonus||0)+1}else sv.inv.push(id);sv.bought=(sv.bought||0)+1;Save.write(sv);M.say='A FINE CHOICE. '+itemName(id)+' IS YOURS.';this.sfx('pickup',.45);this.fx.ember(this.player.x,this.player.y-8,16,1.4);M.sel=Math.min(M.sel,this.shopList().length)}}return}
   if(M.mode==='level'){const L=RPG.level(sv.cls,M.pend);
    if(k==='up')M.sel=(M.sel+8)%9;else if(k==='down')M.sel=(M.sel+1)%9;
@@ -1499,7 +1505,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(st==='parry')fr=P.t<TUNE.parryWin?0:1;
   else if(st==='climb')fr=Math.floor(P.run)%2;
   if(P.land>0&&st==='idle')st='rollrec';
-  const pf=P.pflash>0;if(pf)P.pflash--;NET.localStyle(this);drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo});this._hero={st,fr,hv:P.heavy&&P.state==='atk'};HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.32);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);
+  const pf=P.pflash>0;if(pf)P.pflash--;NET.localStyle(this);{// r9: readability on dark stages - a 1px pale outline (4 offset flash blits) under the hero, brighter rim
+   rasterHero(HERO,heroPose(st,fr,t,P.combo));const oa=this.def.theme==='cinderdeep'?.22:.4;for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1]])HERO.blit(g,x+dx,y+dy,f,true,oa);HERO.blit(g,x,y,f,P.flash>0||pf,1)}this._hero={st,fr,hv:P.heavy&&P.state==='atk'};HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.55);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);
   if(P.state==='atk'){const m=this.move();if(P.t>=m.h0-.02&&P.t<m.h1+.08){const k=(P.t-m.h0+.02)/(m.h1-m.h0+.1);
     if(m.arc)drawSlash(ga,x+f*2,y-10-(m.spin?0:0),f,k,this.wp===WEAPONS.longsword&&!P.heavy?SLASH:m.arc,P.combo===1);
     else if(m.stab){const L=(m.reach||12)+6,yy=y-9+(P.combo===1?-2:P.combo===2?1:0);for(let i=0;i<L;i++){const a=(1-Math.abs(i/L-k))*.8;if(a>0)px(ga,x+f*(4+i),yy,i>L-4?0xffffff:C.f1,a)}glow(ga,x+f*(4+L*k),yy,4,C.f2,.3)}
@@ -1577,7 +1584,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(this.soulPop&&this.soulPop.t>0){const sp=this.soulPop;sp.t-=this.dt;const ps='+'+sp.n;drawText(g,ps,W-textW(ps)-6,19+Math.round((1.4-sp.t)*3),0x9fd8ff,1,0x07050f,Math.min(1,sp.t*2))}
    if(this.stain){const ds=Math.round(this.stain.x-P.x),ss='SOULS '+(ds>0?'>':'<');drawText(g,ss,W-textW(ss)-6,this.soulPop&&this.soulPop.t>0?27:20,0x5fe0c0,1,0x07050f,.6+.4*Math.sin(t*5))}
    const B=this.boss;if(B&&this.bossState==='fight'){const w=this.touch?140:180,x0=(W-w)/2,y0=H-14;{const bn=this.def.boss.name+(this.ng?' +'+this.ng:''),by=y0-(TXT.big?11:8);g.fillStyle(0x05040b,.6);g.fillRect(x0-2,by-2,textW(bn)+5,TXT.big?11:9);drawText(g,bn,x0,by,0xf0e8ff)}g.fillStyle(0x7a5a24);g.fillRect(x0-2,y0-2,w+4,7);g.fillStyle(0x07050f);g.fillRect(x0-1,y0-1,w+2,5);g.fillStyle(0x2a1020);g.fillRect(x0,y0,w,3);g.fillStyle(0xb8302a);g.fillRect(x0,y0,Math.max(0,Math.round(w*B.hp/B.hpMax)),3);if(B.kind!=='warden'){g.fillStyle(0xd8b060);for(const k of[.66,.33])g.fillRect(x0+Math.round(w*k),y0-1,1,5)}}
-   if(this.touch&&!this.paused)this.drawTouch(g)}
+   if(this.touch&&!this.paused&&!this.menu&&!this.quitQ)this.drawTouch(g)}
   if(this.msg){this.msg.t-=this.paused?0:this.dt;const m=this.msg,a=clamp(m.t*2,0,1);const BS=(this.def.boss||{}).slain;const big=m.s==='EMBER EXTINGUISHED'||m.s===BS;const sc=big?2:1;
    if(big){g.fillStyle(0x05040b,.6*a);g.fillRect(0,78,W,22)}
    if(!big){const mw=textW(m.s);g.fillStyle(0x05040b,.6*a);g.fillRect(Math.round(W/2-mw/2)-5,36,mw+10,TXT.big?13:11)}
@@ -1594,7 +1601,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    O.forEach((s,i)=>row(s,14,65+i*9,M.sel===i));drawText(g,'SOULS '+this.souls,14,40+h-9,0x9fd8ff);return}
   if(M.mode==='items'){const L=this.itemList();box(6,14,308,160);drawText(g,'ITEMS AND SPELLS',12,19,0xffb04a);const top=Math.max(0,Math.min(M.sel-4,L.length-8));
    L.slice(top,top+8).forEach(([id,kind],j)=>{const i=top+j;row(itemName(id),12,30+j*9,M.sel===i);drawText(g,kind,104,30+j*9,0x6b67a0)});
-   const[id,kind]=L[M.sel]||[];if(id){g.fillStyle(0x7a5a24);g.fillRect(12,104,296,1);drawText(g,itemName(id),12,109,0xffe2a8);(DESC[id]||[]).forEach((s,i)=>drawText(g,s,12,120+i*9,0xd8c8b0,1));const R=MIRACLES[id]?'REQ FTH '+MIRACLES[id].fth+'  FP '+MIRACLES[id].fp+'  KEY '+MIRACLES[id].key:SPELLS[id]?'REQ INT '+SPELLS[id].int+'  FP '+SPELLS[id].fp:WEAPONS[id]?'REQ '+RPG.reqs(WEAPONS[id]):ARMORS[id]?'WEIGHT '+ARMORS[id].w+'  POISE '+ARMORS[id].poise:'';drawText(g,R,150,109,0x8a86c0)}return}
+   const[id,kind]=L[M.sel]||[];if(id){g.fillStyle(0x7a5a24);g.fillRect(12,104,296,1);drawText(g,itemName(id),12,109,0xffe2a8);descLines(id).forEach((s,i)=>drawText(g,s,12,120+i*9,0xd8c8b0,1));const R=MIRACLES[id]?'REQ FTH '+MIRACLES[id].fth+'  FP '+MIRACLES[id].fp+'  KEY '+MIRACLES[id].key:SPELLS[id]?'REQ INT '+SPELLS[id].int+'  FP '+SPELLS[id].fp:WEAPONS[id]?'REQ '+RPG.reqs(WEAPONS[id]):ARMORS[id]?'WEIGHT '+ARMORS[id].w+'  POISE '+ARMORS[id].poise:'';drawText(g,R,150,109,0x8a86c0)}return}
   if(M.mode==='keeper'||M.mode==='talk'||M.mode==='shop'){this.drawKeeperUI(g,ga,M,box,row);return}
   if(M.mode==='level'){const st=M.pend,L=RPG.level(sv.cls,st),d=RPG.derive(st,sv.eq),d0=this.build;box(6,20,190,150);
    drawText(g,'LEVEL UP  '+this.lvl+(L>this.lvl?' > '+L:''),12,25,0xffb04a);drawText(g,'SOULS '+(this.souls-M.spent)+'   NEXT '+RPG.cost(L),12,34,0x9fd8ff);
@@ -1612,7 +1619,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const rc=d.roll.kind==='LIGHT'?0x58e070:d.roll.kind==='MEDIUM'?0xd8d0ee:d.roll.kind==='HEAVY'?0xffb04a:0xd8402a;
    drawText(g,'LOAD '+d.w+' / '+d.load+' ('+Math.round(d.ratio*100)+'%)',10,88,0xd8d0ee);drawText(g,'ROLL '+d.roll.kind,180,88,rc);drawText(g,fit('ATTACK '+Math.round(d.ar*100)+'   SPELL '+Math.round(d.spell*100)+'   POISE '+d.poise,300),10,98,0xd8d0ee);
    drawText(g,fit('MOVESET: '+({sword:'2-HIT SLASH, OVERHEAD HEAVY',greatsword:'WIDE CLEAVE, LEAPING SLAM',dagger:'3-STAB FLURRY, LUNGE',spear:'LONG THRUST, CHARGE',axe:'CHOP, SPIN HEAVY',bow:'ARROW, CHARGED PIERCE',staff:'POKE, BASH, CASTS SPELLS'})[W0?W0.type:'dagger'],300),10,110,0x8a86c0);
-   {const id=[sv.eq.main,sv.eq.off,sv.eq.armor||'none'][M.sel];wrap((DESC[id]||[]).join(' '),300,TXT.big?5:6).forEach((t,i)=>drawText(g,t,10,124+i*(TXT.big?10:8),0xa89878))}}}
+   {const id=[sv.eq.main,sv.eq.off,sv.eq.armor||'none'][M.sel];wrap(descLines(id).join(' '),300,TXT.big?5:6).forEach((t,i)=>drawText(g,t,10,124+i*(TXT.big?10:8),0xa89878))}}}
  // ---------------- milestone E: hub, keeper, merchant, lore, miracles ----------------
  mainOpts(){const o=['LEVEL UP','EQUIPMENT','ITEMS AND SPELLS'];if(!this.def.hub&&this.sv.lords.length)o.push('TRAVEL TO THE SHRINE');o.push('LEAVE');return o}
  itemList(){const sv=this.sv,o=[];sv.inv.filter(i=>WEAPONS[i]).forEach(i=>o.push([i,WEAPONS[i].hand==='off'?'OFF HAND':'WEAPON']));sv.inv.filter(i=>ARMORS[i]).forEach(i=>o.push([i,'ARMOR']));
@@ -1634,7 +1641,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(D.hub&&near(D.keeper,18))return'Talk';if(D.hub&&near(D.exit,16))return'Travel';
   if(this.bonfire&&Math.abs(P.x-this.bonfire.x)<TUNE.restR)return'Rest';return null}
  // button glyph: Xbox A (green disc) when a pad is connected, else the keyboard key [E]
- keyGlyph(g,x,y,label,col=0xffe2a8){const pad=typeof PAD!=='undefined'&&PAD.connected();if(pad){g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0x3fb950);g.fillRect(x+1,y-1,7,9);g.fillRect(x,y,9,7);drawText(g,'A',x+2,y,0x0b2a12,1,0x3fb950);return drawText(g,label,x+12,y,col)}g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0xd8d0ee);g.fillRect(x+1,y-1,7,1);g.fillRect(x+1,y+7,7,1);g.fillRect(x,y,1,7);g.fillRect(x+8,y,1,7);drawText(g,'E',x+2,y,0xffe2a8,1,0x1e1a12);return drawText(g,label,x+12,y,col)}
+ keyGlyph(g,x,y,label,col=0xffe2a8){if(this.touch&&!(typeof PAD!=='undefined'&&PAD.connected()))return drawText(g,label,x+2,y,col);const pad=typeof PAD!=='undefined'&&PAD.connected();if(pad){g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0x3fb950);g.fillRect(x+1,y-1,7,9);g.fillRect(x,y,9,7);drawText(g,'A',x+2,y,0x0b2a12,1,0x3fb950);return drawText(g,label,x+12,y,col)}g.fillStyle(0x1e1a12);g.fillRect(x,y-1,9,9);g.fillStyle(0xd8d0ee);g.fillRect(x+1,y-1,7,1);g.fillRect(x+1,y+7,7,1);g.fillRect(x,y,1,7);g.fillRect(x+8,y,1,7);drawText(g,'E',x+2,y,0xffe2a8,1,0x1e1a12);return drawText(g,label,x+12,y,col)}
  interact(){const P=this.player,D=this.def,near=(x,r=14)=>Math.abs(P.x-x)<r;
   for(const c of this.shortcuts||[]){if(c.open||Math.abs(P.y-GY)>24)continue;if(near(c.lever,14)&&P.x>c.x){this.openShortcut(c);return true}if(P.x<c.x&&near(c.x-6,16)){this.say('BARRED FROM THE FAR SIDE - FIND A WAY AROUND',1.4);this.sfx('clang',.2);return true}}
   for(const c of this.chests)if(c.st==='shut'&&near(c.x,14)&&Math.abs(P.y-c.y)<16){this.openChest(c);return true}
@@ -1731,13 +1738,15 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(M.mode==='talk'){const L=this.keeperLines(),s=L[Math.min(M.page,L.length-1)],n=Math.floor(M.t*45);box(10,114,300,58);drawText(g,KEEPER.name,16,119,0xffb04a);{let k=n;wrapText(TXT.big?nice(s):s,286).forEach((ln,i)=>{if(k>0)drawText(g,ln.slice(0,k),16,132+i*10,0xf0e8ff);k-=ln.length+1})}
    if(n>=s.length&&Math.sin(this.t*8)>0)drawText(g,'>',300,162,0xffe2a8);drawText(g,(M.page+1)+'/'+L.length,16,162,0x6b67a0);return}
   if(M.mode==='shop'){const L=this.shopList();box(6,14,308,160);drawText(g,KEEPER.name+' - WARES',12,19,0xffb04a);drawText(g,'SOULS '+this.souls,230,19,0x9fd8ff);
-   L.forEach(([id,price],i)=>{row(itemName(id),12,32+i*9,M.sel===i,this.souls>=price?0xb8b4d8:0x6b4a4a);drawText(g,String(price),112,32+i*9,this.souls>=price?0x9fd8ff:0x6b4a4a)});row('LEAVE',12,32+L.length*9,M.sel===L.length);
-   const it=L[M.sel];if(it){g.fillStyle(0x7a5a24);g.fillRect(140,30,1,94);(DESC[it[0]]||[]).forEach((s,i)=>drawText(g,s,12,127+i*8,0xd8c8b0));const m=MIRACLES[it[0]],wp=WEAPONS[it[0]],am=ARMORS[it[0]];drawText(g,m?'MIRACLE':wp?(wp.hand==='off'?'OFF HAND':'WEAPON'):am?'ARMOR':'',146,32,0xffe2a8);const info=m?['REQ FTH '+m.fth,'FP '+m.fp,'KEY '+m.key]:wp?['REQ '+RPG.reqs(wp),RPG.letters(wp)||(wp.mir?'POWERS MIRACLES':'CASTS SORCERY'),'WEIGHT '+wp.w]:am?['WEIGHT '+am.w,'POISE '+am.poise,'ABSORB '+Math.round(am.abs*100)+'%']:['ONE MORE FLASK','AT EVERY REST'];info.forEach((s,i)=>drawText(g,s,146,44+i*9,0x8a86c0))}
+   L.forEach(([id,price],i)=>{const ps=String(price),px0=136-textW(ps);let nm=itemName(id);while(nm.length>3&&12+10+textW(nm)>px0-4)nm=nm.slice(0,-1);if(nm!==itemName(id))nm=nm.replace(/\s+$/,'')+'.';/* r9: names never run into the price */row(nm,12,32+i*9,M.sel===i,this.souls>=price?0xb8b4d8:0x6b4a4a);drawText(g,ps,px0,32+i*9,this.souls>=price?0x9fd8ff:0x6b4a4a)});row('LEAVE',12,32+L.length*9,M.sel===L.length);
+   const it=L[M.sel];if(it){g.fillStyle(0x7a5a24);g.fillRect(140,30,1,94);descLines(it[0]).forEach((s,i)=>drawText(g,s,12,127+i*8,0xd8c8b0));const m=MIRACLES[it[0]],wp=WEAPONS[it[0]],am=ARMORS[it[0]];drawText(g,m?'MIRACLE':wp?(wp.hand==='off'?'OFF HAND':'WEAPON'):am?'ARMOR':'',146,32,0xffe2a8);const info=m?['REQ FTH '+m.fth,'FP '+m.fp,'KEY '+m.key]:wp?['REQ '+RPG.reqs(wp),RPG.letters(wp)||(wp.mir?'POWERS MIRACLES':'CASTS SORCERY'),'WEIGHT '+wp.w]:am?['WEIGHT '+am.w,'POISE '+am.poise,'ABSORB '+Math.round(am.abs*100)+'%']:['ONE MORE FLASK','AT EVERY REST'];info.forEach((s,i)=>drawText(g,s,146,44+i*9,0x8a86c0))}
    drawText(g,M.say||'',12,160,0xd8c8b0)}}
  drawTouch(g){const h=this.tHeld||{};for(const b of TBTN){const on=h[b.k];g.fillStyle(on?0xffb04a:0x8a86c0,on?.45:.18);g.fillCircle(b.x,b.y,b.r);g.lineStyle(1,on?0xffe2a8:0x8a86c0,on?.9:.45);g.strokeCircle(b.x,b.y,b.r);
   drawText(g,b.lab,Math.round(b.x-textW(b.lab)/2),b.y-2,on?0xffffff:0xd8d0ee,1,null,on?1:.7)}}
  drawPause(g){g.fillStyle(0x05040b,.82);g.fillRect(0,0,W,H);drawText(g,'PAUSED',Math.round(W/2-textW('PAUSED',2)/2),22,0xffe2a8,2);
   const L=['ARROWS / WASD  MOVE      SPACE / Z  JUMP','X / J  WEAPON (TAP LIGHT, HOLD HEAVY)','C / K  MAGIC (SELECTED SPELL)   Q  NEXT SPELL','SHIFT / L  DODGE      V / U  PARRY','F / R  FLASK          E / UP  INTERACT','TAB / I  INVENTORY    ESC / P  PAUSE','M  SOUND '+(this.sound.mute?'OFF':'ON'),'T  TEXT SIZE '+(TXT.big?'LARGE':'SMALL'),'ESC / P  RESUME','PAD: A JUMP/USE  B DODGE  X ATTACK  Y HEAVY','LB PARRY  RB MAGIC  VIEW FLASK  START PAUSE'];
+  // r9: on touch there are no keys - show only the tappable rows (sound, text size) and how to resume; no key/pad hints
+  if(this.touch){const T=[null,null,null,null,null,null,'SOUND '+(this.sound.mute?'OFF':'ON')+'  (TAP)','TEXT SIZE '+(TXT.big?'LARGE':'SMALL')+'  (TAP)','TAP PAUSE AGAIN TO RESUME'];T.forEach((s,i)=>s&&drawText(g,s,20,40+i*12,i===6||i===7?0x9fd8ff:0xd8d0ee));return}
   L.forEach((s,i)=>drawText(g,s,20,40+i*12,i===6||i===7?0x9fd8ff:0xd8d0ee))}
  drawVictory(g,ga){const V=this.victory,a=Math.min(1,V.t/.6);g.fillStyle(0x05040b,.78*a);g.fillRect(0,0,W,H);
   g.fillStyle(0x7a5a24,a);g.fillRect(60,30,200,1);g.fillRect(60,150,200,1);

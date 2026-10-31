@@ -40,7 +40,7 @@ ok('kb_yes_saves_and_goes_to_title',t1.title&&t1.sv.souls===4321&&t1.sv.lords.in
 // 2. touch: tap the quit row, tap YES
 await A.pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts&seed=0&touch');await inStage(A);
 await A.ev(()=>{S().togglePause()});await wait(200);const tap=(x,y)=>tapG(A,x,y);
-await tap(240,10);ok('touch_opens_confirm',await A.ev(()=>!!S().quitQ));await tap(128,104);await wait(600);ok('touch_yes_to_title',await A.ev(()=>__G.scene.getScene('title').sys.isActive()));
+{const q=await A.ev(()=>({x:QUIT_ROW.x+QUIT_ROW.w/2,y:QUIT_ROW.y+3}));await tap(q.x,q.y)}ok('touch_opens_confirm',await A.ev(()=>!!S().quitQ));await tap(128,104);await wait(600);ok('touch_yes_to_title',await A.ev(()=>__G.scene.getScene('title').sys.isActive()));
 // 3. pad (Chrome-like getGamepads mock): START pauses, A opens, D-pad left, A confirms
 const P=await mk(false);await P.pg.addInitScript(()=>{const st={b:Array(17).fill(0),a:[0,0,0,0],ts:1};window.btn=(i,on)=>{st.b[i]=on?1:0;st.ts=performance.now()};
  navigator.getGamepads=()=>[Object.freeze({id:'Xbox Wireless Controller (STANDARD GAMEPAD)',index:0,connected:true,mapping:'standard',timestamp:st.ts,axes:Object.freeze(st.a.slice()),buttons:Object.freeze(st.b.map(v=>Object.freeze({pressed:v>.5,value:v,touched:v>0})))}),null,null,null]});
