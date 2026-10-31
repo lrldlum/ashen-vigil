@@ -17,13 +17,13 @@ const ARS={
   katana:{name:'ASHEN KATANA',type:'sword',hand:'main',base:.95,req:{str:9,dex:14},sc:{str:'E',dex:'A'},w:3,swL:11,crit:1.3,
    light:{t:.26,h0:.06,h1:.13,reach:14,w:24,h:14,mul:1,cost:14,lunge:60,n:3,arc:{r:17,th:2,sweep:150,trail:1}},
    heavy:{t:.5,h0:.16,h1:.3,reach:16,w:48,h:12,mul:1.9,cost:26,lunge:170,stab:1,poise:1}},// iaido dash-cut
-  warhalberd:{name:'WATCH HALBERD',type:'spear',hand:'main',base:1.3,req:{str:14,dex:10},sc:{str:'B',dex:'D'},w:6,swL:17,
+  warhalberd:{name:'WATCH HALBERD',type:'spear',hand:'main',base:1.6,req:{str:14,dex:10},sc:{str:'B',dex:'D'},w:6,swL:17,
    light:{t:.44,h0:.14,h1:.22,reach:24,w:30,h:10,mul:1,cost:22,lunge:40,n:2,stab:1},
    heavy:{t:.74,h0:.3,h1:.44,reach:10,w:60,h:26,mul:2,cost:34,lunge:20,aoe:1,poise:3,arc:{r:26,th:4,sweep:220,trail:1}}},
   whip:{name:'BELLROPE WHIP',type:'sword',hand:'main',base:.7,req:{str:6,dex:12},sc:{str:'E',dex:'B'},w:2,swL:20,
-   light:{t:.4,h0:.18,h1:.24,reach:30,w:40,h:8,mul:1,cost:14,lunge:0,n:2,arc:{r:30,th:1,sweep:120,trail:1}},
+   light:{t:.4,h0:.18,h1:.24,reach:22,w:40,h:8,mul:1,cost:20,lunge:0,n:2,arc:{r:30,th:1,sweep:120,trail:1}},
    heavy:{t:.6,h0:.26,h1:.4,reach:0,w:76,h:16,mul:1.5,cost:24,lunge:0,aoe:1,arc:{r:36,th:1,sweep:340,trail:1}}},
-  scythe:{name:'GRAVE SCYTHE',type:'axe',hand:'main',base:1.15,req:{str:12,dex:12},sc:{str:'C',dex:'C'},w:5,swL:16,
+  scythe:{name:'GRAVE SCYTHE',type:'axe',hand:'main',base:1.15,req:{str:12,dex:12},sc:{str:'B',dex:'C'},w:5,swL:16,
    light:{t:.48,h0:.16,h1:.28,reach:16,w:36,h:22,mul:1,cost:22,lunge:20,n:2,aoe:1,arc:{r:22,th:3,sweep:260,trail:1}},
    heavy:{t:.8,h0:.3,h1:.5,reach:0,w:64,h:28,mul:1.9,cost:34,lunge:0,aoe:1,spin:1,poise:2,arc:{r:26,th:4,sweep:360,trail:1}}},
   twinblade:{name:'VIGIL TWINBLADE',type:'sword',hand:'main',base:.85,req:{str:10,dex:13},sc:{str:'D',dex:'B'},w:4,swL:12,
@@ -40,25 +40,25 @@ const ARS={
    light:{t:1.4,h0:.1,h1:.11,mul:1,cost:14,arrow:600,pierce:1},heavy:{t:1.8,h0:.12,h1:.13,mul:1.4,cost:18,arrow:640,pierce:1}}},
  // guns: dmg = AR * mul per pellet; mag rounds; reload s; recoil px/s pushback; spd px/s; life s; elem optional; fp = rune cost
  GUNS:{
-  flintlock:{name:'FLINTLOCK PISTOL',base:1.25,req:{dex:10},sc:{dex:'A'},w:2,gun:{mag:1,reload:1.4,pellets:1,spread:0,mul:1.4,spd:520,life:.55,recoil:90,shake:.008,fire:.32}},
-  blunderbuss:{name:'BLUNDERBUSS',base:1.0,req:{str:10,dex:10},sc:{str:'D',dex:'B'},w:4,gun:{mag:1,reload:1.9,pellets:6,spread:.32,mul:.55,spd:420,life:.28,recoil:170,shake:.016,fire:.42}},
+  flintlock:{name:'FLINTLOCK PISTOL',base:1.25,req:{dex:10},sc:{dex:'A'},w:2,gun:{mag:1,reload:1.0,pellets:1,spread:0,mul:1.4,spd:520,life:.55,recoil:90,shake:.008,fire:.32}},
+  blunderbuss:{name:'BLUNDERBUSS',base:1.0,req:{str:10,dex:10},sc:{str:'D',dex:'B'},w:4,gun:{mag:1,reload:1.9,pellets:6,spread:.22,mul:.9,spd:420,life:.28,recoil:170,shake:.016,fire:.42}},
   handcannon:{name:'HAND CANNON',base:2.2,req:{str:16,dex:12},sc:{str:'C',dex:'B'},w:8,gun:{mag:1,reload:2.6,pellets:1,spread:0,mul:2.2,spd:360,life:.9,recoil:260,shake:.024,fire:.6,blast:28,pierce:1}},
   longrifle:{name:'LONG RIFLE',base:1.6,req:{dex:16},sc:{dex:'S'},w:5,gun:{mag:1,reload:2.2,pellets:1,spread:0,mul:2.0,spd:900,life:.7,recoil:120,shake:.012,fire:.5,pierce:1}},
-  runepistol:{name:'RUNE PISTOL',base:.9,req:{dex:10,int:10},sc:{dex:'B',int:'C'},w:2,gun:{mag:6,reload:1.2,pellets:1,spread:.04,mul:.9,spd:480,life:.6,recoil:60,shake:.006,fire:.22,rune:1,fp:4}}},
+  runepistol:{name:'RUNE PISTOL',base:.9,req:{dex:10,int:10},sc:{dex:'B',int:'C'},w:2,gun:{mag:6,reload:1.2,pellets:1,spread:.04,mul:.6,spd:480,life:.6,recoil:60,shake:.006,fire:.22,rune:1,fp:7}}},
  SHIELDS:{
   buckler:{name:'IRON BUCKLER',w:1.5,shield:{abs:.55,stab:30,parry:.16}},
   kite:{name:'KITE SHIELD',w:4,shield:{abs:.85,stab:55,parry:.1}},
   towershield:{name:'TOWER SHIELD',w:10,shield:{abs:1,stab:85,parry:0}},
   magicshield:{name:'WARDING AEGIS',w:3,shield:{abs:.7,stab:45,parry:.1,magic:1}}},
  THROWN:{
-  tknife:{name:'THROWING KNIFE',col:0xd8d0e0,dmg:16,spd:420,g:60,per:5},
-  firebomb:{name:'FIREBOMB',col:0xff7a2a,dmg:30,spd:115,g:420,blast:30,elem:'fire',per:3},
-  frostjar:{name:'FROST JAR',col:0x9fd8ff,dmg:22,spd:115,g:420,blast:30,elem:'frost',per:3},
-  boltjar:{name:'STORM JAR',col:0xfff08a,dmg:26,spd:115,g:420,blast:30,elem:'lightning',per:3}},
+  tknife:{name:'THROWING KNIFE',col:0xd8d0e0,mul:.6,spd:420,g:60,per:5},
+  firebomb:{name:'FIREBOMB',col:0xff7a2a,mul:1.2,spd:115,g:420,blast:30,elem:'fire',per:3},
+  frostjar:{name:'FROST JAR',col:0x9fd8ff,mul:1,spd:115,g:420,blast:30,elem:'frost',per:3},
+  boltjar:{name:'STORM JAR',col:0xfff08a,mul:1.1,spd:115,g:420,blast:30,elem:'lightning',per:3}},
  ELEM:{fire:0xff7a2a,frost:0x9fd8ff,lightning:0xfff08a},
  AMMO_PACK:12,
- MERCH:[['ammo',300],['tknife',200],['firebomb',350],['frostjar',350],['boltjar',350],['flintlock',2400],['buckler',1200],['lightxbow',2200]],
- DROPS:{common:[['ammo',6],['tknife',3]],elite:[['ammo',10],['firebomb',4],['frostjar',3],['boltjar',3]],chest:[['ammo',12],['firebomb',5],['tknife',5]]}};
+ MERCH:[['ammo',300],['tknife',600],['firebomb',700],['frostjar',700],['boltjar',700],['flintlock',2400],['buckler',1200],['lightxbow',2200]],
+ DROPS:{common:[['ammo',4],['tknife',1]],elite:[['ammo',8],['firebomb',2],['frostjar',2],['boltjar',2]],chest:[['ammo',10],['firebomb',3],['tknife',2]]}};
 (()=>{
  for(const[id,W]of Object.entries(ARS.MELEE))WEAPONS[id]=W;
  for(const[id,W]of Object.entries(ARS.RANGED))WEAPONS[id]=W;
@@ -110,25 +110,25 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  // ---- throwables ----
  SP.throwItem=function(){const sv=sv0(this),P=this.player;let id=sv.eq.q2;if(!id||!(sv.thr[id]>0))id=Object.keys(ARS.THROWN).find(k=>sv.thr[k]>0);if(!id){this.pop('NOTHING TO THROW',P.x,P.y-24,0xa89880);return false}
   const T=ARS.THROWN[id];sv.thr[id]--;sv.eq.q2=id;const dex=(sv.stats&&sv.stats.dex)||10;
-  this.arsShot({k:id,x:P.x+P.f*8,y:P.y-14,vx:P.f*T.spd,vy:T.g>100?-150:-10,g:T.g,dmg:T.dmg*(1+dex/40),life:1.6,blast:T.blast,elem:T.elem});Save.write(sv);this.sfx('roll',.3);this.stats.throws=(this.stats.throws||0)+1;return true};
+  this.arsShot({k:id,x:P.x+P.f*8,y:P.y-14,vx:P.f*T.spd,vy:T.g>100?-150:-10,g:T.g,dmg:this.build.ar*T.mul,thr:1,life:1.6,blast:T.blast,elem:T.elem});Save.write(sv);this.sfx('roll',.3);this.stats.throws=(this.stats.throws||0)+1;return true};
  SP.thrCycle=function(){const sv=sv0(this),L=Object.keys(ARS.THROWN).filter(k=>sv.thr[k]>0);if(!L.length)return;sv.eq.q2=L[(L.indexOf(sv.eq.q2)+1)%L.length];this.pop(ARS.THROWN[sv.eq.q2].name+' x'+sv.thr[sv.eq.q2],this.player.x,this.player.y-26,ARS.THROWN[sv.eq.q2].col)};
  // ---- projectiles (own list; mirrored to the partner as visual-only) ----
  SP.arsShot=function(p,fromNet){const L=this.arsP||(this.arsP=[]);p={t:0,hit:[],...p};if(fromNet)p.vis=1;L.push(p);if(!fromNet&&NET.linked&&NET.linked())NET.send({t:'ars',p:{k:p.k,x:Math.round(p.x),y:Math.round(p.y),vx:Math.round(p.vx),vy:Math.round(p.vy),g:p.g||0,life:p.life,blast:p.blast||0,elem:p.elem||null}});return p};
- SP.arsHitE=function(e,n,dir,el){this.damageEnemy(e,e.state==='stag'?n*TUNE.ripMul:n,dir);if(el==='frost')e.slowT=Math.max(e.slowT||0,3);else if(el==='lightning'&&!e.dead){e.state='stag';e.t=0}else if(el==='fire')e.burn=2};
+ SP.arsHitE=function(e,n,dir,el){this.damageEnemy(e,n,dir);this.arsStatus(e,el,3)};// r6: no riposte multiplier from projectiles
  SP.arsBlast=function(p){const R=p.blast;this.fx.fire&&p.elem==='fire'&&this.fx.fire(p.x,p.y,10,4,1.2);this.fx.spark(p.x,p.y,18,ARS.ELEM[p.elem]||0xffd070,140,20);this.cam.shake(140,.012);this.sfx('slam',.35);
   (this.arsFx||(this.arsFx=[])).push({k:'boom',x:p.x,y:p.y,t:0,R,col:ARS.ELEM[p.elem]||0xffb050});if(p.vis)return;
-  const hs=new Set();for(const e of this.enemies){if(e.dead||hs.has(e))continue;const bb=e.b.body;if(Math.abs(bb.center.x-p.x)<R&&Math.abs(bb.center.y-p.y)<R){hs.add(e);this.arsHitE(e,p.dmg,Math.sign(bb.center.x-p.x)||1,p.elem)}}
-  const B=this.boss;if(B&&this.bossState==='fight'&&Math.abs(B.x-p.x)<R+8&&Math.abs(B.y-16-p.y)<R+16)this.damageBoss(p.dmg)};
+  const hs=new Set();for(const e of this.enemies){if(e.dead||e.parked||hs.has(e)||!this.arsInRoom(e.b.x))continue;const bb=e.b.body;if(Math.abs(bb.center.x-p.x)<R&&Math.abs(bb.center.y-p.y)<R){hs.add(e);this.arsHitE(e,p.dmg,Math.sign(bb.center.x-p.x)||1,p.elem)}}
+  const B=this.boss;if(B&&this.bossState==='fight'&&Math.abs(B.x-p.x)<R+8&&Math.abs(B.y-16-p.y)<R+16)this.damageBoss(p.dmg*(p.thr?.5:1))};
  SP.arsStep=function(dt){const n=Math.max(1,Math.ceil(Math.max(0,...(this.arsP||[]).map(p=>Math.abs(p.vx)))*dt/6));for(let k=0;k<n;k++)this.arsSub(dt/n);this.arsAfter(dt)};// sub-steps of <=6 px so fast shots never tunnel through a target
  SP.arsSub=function(dt){const L=this.arsP;if(L)for(let i=L.length-1;i>=0;i--){const p=L[i];p.t+=dt;p.x+=p.vx*dt;p.vy+=(p.g||0)*dt;p.y+=p.vy*dt;
-   let gone=p.t>p.life||(this.lv&&this.lv.kAt(p.x,p.y)===K_SOLID)||p.y>GY+2&&p.g>100;
-   if(!gone&&!p.vis){for(const e of this.enemies){if(e.dead||p.hit.includes(e))continue;const bb=e.b.body;if(Math.abs(bb.center.x-p.x)<bb.width/2+2&&Math.abs(bb.center.y-p.y)<bb.height/2+2){p.hit.push(e);if(p.blast){gone=true;break}this.arsHitE(e,p.dmg,Math.sign(p.vx)||1,p.elem);if(!p.pierce){gone=true;break}}}
-    const B=this.boss;if(!gone&&B&&this.bossState==='fight'&&!p.hit.includes(B)&&Math.abs(B.x-p.x)<12&&p.y>B.y-44&&p.y<B.y){p.hit.push(B);if(!p.blast)this.damageBoss(p.dmg*1.2);if(!p.pierce||p.blast)gone=true}
+   let gone=p.t>p.life||!this.arsInRoom(p.x)||(this.lv&&this.lv.kAt(p.x,p.y)===K_SOLID)||p.y>GY+2&&p.g>100;
+   if(!gone&&!p.vis){for(const e of this.enemies){if(e.dead||e.parked||p.hit.includes(e)||!this.arsInRoom(e.b.x))continue;const bb=e.b.body;if(Math.abs(bb.center.x-p.x)<bb.width/2+2&&Math.abs(bb.center.y-p.y)<bb.height/2+2){p.hit.push(e);if(p.blast){gone=true;break}this.arsHitE(e,p.dmg,Math.sign(p.vx)||1,p.elem);if(!p.pierce){gone=true;break}}}
+    const B=this.boss;if(!gone&&B&&this.bossState==='fight'&&!p.hit.includes(B)&&Math.abs(B.x-p.x)<12&&p.y>B.y-44&&p.y<B.y){p.hit.push(B);if(!p.blast)this.damageBoss(p.dmg*(p.thr?.5:1.2));if(!p.pierce||p.blast)gone=true}
     for(const c of this.chests||[])if(!gone&&c.st==='awake'&&Math.abs(c.hx-p.x)<10&&Math.abs(c.y-6-p.y)<12){this.hitMimic(c,p.dmg);gone=true}}
    if(gone){if(p.blast)this.arsBlast(p);else this.fx.spark(p.x,p.y,5,ARS.ELEM[p.elem]||0xffe2a8,60);L.splice(i,1)}}
  };
  SP.arsAfter=function(dt){
-  for(const e of this.enemies)if(e.burn>0&&!e.dead){e.burn-=dt;if(Math.random()<.4)this.fx.fire&&this.fx.fire(e.b.x,e.b.y,1,2,.6);e.burnT=(e.burnT||0)+dt;if(e.burnT>.5){e.burnT=0;if(!NET.guest())this.damageEnemy(e,2+this.build.ar*.6,0)}}
+  for(const e of this.enemies)if(e.burn>0&&!e.dead){e.burn-=dt;if(Math.random()<.4)this.fx.fire&&this.fx.fire(e.b.x,e.b.y,1,2,.6);e.burnT=(e.burnT||0)+dt;if(e.burnT>.5){e.burnT=0;if(!NET.guest()){const b=.15*this.build.ar;this.damageEnemy(e,b,0);this.stats.burnDmg=(this.stats.burnDmg||0)+b}}}
   const F=this.arsFx;if(F)for(let i=F.length-1;i>=0;i--){const q=F[i];q.t+=dt;if(q.k==='smoke'){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.92}if(q.t>(q.k==='smoke'?.7:q.k==='boom'?.35:.16))F.splice(i,1)}};
  const ua=SP.updateArrows;SP.updateArrows=function(dt){const n=Math.max(1,Math.ceil(Math.max(0,...(this.arrows||[]).map(a=>Math.abs(a.vx)))*dt/6));for(let k=0;k<n;k++)ua.call(this,dt/n);// crossbow bolts / lightning spear: sub-step so they can't tunnel
   const P=this.player,inp=this.inp||{},A=this.ars||(this.ars={}),sv=sv0(this);
@@ -138,11 +138,11 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
   this.arsStep(dt)};
  // ---- shields: guard absorbs hits from the front ----
  const hp=SP.hurtPlayer;SP.hurtPlayer=function(n,src,att){const P=this.player,S=WEAPONS[this.sv.eq&&this.sv.eq.off];
-  if(P&&P.guard&&S&&S.shield&&P.inv<=0&&!P.dead&&(Math.sign(src-P.x)||P.f)===P.f&&!(this._inE&&this._eRemote)){const sh=S.shield,cost=n*1.2*(1-sh.stab/100)+4;
+  if(P&&P.guard&&S&&S.shield&&P.inv<=0&&!P.dead&&!this.arsEnvHit(src,att)&&(Math.sign(src-P.x)||P.f)===P.f&&!(this._inE&&this._eRemote)){const sh=S.shield,bh=this.arsBossHeavy(att),cost=(n*1.2*(1-sh.stab/100)+4)*(bh?3:1);
    this.spend(cost);this.stats.blocks=(this.stats.blocks||0)+1;this.fx.spark(P.x+P.f*8,P.y-10,10,sh.magic?0xb8a8ff:0xffffff,110);this.sfx('parry',.25);this.pb.setVelocityX(-P.f*60);
    if(sh.magic)P.fp=Math.min(P.fpMax,P.fp+n*.3);
-   if(P.st<=0){P.guard=false;this.pop('GUARD BROKEN',P.x,P.y-24,0xd8402a);return hp.call(this,n*.5,src,att)}
-   const left=n*(1-sh.abs);if(left<1){P.inv=.25;this.pop('BLOCK',P.x,P.y-24,0x9fb8e8);return false}return hp.call(this,left,src,att)}
+   if(P.st<=0){P.guard=false;P.guardLock=1;this.stats.guardBreaks=(this.stats.guardBreaks||0)+1;this.pop('GUARD BROKEN',P.x,P.y-24,0xd8402a);P.inv=0;const r=hp.call(this,n,src,att);if(!P.dead){P.state='hurt';P.t=0;P.gbStag=.7}return r}// r6: full hit + 0.7 s stagger; guard stays down until re-pressed
+   const left=Math.max(n*(1-sh.abs),bh?n*.15:0);if(left<1){P.inv=.25;this.pop('BLOCK',P.x,P.y-24,0x9fb8e8);return false}return hp.call(this,left,src,att)}
   return hp.call(this,n,src,att)};
  // ---- drawing (after the scene, before lights) ----
  const rl=SP.renderLights;SP.renderLights=function(...a){try{this.arsDraw(this.gn,this.ga)}catch(e){}return rl.apply(this,a)};
@@ -159,8 +159,8 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
    else if(q.k==='smoke'){g.fillStyle(0x8a8478,Math.max(0,.5-q.t*.7));g.fillRect(x-q.r,y-q.r,q.r*2,q.r*2)}
    else if(q.k==='boom'){const r=Math.round(q.R*(.4+q.t*2));ga.fillStyle(q.col,Math.max(0,.6-q.t*1.6));ga.fillRect(x-r,y-r,r*2,r*2);ga.fillStyle(0xffffff,Math.max(0,.6-q.t*2));ga.fillRect(x-r/2,y-r/2,r,r);this.light(x,y,70,q.col,1)}}
   // HUD: ammo / mag and throwable
-  if(P){const sv=this.sv;let s='';if(W&&W.gun)s=W.gun.rune?'RUNE '+(sv.rune||'fire').toUpperCase():'MAG '+(sv.gmag&&sv.gmag[sv.eq.main]||0)+'/'+W.gun.mag+'  SHOT '+(sv.ammo||0)+((this.ars&&this.ars.reload>0)?'  RELOADING':'');
-   const q=sv.eq&&sv.eq.q2,tn=q&&sv.thr&&sv.thr[q];if(tn)s+=(s?'  ':'')+'G '+ARS.THROWN[q].name+' x'+tn;if(s){const cx=this.cam.scrollX,cy=this.cam.scrollY;drawText(g,s,Math.round(cx+6),Math.round(cy+52),0xd8c8a0)}}};
+  if(P){const sv=this.sv;let s='';if(W&&W.gun)s=W.gun.rune?'RUNE '+(sv.rune||'fire').toUpperCase():'MAG '+((sv.gmag&&sv.gmag[sv.eq.main])??W.gun.mag)+'/'+W.gun.mag+'  SHOT '+(sv.ammo||0)+((this.ars&&this.ars.reload>0)?'  RELOADING':'');
+   const q=sv.eq&&sv.eq.q2,tn=q&&sv.thr&&sv.thr[q];if(tn)s+=(s?'  ':'')+'G '+ARS.THROWN[q].name+' x'+tn;this._arsHudS=s}};
  // ---- co-op: mirror shots/throws as visuals ----
  if(typeof NET!=='undefined'){const nr=NET.recv;NET.recv=function(d){if(d&&d.t==='ars'){const S=this.scene;if(S&&S.sys&&S.sys.isActive()&&S.arsShot){S.arsShot({...d.p},1);S.stats.arsNet=(S.stats.arsNet||0)+1}return}return nr.call(this,d)}}
 }
@@ -200,11 +200,11 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
   drawText(g,'THE SMITH - INFUSE '+itemName(M.id),12,19,0xffb04a);drawText(g,'SHARDS '+(sv.embers||0)+'  SOULS '+this.souls,180,30,0xff9a3a);
   L.forEach((id,i)=>{const y=34+i*11,on=i===M.sel,nm=id?INF[id].name:'NONE';if(id){g.fillStyle(INF[id].c);g.fillRect(14,y+1,5,5)}drawText(g,(on?'> ':'  ')+nm+(id===cur?' *':''),22,y,on?0xffe2a8:0xb8b4d8);
    if(id){const[e,s]=ARS.INF_COST[id];drawText(g,e+' SH  '+s,110,y,(sv.embers||0)>=e&&this.souls>=s?0x9fd8ff:0x6b4a4a)}});
-  const F=L[M.sel]&&ARS.INF_FX[L[M.sel]];if(F)drawText(g,(F.stat?'+10% ATTACK IF '+F.stat.toUpperCase()+' LEADS':F.elem?F.elem.toUpperCase()+' ON HIT'+(F.mul>1?', +5% ATTACK':''):''),180,60,0xd8c8a0);
+  const F=L[M.sel]&&ARS.INF_FX[L[M.sel]];if(F){const t=F.stat?'+10% ATTACK IF '+F.stat.toUpperCase()+' LEADS':F.elem?F.elem.toUpperCase()+' ON HIT'+(F.add?', +'+F.add+' ATTACK':'')+(F.mul>1?', +5% ATTACK':''):'';drawText(g,t,22,128,0xd8c8a0);this.stats.infText={t,x:22,w:textW(t)}}
   drawText(g,M.say||'LEFT: BACK',12,160,0xd8c8a0)};
  // melee hits carry the infusion's element
  const mh=SP.meleeHit;SP.meleeHit=function(m){const inf=((this.sv.wup||{})[this.sv.eq.main]||{}).inf,F=inf&&ARS.INF_FX[inf];this._arsEl=F&&F.elem||null;try{return mh.call(this,m)}finally{this._arsEl=null}};
- const de=SP.damageEnemy;SP.damageEnemy=function(e,n,dir,fromNet){const r=de.call(this,e,n,dir,fromNet);const el=this._arsEl;if(el&&e&&!e.dead){if(el==='frost')e.slowT=Math.max(e.slowT||0,2);else if(el==='fire')e.burn=1.5;else if(el==='lightning'&&Math.random()<.35){e.state='stag';e.t=0}this.stats.infHits=(this.stats.infHits||0)+1}return r};
+ const de=SP.damageEnemy;SP.damageEnemy=function(e,n,dir,fromNet){const r=de.call(this,e,n,dir,fromNet);const el=this._arsEl;if(el&&e&&!e.dead){if(el==='frost')e.slowT=Math.max(e.slowT||0,2);this.arsStatus(e,el,2);this.stats.infHits=(this.stats.infHits||0)+1}return r};
  const ae=SP.arsElem;SP.arsElem=function(id){const r=ae.call(this,id);if(r)return r;const u=(this.sv.wup||{})[id]||{},F=u.inf&&ARS.INF_FX[u.inf];return F&&F.elem||null};
  // ---- distinct swing arcs + partner guard + sprites (drawn with the arsenal layer) ----
  const ad=SP.arsDraw;SP.arsDraw=function(g,ga){const P=this.player,id=this.sv&&this.sv.eq&&this.sv.eq.main,R=typeof NET!=='undefined'&&NET.remote;
@@ -267,4 +267,48 @@ if(typeof WEAPART!=='undefined'){
   if(on&&off&&B.visible&&s.textures.exists('arss_'+off)){const key=guard?'arsg_'+off:'arss_'+off;let sp=R.arsS;if(!sp||sp.texture.key!==key){if(sp)sp.destroy();sp=R.arsS=s.add.sprite(0,0,key,0).setOrigin(B.originX,B.originY)}
    sp.setVisible(true).setFrame(guard?Math.floor(s.t*4)%2:+B.frame.name).setPosition(B.x,B.y).setFlipX(B.flipX).setDepth(B.depth+.004);tf(sp);s.stats&&(s.stats.arsShieldArt=(s.stats.arsShieldArt||0)+1)}
   else if(R.arsS)R.arsS.setVisible(false)}}
+
+// ===================== r6: Tester r15 fixes (P1-1 throwable scale, P1-2 statuses, P2-3 rooms, P2-4 env, P2-5 guard break, P2-6 HUD, P3s) =====================
+if(typeof MIRACLES!=='undefined')for(const m of Object.values(MIRACLES))m.key='C (SELECT Q)';// P3-8: G/T/R now throw/cycle/flask
+if(typeof CONSUMABLES!=='undefined'){for(const id of Object.keys(ARS.THROWN))CONSUMABLES[id].fx='ars';CONSUMABLES.ammo.fx='ars'}
+ARS.MTXT={ammo:['12 PISTOL SHOT.','LOADED WITH HOLD X.'],tknife:['THROWN WITH G.','T PICKS THE NEXT ONE.'],firebomb:['THROWN WITH G. BURSTS','INTO FLAME.'],frostjar:['THROWN WITH G. BURSTS','INTO RIME. SLOWS.'],boltjar:['THROWN WITH G. BURSTS','INTO LIGHTNING.']};
+if(typeof DESC!=='undefined'){DESC.ammo=['A POUCH OF 12 PISTOL SHOT AND POWDER.','LOADED WITH HOLD X (OR RLD).'];for(const id of Object.keys(ARS.THROWN))DESC[id]=[ARS.THROWN[id].name+'.','THROWN WITH G. T PICKS THE NEXT ONE.']}
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ // P1-2: one place for elemental statuses. Fire: burn only starts when not already burning (no full refresh). Lightning: 25% chance,
+ // 1.5 s per-enemy cooldown, a short 0.5 s stagger flagged arsStag so it never enables a riposte.
+ SP.arsStatus=function(e,el,dur){if(!e||e.dead||!el)return;if(el==='frost')e.slowT=Math.max(e.slowT||0,dur);
+  else if(el==='fire'){if(!(e.burn>0)){e.burn=dur*.75;e.burnT=0}}
+  else if(el==='lightning'){const now=this.t||0;if(now-(e.lstT??-9)>=1.5&&Math.random()<.25){e.lstT=now;if(e.state!=='stag'){e.state='stag';e.t=Math.max(0,TUNE.stagT-.5);e.arsStag=1;this.stats.arsStags=(this.stats.arsStags||0)+1}}}};
+ const mh6=SP.meleeHit;SP.meleeHit=function(m){const sw=[];for(const e of this.enemies)if(e.arsStag&&e.state==='stag'){e.state='idle';sw.push(e)}try{return mh6.call(this,m)}finally{for(const e of sw)if(e.state==='idle'&&!e.dead)e.state='stag'}};
+ // P2-3: shots live only in the current room; parked enemies are out of play
+ SP.arsInRoom=function(x){const r=this.room;if(!r||this.bossState==='fight'||this.cine)return true;return x>=r.x0-2&&x<r.x1+2};
+ // P2-4: environmental damage (drowning, lava, spikes, thorns, falling ice/chunks) is never guarded
+ SP.arsEnvHit=function(src,att){if(att&&(typeof att==='object'||att==='boss'))return false;const P=this.player,d=this.def||{};
+  if(P.air!=null&&P.air<=0)return true;if(this.arsEnvT>0)return true;
+  for(const[a,b]of d.lavaPits||[])if(P.x>a&&P.x<b)return true;for(const th of d.thorns||[])if(P.x>th[0]-7&&P.x<th[1]+7&&P.y>th[2]-15&&P.y<th[2]+4)return true;
+  if(this.lv&&typeof K_SPIKE!=='undefined'&&(this.lv.kAt(P.x,P.y-2)===K_SPIKE||this.lv.kAt(P.x,P.y+2)===K_SPIKE))return true;
+  return Math.abs(src-P.x)<6};// overhead/at-feet sources (icicles, chunks, spikes) have no front to block
+ SP.arsBossHeavy=function(att){const B=this.boss;return att==='boss'&&B&&/slam|roar|heavy/.test(B.state||'')};
+ const rI=SP.readInput;SP.readInput=function(){const o=rI.call(this)||{},P=this.player;if(P&&P.guardLock){if(!o.guard)P.guardLock=0;else o.guard=false}return o};
+ const up6=SP.update;SP.update=function(t,dms){const P=this.player;if(P&&P.gbStag>0){P.gbStag-=(dms||16)/1000;if(P.state!=='dead'&&!P.dead&&P.gbStag>0&&P.state!=='hurt'){P.state='hurt'}}return up6.call(this,t,dms)};
+ // P2-6: ammo line sits in the top-right under the souls counter, clear of the spell box and objective counters
+ SP.arsHudY=function(){return 22};
+ const hud6=SP.drawHUD;SP.drawHUD=function(...a){const r=hud6.apply(this,a);const s=this._arsHudS,g=this.gu;if(s&&g&&!this.menu&&!this.paused&&!this.cine&&!this.victory){const y=this.arsHudY(),x=W-textW(s)-6;g.fillStyle(0x07050f,.55);g.fillRect(x-3,y-2,textW(s)+6,9);drawText(g,s,x,y,0xd8c8a0);this.stats.arsHud={s,y}}return r};// screen-space HUD layer
+ // P3-11: changing weapon cancels a reload in progress
+ const ab6=SP.applyBuild;SP.applyBuild=function(...a){const A=this.ars,sv=this.sv;if(A&&A.reload>0&&sv&&sv.eq&&A.reloadId!==sv.eq.main){A.reload=0;this.stats.reloadCancel=(this.stats.reloadCancel||0)+1}return ab6.apply(this,a)};
+ // P3-10: D-pad Down throws / cycles only when standing still on the ground (never while dropping, swimming or moving)
+ const pi6=SP.arsPadInput;SP.arsPadInput=function(now){const o=pi6.call(this,now),P=this.player,b=this.pb&&this.pb.body;
+  const still=P&&!P.swim&&b&&b.blocked.down&&Math.abs(b.velocity.x)<8&&P.state!=='climb';if(!still&&(o.throwP||o.thrCyc)){delete o.throwP;delete o.thrCyc;this.stats.padThrowBlocked=(this.stats.padThrowBlocked||0)+1}return o};
+ // P3-9: pause screen lists the arsenal controls
+ const dp6=SP.drawPause;SP.drawPause=function(g){dp6.call(this,g);if(this.touch)return;const st=TXT.big?10:11,L=['G THROW  T NEXT ITEM','HOLD V  SHIELD GUARD','HOLD X  RELOAD  PAD DN THROW'];let mx=0;L.forEach((s,i)=>{const x=W-textW(s)-8;mx=Math.max(mx,x+textW(s));drawText(g,s,x,38+(6+i)*st,0xd8d0ee)});this.stats.pauseArs=L.length;this.stats.pauseArsR=mx};
+ // P3-12: merchant panel text for shot / throwables (rings.js prints a generic consumable line)
+ const dm6=SP.drawMenu0;SP.drawMenu0=function(g,ga){const r=dm6.call(this,g,ga),M=this.menu;if(M&&M.mode==='lmerch'){const row=this.merchRows()[M.sel],id=row&&row[0],T=id&&ARS.MTXT[id];
+  if(T){g.fillStyle(0x07050f);g.fillRect(199,58,118,24);T.forEach((s,i)=>drawText(g,s,202,60+i*10,0xd8c8b0));this.stats.merchTxt=T[0]}}return r};
+}
+if(typeof WEAPART!=='undefined'){
+ // P3-15: keep the pixel hero's outline on the same frame/texture as the body (no baked-sword crescent on bows/guns), and a brass rim on gun overlays
+ const w6=WEAPART.wield;WEAPART.wield=function(s,R,id,flash,tint){w6.call(this,s,R,id,flash,tint);const c=s.pxc,B=R.base;if(!c||!B)return;const E=R===c.rig?c.he:R===c.rrig?c.re:null;
+  if(E&&R.arsW&&R.arsW.visible){for(const q of E.ol)q.setTexture(B.texture.key,B.frame.name);E.lift.setTexture(B.texture.key,B.frame.name);s.stats&&(s.stats.arsEdgeSync=(s.stats.arsEdgeSync||0)+1)}
+  const W=id&&WEAPONS[id],rim=R.arsRim;if(W&&W.gun&&R.arsW&&R.arsW.visible&&R.arsW.texture.key==='arsw_'+id){let q=rim;if(!q||q.texture.key!==R.arsW.texture.key){if(q)q.destroy();q=R.arsRim=s.add.sprite(0,0,R.arsW.texture.key,0).setOrigin(R.arsW.originX,R.arsW.originY)}
+   q.setVisible(true).setFrame(R.arsW.frame.name).setFlipX(R.arsW.flipX).setPosition(R.arsW.x,R.arsW.y-1).setDepth(R.arsW.depth-.0005).setTintFill(0xe8c878).setAlpha(.8);s.stats&&(s.stats.arsRim=(s.stats.arsRim||0)+1)}else if(rim)rim.setVisible(false)}}
 if(typeof module!=='undefined')module.exports={ARS};

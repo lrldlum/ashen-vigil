@@ -57,7 +57,8 @@ for(const id of['buckler','kite','towershield','magicshield']){
   const g=P.guard,h0=P.hp,st0=P.st;s.hurtPlayer(20,P.x+20);const lost=h0-P.hp,stc=+(st0-P.st).toFixed(1),fp=+P.fp.toFixed(1);P.inv=0;const back=(()=>{const h=P.hp;s.hurtPlayer(20,P.x-20);return h-P.hp})();P.inv=0;P.state='idle';
   window.__inp=()=>({});await new Promise(r=>setTimeout(r,300));return{g,lost,stc,fp,back,win:TUNE.parryWin}},id)}
 await ev(async()=>{equip('kite','off');window.__inp=()=>({guard:1});await new Promise(r=>setTimeout(r,200));const s=S(),P=s.player;P.st=2;P.inv=0;window.__gb=P.hp;s.hurtPlayer(20,P.x+20);window.__gb=window.__gb-P.hp;window.__inp=()=>({})});
-const gb=await ev(()=>window.__gb);await ev(async()=>{equip('towershield','off');window.__inp=()=>({guard:1});S().player.f=1});await wait(300);await shot('ars02_tower_guard');await ev(()=>{window.__inp=()=>({})});mark('shields',1);
+const gb=await ev(()=>window.__gb);await wait(900);// r6: guard break staggers 0.7 s and keeps the guard down until V is re-pressed
+await ev(async()=>{window.__inp=()=>({});await new Promise(r=>setTimeout(r,100));const P=S().player;P.st=P.stMax;equip('towershield','off');window.__inp=()=>({guard:1});S().player.f=1});await wait(300);await shot('ars02_tower_guard');await ev(()=>{window.__inp=()=>({})});mark('shields',1);
 ok('shields_block_absorb_and_parry_windows',SHD.buckler.g&&SHD.buckler.lost>0&&SHD.buckler.lost<20&&SHD.kite.lost<SHD.buckler.lost&&SHD.towershield.lost===0&&SHD.magicshield.fp>0&&SHD.towershield.stc<SHD.buckler.stc&&SHD.buckler.back>0
  &&SHD.buckler.win>SHD.kite.win&&SHD.towershield.win===0&&gb>0,{SHD,gb});
 await ev(()=>{const sv=S().sv;sv.eq.off=null;S().applyBuild(false)});
@@ -95,7 +96,7 @@ await wait(3000);const NA=await ev(async()=>{const s=S(),sv=s.sv;s.ars.reload=0;
 const MB=await ev(()=>{const s=S(),sv=s.sv;s.souls=sv.souls=9999;const a0=sv.ammo;s.menu={mode:'lmerch',sel:0,t:1,prev:{}};const buy=id=>{s.menu.sel=s.merchRows().findIndex(r=>r[0]===id);s.menuKey('ok')};
  sv.inv=sv.inv.filter(i=>i!=='flintlock');buy('ammo');buy('firebomb');buy('flintlock');const o={ammo:sv.ammo-a0,fb:sv.thr.firebomb,gun:sv.inv.includes('flintlock'),gone:!s.merchRows().some(r=>r[0]==='flintlock'),souls:9999-s.souls};s.menu=null;sv.gmag.flintlock=1;Save.write(sv);return o});
 await go('?play&mute&novideo&slot=1&continue');const SV=await ev(()=>{const sv=S().sv;return{ammo:sv.ammo,fb:sv.thr&&sv.thr.firebomb,mag:sv.gmag&&sv.gmag.flintlock,gun:sv.inv.includes('flintlock')}});
-ok('no_shot_clicks_merchant_and_save',NA.mag===0&&!NA.reload&&MB.ammo===12&&MB.fb===3&&MB.gun&&MB.gone&&MB.souls===3050&&SV.ammo>=12&&SV.fb===3&&SV.mag===1&&SV.gun,{NA,MB,SV});
+ok('no_shot_clicks_merchant_and_save',NA.mag===0&&!NA.reload&&MB.ammo===12&&MB.fb===3&&MB.gun&&MB.gone&&MB.souls===3400&&SV.ammo>=12&&SV.fb===3&&SV.mag===1&&SV.gun,{NA,MB,SV});
 await go('?play&mute&novideo&slot=1&continue');await setup();
 // ---------- 9. gamepad: D-pad down tap = throw, hold = cycle; LB = guard
 mark('pad');const PD=await ev(async()=>{const s=S(),sv=s.sv,P=s.player;window.__inp=null;equip('longsword');equip('kite','off');sv.thr={tknife:5,firebomb:3};sv.eq.q2='tknife';P.f=1;
@@ -122,6 +123,51 @@ ok('smith_infusion_menu_cost_and_element',IF.mode==='infuse'&&IF.inf==='fire'&&I
 mark('swings');const SW=await ev(async()=>{const s=S(),o={};for(const id of['katana','warhalberd','whip','scythe','twinblade','catalyst']){equip(id);s.stats.arsSwing={};const P=s.player;P.state='idle';P.f=1;await act({atkP:1},700);o[id]=Object.keys(s.stats.arsSwing)}return o});
 mark('swings',1);
 ok('distinct_swing_arcs',Object.values(SW).every(k=>k.length===1)&&new Set(Object.values(SW).map(k=>k[0])).size===6,SW);
+
+// ---------- 14. Tester r15 fixes
+mark('r15');
+const T15=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Promise(r=>setTimeout(r,ms));window.__fakePad=null;
+ // P1-1 throwable on the weapon AR scale: one knife <= ~1x a light attack
+ equip('longsword');tp(400);P.f=1;let e=dummy(20);let h=e.hp;await act({atkP:1},700);o.light=+(h-e.hp).toFixed(2);kill();
+ sv.thr={tknife:3};sv.eq.q2='tknife';e=dummy(60);h=e.hp;await act({throwP:1},700);o.knife=+(h-e.hp).toFixed(2);kill();
+ o.ar=s.build.ar;o.prices=Object.fromEntries(MERCH_STOCK.filter(r=>ARS.THROWN[r[0]]).map(r=>[r[0],r[1]]));
+ // P1-2 fire infusion total <= 1.5x plain; lightning stagger uptime < 30%; projectiles never riposte
+ const tot=async inf=>{sv.wup=sv.wup||{};sv.wup.longsword={...(sv.wup.longsword||{}),inf};if(!inf)delete sv.wup.longsword.inf;s.applyBuild(false);tp(400);P.f=1;const e=dummy(20);const h=e.hp;await act({atkP:1},700);await sl(2600);const d=h-e.hp;kill();return+d.toFixed(2)};
+ o.plain=await tot(null);o.fire=await tot('fire');sv.wup.longsword={};s.applyBuild(false);
+ equip('runepistol');sv.rune='lightning';tp(400);P.f=1;e=dummy(40);let st=0,fr=0;for(let i=0;i<40;i++){P.fp=P.fpMax;s.ars.reload=0;await act({atkP:1},150);if(e.state==='stag')st++;fr++}o.uptime=+(st/fr).toFixed(2);kill();
+ e=dummy(40);e.state='stag';e.t=0;h=e.hp;s.arsHitE(e,1,1,null);o.projOnStag=+(h-e.hp).toFixed(2);kill();
+ // P2-3 parked / other-room enemies are out of reach; shots end at the room cut
+ equip('longrifle');sv.ammo=9;const r=s.room;o.room=r&&[r.x0,r.x1];tp(r.x1-30);P.f=1;e=dummy(60);h=e.hp;delete sv.gmag.longrifle;await act({atkP:1},600);o.otherRoom=+(h-e.hp).toFixed(2);kill();
+ tp(400);P.f=1;e=dummy(60);e.parked=1;h=e.hp;delete sv.gmag.longrifle;s.ars.reload=0;await act({atkP:1},600);o.parked=+(h-e.hp).toFixed(2);e.parked=0;kill();
+ // P2-4 environment ignores the guard
+ equip('longsword');equip('towershield','off');window.__inp=()=>({guard:1});await sl(200);P.inv=0;P.hp=P.hpMax;const b0=s.stats.blocks||0;const a0=P.air;P.air=0;let h0=P.hp;s.hurtPlayer(8,P.x);o.drown=h0-P.hp;P.air=a0;P.inv=0;P.state='idle';
+ h0=P.hp;s.hurtPlayer(15,P.x-1);o.spike=h0-P.hp;P.inv=0;P.state='idle';await sl(100);h0=P.hp;s.hurtPlayer(20,P.x+20*P.f);o.front=h0-P.hp;o.envBlocks=(s.stats.blocks||0)-b0;P.inv=0;P.state='idle';
+ // P2-5 guard break: full hit, hurt stagger, guard stays down while held
+ window.__inp=()=>({});sv.eq.off=null;s.applyBuild(false);await sl(150);P.inv=0;P.hp=P.hpMax;h0=P.hp;s.hurtPlayer(16,P.x+20*P.f,{});const base=h0-P.hp;await sl(900);P.state='idle';P.inv=0;equip('kite','off');window.__inp=()=>({guard:1});P.hp=P.hpMax;await sl(200);P.st=1;P.inv=0;h0=P.hp;s.hurtPlayer(16,P.x+20*P.f,{});o.gb={lost:h0-P.hp,base,state:P.state};await sl(300);o.gb.heldGuard=!!P.guard;window.__inp=()=>({});await sl(150);P.st=P.stMax;window.__inp=()=>({guard:1});await sl(1000);o.gb.again=!!P.guard;window.__inp=()=>({});
+ P.hp=P.hpMax;sv.eq.off=null;s.applyBuild(false);
+ // P2-6 HUD: fresh gun shows a full magazine, top-right
+ delete sv.gmag.flintlock;equip('flintlock');await sl(150);o.hud=s.stats.arsHud;
+ // P2-7 balance data
+ o.bal={rune:[WEAPONS.runepistol.gun.mul,WEAPONS.runepistol.gun.fp],bb:[WEAPONS.blunderbuss.gun.mul,WEAPONS.blunderbuss.gun.spread],fl:WEAPONS.flintlock.gun.reload,whip:[WEAPONS.whip.light.reach,WEAPONS.whip.light.cost],hal:WEAPONS.warhalberd.base,scy:WEAPONS.scythe.sc};
+ // P3-8 / 9 / 12 / 13
+ o.keys=Object.values(MIRACLES).map(m=>m.key);const g=s.add.graphics();s.drawPause(g);o.pause=s.stats.pauseArs;o.pauseR=s.stats.pauseArsR;o.W=W;
+ s.menu={mode:'lmerch',sel:s.merchRows().findIndex(r=>r[0]==='ammo'),t:1,prev:{}};s.drawMenu0(g,g);o.merch=s.stats.merchTxt;
+ s.menu={mode:'infuse',id:'longsword',sel:1,t:1,prev:null};s.drawMenu0(g,g);o.inf=s.stats.infText;s.menu=null;g.destroy();o.desc=DESC.ammo[0];
+ // P3-10 D-pad Down while moving does not throw
+ window.__inp=null;sv.thr={tknife:3};sv.eq.q2='tknife';const pad=b=>({connected:true,buttons:Array.from({length:17},(_,i)=>({pressed:b.includes(i),value:b.includes(i)?1:0})),axes:[0,0,0,0]});
+ s.pb.setVelocityX(120);window.__fakePad=pad([13]);await sl(80);s.pb.setVelocityX(120);window.__fakePad=pad([]);await sl(200);o.padMoving=3-sv.thr.tknife;window.__fakePad=null;window.__inp=()=>({});tp(400);
+ // P3-11 reload cancelled by a weapon change
+ equip('flintlock');sv.ammo=5;sv.gmag.flintlock=0;s.ars.reload=0;s.gunReload('flintlock');await sl(100);equip('runepistol');o.reloadAfterSwap=s.ars.reload;P.fp=P.fpMax;const sh0=s.stats.shots||0;await act({atkP:1},300);o.runeFired=(s.stats.shots||0)-sh0;
+ return o});
+await shot('ars12_r15_hud');mark('r15',1);
+ok('p1_1_throwable_on_weapon_scale',T15.knife>0&&T15.knife<=T15.ar*1.2&&T15.prices.tknife>=600,T15);
+ok('p1_2_status_curve',T15.fire<=T15.plain*1.5&&T15.fire>T15.plain&&T15.uptime<.3&&T15.projOnStag===1,{plain:T15.plain,fire:T15.fire,up:T15.uptime,rip:T15.projOnStag});
+ok('p2_3_no_hits_in_other_rooms_or_parked',T15.otherRoom===0&&T15.parked===0,{room:T15.room,o:T15.otherRoom,p:T15.parked});
+ok('p2_4_env_ignores_guard',T15.drown>0&&T15.spike>0&&T15.front===0&&T15.envBlocks===1,{d:T15.drown,s:T15.spike,f:T15.front,b:T15.envBlocks});
+ok('p2_5_guard_break_punishes',T15.gb.lost===T15.gb.base&&T15.gb.base>0&&T15.gb.state==='hurt'&&!T15.gb.heldGuard&&T15.gb.again,T15.gb);
+ok('p2_6_hud_full_mag_top_right',T15.hud&&/MAG 1\/1/.test(T15.hud.s)&&T15.hud.y===22,T15.hud);
+ok('p2_7_balance',JSON.stringify(T15.bal)===JSON.stringify({rune:[.6,7],bb:[.9,.22],fl:1,whip:[22,20],hal:1.6,scy:{str:'B',dex:'C'}}),T15.bal);
+ok('p3_labels_pause_merch_infuse_pad_reload',T15.keys.every(k=>!/^[GTR]$/.test(k))&&T15.pause===3&&T15.pauseR<=T15.W&&/PISTOL SHOT/.test(T15.merch)&&T15.inf&&T15.inf.x+T15.inf.w<=312&&/12 PISTOL/.test(T15.desc)&&T15.padMoving===0&&T15.reloadAfterSwap===0&&T15.runeFired===1,{k:T15.keys,p:T15.pause,m:T15.merch,i:T15.inf,pm:T15.padMoving,r:T15.reloadAfterSwap,rf:T15.runeFired});
 await A.ctx.close();
 // ---------- 8. co-op: a guest's shot is mirrored on the host and its damage lands host-side
 const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&novideo&stage=ramparts&class=knight');
@@ -155,13 +201,13 @@ const ART=await AR.ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={};clear();for(
  const R=s.pxc.rig;o.bowArt=null;o.melee={};for(const id of['katana','whip','scythe','dagger','axe']){equip(id);P.f=1;await act({atkP:1},700);o.melee[id]=!!(R.arsW&&R.arsW.texture.key==='arsw_'+id)}
  o.gunFrames=[];for(const id of['flintlock','blunderbuss','handcannon','runepistol','lightxbow','longbow','bow']){equip(id);sv.ammo=9;delete sv.gmag[id];s.ars.reload=0;P.f=1;P.state='idle';dummy(60);let n=0;window.__inp=()=>(n++===0?{atkP:1}:{});
   for(let i=0;i<25;i++){await sl(30);o.gunFrames.push(+R.base.frame.name)}window.__inp=()=>({});await sl(900);for(const e of s.enemies)if(e.temp){e.dead=true;e.b.body.enable=false}}
- o.runeMuzzle=s.stats.arsMuzzle;o.badFrames=o.gunFrames.filter(f=>f>=16&&f<24).length;o.fx=s.stats.arsFxArt||0;
+ o.runeMuzzle=s.stats.arsMuzzle;o.edge=s.stats.arsEdgeSync||0;o.rim=s.stats.arsRim||0;o.badFrames=o.gunFrames.filter(f=>f>=16&&f<24).length;o.fx=s.stats.arsFxArt||0;
  equip('flintlock');sv.ammo=5;sv.gmag.flintlock=0;s.gunReload('flintlock');await sl(150);o.reloadOverlay=R.arsW&&R.arsW.texture.key;await sl(1500);
  equip('longsword');equip('towershield','off');window.__inp=()=>({guard:1});await sl(400);o.guardArt=R.arsS&&R.arsS.visible&&R.arsS.texture.key;window.__inp=()=>({});
  sv.thr={firebomb:3};sv.eq.q2='firebomb';P.f=1;dummy(95);await act({throwP:1},250);o.spin=(s.arsSpr&&s.arsSpr.size)||0;await sl(1200);
  const g=s.add.graphics();o.icon=WEAPART.icon(s,g,'blunderbuss',0,0,24);g.destroy();return o});
 await AR.shot('ars11_art_on');mark('art',1);await AR.ctx.close();
-ok('art_on_by_default_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.runeMuzzle==='muzzle_rune'&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
+ok('art_on_by_default_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.edge>0&&ART.rim>0&&ART.runeMuzzle==='muzzle_rune'&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
 ok('no_errors',errs.length===0,errs);
 const clip=(out,a,b)=>{let s='';for(let i=a;i<b;i++)s+=`file '${VD}/${String(i).padStart(5,'0')}.jpg'\nduration ${Math.min(.5,((FR[i+1]||FR[i]+100)-FR[i])/1000).toFixed(3)}\n`;fs.writeFileSync(VD+'/l.txt',s);
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${VD}/l.txt -vf "scale=640:360,fps=30" -c:v libx264 -pix_fmt yuv420p -crf 27 ${out}`)};
