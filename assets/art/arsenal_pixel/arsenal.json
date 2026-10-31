@@ -66,6 +66,34 @@
    "icon2x": "arsenal_pixel/icon_twinblade@2x.png"
   },
   {
+   "id": "dagger",
+   "file": "arsenal_pixel/weapon_dagger.png",
+   "icon": "arsenal_pixel/icon_dagger.png",
+   "icon2x": "arsenal_pixel/icon_dagger@2x.png",
+   "existing": true
+  },
+  {
+   "id": "spear",
+   "file": "arsenal_pixel/weapon_spear.png",
+   "icon": "arsenal_pixel/icon_spear.png",
+   "icon2x": "arsenal_pixel/icon_spear@2x.png",
+   "existing": true
+  },
+  {
+   "id": "axe",
+   "file": "arsenal_pixel/weapon_axe.png",
+   "icon": "arsenal_pixel/icon_axe.png",
+   "icon2x": "arsenal_pixel/icon_axe@2x.png",
+   "existing": true
+  },
+  {
+   "id": "staff",
+   "file": "arsenal_pixel/weapon_staff.png",
+   "icon": "arsenal_pixel/icon_staff.png",
+   "icon2x": "arsenal_pixel/icon_staff@2x.png",
+   "existing": true
+  },
+  {
    "id": "catalyst",
    "file": "arsenal_pixel/weapon_catalyst.png",
    "icon": "arsenal_pixel/icon_catalyst.png",
@@ -159,6 +187,13 @@
    "reloadFrames": 3,
    "reloadFps": 6,
    "reloadBaseFrame": 0
+  },
+  {
+   "id": "bow",
+   "file": "arsenal_pixel/weapon_bow.png",
+   "icon": "arsenal_pixel/icon_bow.png",
+   "icon2x": "arsenal_pixel/icon_bow@2x.png",
+   "existing": true
   },
   {
    "id": "longbow",
@@ -304,7 +339,21 @@
     0,
     0.5
    ],
-   "use": "flintlock, runepistol (tint frame 0 by element optional)"
+   "use": "flintlock"
+  },
+  "muzzle_rune": {
+   "file": "arsenal_pixel/fx_muzzle_rune.png",
+   "frame": [
+    16,
+    16
+   ],
+   "frames": 3,
+   "fps": 20,
+   "origin": [
+    0,
+    0.5
+   ],
+   "use": "runepistol (replaces muzzle_small)"
   },
   "muzzle_medium": {
    "file": "arsenal_pixel/fx_muzzle_medium.png",

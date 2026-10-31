@@ -169,7 +169,8 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
 // Pad (read straight from navigator.getGamepads, so gamepad.js stays untouched): D-pad DOWN tap = throw, hold 0.4 s = next throwable,
 // LB held = shield guard (LB tap still parries via gamepad.js). Touch: THR (throw), GRD (hold guard), RLD (reload) buttons.
 ARS.INF_COST={heavy:[1,1000],sharp:[1,1000],fire:[2,2000],frost:[2,2000],lightning:[2,2000],dark:[3,3000],holy:[3,3000]};// [Ember Shards, souls]
-ARS.INF_FX={heavy:{stat:'str',mul:1.1},sharp:{stat:'dex',mul:1.1},fire:{mul:1,elem:'fire'},frost:{mul:1,elem:'frost'},lightning:{mul:1,elem:'lightning'},dark:{mul:1.05,elem:'frost'},holy:{mul:1.05,elem:'lightning'}};
+// infusions: heavy/sharp scale with the matching stat; fire/frost/lightning add a flat +0.15 AR and their status (burn/slow/stagger); dark/holy x1.05
+ARS.INF_FX={heavy:{stat:'str',mul:1.1},sharp:{stat:'dex',mul:1.1},fire:{mul:1,add:.15,elem:'fire'},frost:{mul:1,add:.15,elem:'frost'},lightning:{mul:1,add:.15,elem:'lightning'},dark:{mul:1.05,elem:'frost'},holy:{mul:1.05,elem:'lightning'}};
 // swing styles drawn over the generic slash (one per new moveset)
 ARS.SWING={katana:{k:'crescent',col:0xd8f0ff},warhalberd:{k:'thrust',col:0xe8d8b8},whip:{k:'lash',col:0xc89060},scythe:{k:'reap',col:0xb070ff},twinblade:{k:'twin',col:0xffd070},catalyst:{k:'runes',col:0x9fd8ff}};
 ARS.SPRITE_KEYS=[...Object.keys(ARS.MELEE),...Object.keys(ARS.RANGED),...Object.keys(ARS.GUNS),...Object.keys(ARS.SHIELDS),...Object.keys(ARS.THROWN)];
@@ -186,7 +187,7 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  SP.arsDrawShield=function(g,ga,x,y,f,id){const S=WEAPONS[id];if(!S||!S.shield||this.arsArtHas('arss_',id))return;const sx=Math.round(x+f*7);const h=S.shield.abs>=1?16:S.shield.parry>.12?7:12;g.fillStyle(S.shield.magic?0x6a5ab8:0x7a6a58);g.fillRect(sx-1,Math.round(y-6-h),3,h);g.fillStyle(0xd8c8a0);g.fillRect(sx-1,Math.round(y-6-h),3,1);if(S.shield.magic)glow(ga,sx,y-12,10,0xb8a8ff,.2)};
  // ---- smith infusions (opened from the smith menu with RIGHT on a weapon) ----
  RPG.derive=(d0=>function(st,eq,...a){const d=d0.call(this,st,eq,...a);const sv=typeof SMITH!=='undefined'&&SMITH.cur;const inf=sv&&eq&&eq.main&&((sv.wup||{})[eq.main]||{}).inf,F=inf&&ARS.INF_FX[inf];
-  if(d&&F){const ok=!F.stat||(F.stat==='str'?st.str>=st.dex:st.dex>st.str);if(ok)d.ar*=F.mul}return d})(RPG.derive);
+  if(d&&F){const ok=!F.stat||(F.stat==='str'?st.str>=st.dex:st.dex>st.str);if(ok)d.ar=d.ar*F.mul+(F.add||0)}return d})(RPG.derive);
  SP.arsInfuse=function(id,inf){const sv=this.sv;sv.wup=sv.wup||{};const cur=(sv.wup[id]||{}).inf||null;if(inf===cur)return'SAME';if(inf){const[e,s]=ARS.INF_COST[inf];if((sv.embers||0)<e)return'SHARDS';if(this.souls<s)return'SOULS';sv.embers-=e;this.souls-=s;sv.souls=this.souls}
   sv.wup[id]={...(sv.wup[id]||{}),inf:inf||undefined};if(!inf)delete sv.wup[id].inf;Save.write(sv);SMITH.cur=sv;this.applyBuild(false);this.stats.infusions=(this.stats.infusions||0)+1;return'OK'};
  const mk=SP.menuKey;SP.menuKey=function(k){const M=this.menu;
@@ -222,6 +223,7 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
 
 // ===================== r3: Artist's arsenal art (assets/art/arsenal_pixel/arsenal.json) — behind an art flag, default OFF =====================
 // ON with ?arsart=1 (or localStorage ashenVigil.arsArt='1'; ?arsart=0 forces off) and the pixel hero (PIXCH) on. Missing textures -> placeholders.
+// Pass 2 adds existing dagger/spear/axe/staff/bow (existing:true) and fx muzzle_rune for the rune pistol.
 // In hand: hero_strip_noblade base + weapon_<id> 46x46x30 overlay frame-for-frame; guns/bows/crossbows never show attack frames 16-23
 // (sword baked in): the base holds idle frame 0 and recoil/flash/smoke sell the shot. Shields: shield_<id> (30f) / shield_<id>_guard (2f, 4fps)
 // after the hero. Reload: hero_reload_powder (6f, 8fps) over frame 0 with the gun hidden; crossbows reload_<id> (3f, 6fps).
@@ -239,8 +241,8 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
   const sp=this.add.sprite(Math.round(x),Math.round(y),key,0).setOrigin(f<0?1-F.origin[0]:F.origin[0],F.origin[1]).setFlipX(f<0).setDepth(7);if(o&&o.tint)sp.setTint(o.tint);sp.play(key);sp.once('animationcomplete',()=>sp.destroy());this.stats.arsFxArt=(this.stats.arsFxArt||0)+1;return sp};
  // muzzle / smoke / impacts / whip arc
  const gf=SP.gunFire;SP.gunFire=function(W,id){gf.call(this,W,id);if(!this.arsArtHas('arsw_',id))return;const P=this.player,f=P.f,G=W.gun,it=(ARS.ART.guns||[]).find(q=>q.id===id),mz=it&&it.muzzle||[12,1];
-  const k=G.recoil>200?'muzzle_large':G.pellets>1||G.spd>800?'muzzle_medium':'muzzle_small';const x=P.x+f*(4+mz[0]),y=P.y-12+mz[1];
-  if(this.arsFxSprite(k,x,y,f,{tint:G.rune?ARS.ELEM[this.sv.rune||'fire']:null})){this.arsFx=(this.arsFx||[]).filter(q=>q.k!=='flash'&&q.k!=='smoke');this.arsFxSprite('smoke_puff',x+f*4,y-2,f)}};
+  const k=G.rune&&this.arsArtHas('arsfx_','muzzle_rune')?'muzzle_rune':G.recoil>200?'muzzle_large':G.pellets>1||G.spd>800?'muzzle_medium':'muzzle_small';this.stats.arsMuzzle=k;const x=P.x+f*(4+mz[0]),y=P.y-12+mz[1];
+  if(this.arsFxSprite(k,x,y,f,{tint:G.rune&&k!=='muzzle_rune'?ARS.ELEM[this.sv.rune||'fire']:null})){this.arsFx=(this.arsFx||[]).filter(q=>q.k!=='flash'&&q.k!=='smoke');this.arsFxSprite('smoke_puff',x+f*4,y-2,f)}};
  const bl=SP.arsBlast;SP.arsBlast=function(p){bl.call(this,p);if(p.elem)this.arsFxSprite('impact_'+p.elem,p.x,p.y-4,1)};
  const sa=SP.startAtk;SP.startAtk=function(hv,combo,on){const r=sa.call(this,hv,combo,on);if(this.sv.eq.main==='whip'&&this.player.state==='atk'&&this.arsArtHas('arsfx_','whip_arc'))this.arsFxSprite('whip_arc',this.player.x+this.player.f*4,this.player.y-10,this.player.f);return r};
  // thrown spin sprites follow their projectiles
@@ -256,7 +258,7 @@ if(typeof WEAPART!=='undefined'){
   wo.call(this,s,R,mine?null:id,flash,tint);const B=R.base;
   const tf=sp=>{if(flash)sp.setTintFill(0xffffff);else if(tint!=null)sp.setTint(tint);else sp.clearTint()};
   const off=local?s.sv&&s.sv.eq&&s.sv.eq.off:Rm&&Rm.off,guard=local?s.player&&s.player.guard:Rm&&Rm.gd;
-  if(mine&&B.visible){if(B.texture.key!=='av_hero_nb')B.setTexture('av_hero_nb',B.frame.name);const W=WEAPONS[id],ranged=!!(W.gun||ARS.RANGED[id]);let fr=+B.frame.name;if(ranged&&fr>=16&&fr<24){fr=0;B.setFrame(0)}
+  if(mine&&B.visible){if(B.texture.key!=='av_hero_nb')B.setTexture('av_hero_nb',B.frame.name);const W=WEAPONS[id],ranged=!!(W.gun||W.type==='bow'||ARS.RANGED[id]);let fr=+B.frame.name;if(ranged&&fr>=16&&fr<24){fr=0;B.setFrame(0)}
    const rl=local&&W.gun&&s.ars&&s.ars.reload>0,xr=local&&/xbow/.test(id)&&s.player.state==='atk'&&s.player.t>.12&&s.textures.exists('arsr_'+id);
    let w=R.arsW;const key=xr?'arsr_'+id:rl?'arsfx_gun_reload':'arsw_'+id;if(!w||w.texture.key!==key){if(w)w.destroy();w=R.arsW=s.add.sprite(0,0,key,0).setOrigin(B.originX,B.originY)}
    const wf=xr?Math.min(2,Math.floor((s.player.t-.12)*6)):rl?Math.floor(s.t*8)%6:fr;if(xr||rl)B.setFrame(0);

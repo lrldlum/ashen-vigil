@@ -137,9 +137,9 @@ const cc=await H.ev(()=>({st:S().chests.find(c=>c.id==='ch_b1').st,ids:S().drops
 const gl=await G.ev(()=>S().sv.looted||0);// the guest may already have auto-picked a drop it was standing on
 await H.shot('g13_coop_host_chest');await G.shot('g14_coop_guest_chest');
 ok('coop_bell_and_chest_host_authoritative',cb.every(Boolean)&&cc.st==='open'&&gc.st==='open'&&cc.ids.join()===gc.ids.join()&&cc.ids.length+gl>=2,{cb,cc,gc});
-await G.ev(()=>{const s=S();s.drops.forEach(d=>d.t=1);const d=s.drops[0];tp(d.x,d.y)});await wait(1200);const gp=[await H.ev(()=>S().drops.length),await G.ev(()=>S().drops.length),await G.ev(()=>S().sv.looted||0)];
+await G.ev(()=>{const s=S();s.drops.forEach(d=>d.t=1);const d=s.drops[0];if(d)tp(d.x,d.y)});await wait(1200);const gp=[await H.ev(()=>S().drops.length),await G.ev(()=>S().drops.length),await G.ev(()=>S().sv.looted||0)];
 ok('coop_guest_picks_drop_removed_on_both',gp[0]<=cc.ids.length&&gp[1]===gp[0]&&gp[2]>=1,{gp});
-const kd=await H.ev(async()=>{const s=S();s.drops.length=0;const e=s.spawnEnemy('sentinel',s.player.x+30,156);e.temp=1;let tries=0;while(!s.drops.length&&tries<40){const e2=s.spawnEnemy('sentinel',s.player.x+30,156);e2.temp=1;s.damageEnemy(e2,999,1);tries++}return s.drops.map(d=>d.id)});await wait(800);
+const kd=await H.ev(async()=>{const s=S();s.drops.length=0;const e=s.spawnEnemy('sentinel',s.player.x+30,156);e.temp=1;let tries=0;while(!s.drops.length&&tries<40){const e2=s.spawnEnemy('sentinel',s.player.x+30,156);e2.temp=1;s.damageEnemy(e2,999,1);tries++}return s.drops.map(d=>d.id)});await G.pg.waitForFunction(ids=>ids.every(i=>S().drops.some(d=>d.id===i)),kd,{timeout:5000}).catch(()=>{});// relay can lag under box load: poll instead of a fixed 800 ms
 const kg=await G.ev(()=>S().drops.map(d=>d.id));ok('coop_monster_drop_synced',kd.length>=1&&kd.every(i=>kg.includes(i)),{kd,kg});
 await G.ev(()=>tp(2488));await H.ev(()=>tp(2420));await wait(400);await G.ev(()=>press('restP'));await wait(1500);
 const mm=[await H.ev(()=>S().chests.find(c=>c.id==='ch_b5').st),await G.ev(()=>S().chests.find(c=>c.id==='ch_b5').st)];

@@ -117,7 +117,7 @@ mark('infuse');const IF=await ev(async()=>{const s=S(),sv=s.sv,o={};equip('katan
  o.inf=(sv.wup.katana||{}).inf;o.embers=sv.embers;o.souls=s.souls;s.applyBuild(false);o.ar=[ar0,s.build.ar];o.poor=(sv.embers=0,s.arsInfuse('katana','dark'));s.menu=null;Save.write(sv);
  const P=s.player;P.f=1;P.state='idle';const e=dummy(20);s.stats.infHits=0;await act({atkP:1},700);o.burn=(e.burn||0)>0;o.hits=s.stats.infHits;kill();return o});
 await shot('ars09_infused');mark('infuse',1);
-ok('smith_infusion_menu_cost_and_element',IF.mode==='infuse'&&IF.inf==='fire'&&IF.embers===3&&IF.souls===7000&&IF.poor==='SHARDS'&&IF.burn&&IF.hits>0&&IF.ar[1]>0,IF);
+ok('smith_infusion_menu_cost_and_element',IF.mode==='infuse'&&IF.inf==='fire'&&IF.embers===3&&IF.souls===7000&&IF.poor==='SHARDS'&&IF.burn&&IF.hits>0&&Math.abs(IF.ar[1]-IF.ar[0]-.15)<.01,IF);
 // ---------- 12. distinct swing arcs
 mark('swings');const SW=await ev(async()=>{const s=S(),o={};for(const id of['katana','warhalberd','whip','scythe','twinblade','catalyst']){equip(id);s.stats.arsSwing={};const P=s.player;P.state='idle';P.f=1;await act({atkP:1},700);o[id]=Object.keys(s.stats.arsSwing)}return o});
 mark('swings',1);
@@ -151,17 +151,17 @@ const ART=await AR.ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={};clear();for(
  window.dummy=(dx=40)=>{const e=s.spawnEnemy('acolyte',P.x+dx,150);e.hp=999;e.temp=1;e.cd=99;e.state='idle';e.b.setPosition(P.x+dx,149);e.b.setVelocity(0,0);e.b.body.moves=false;return e};
  window.equip=(id,slot='main')=>{if(!sv.inv.includes(id))sv.inv.push(id);sv.eq[slot]=id;s.applyBuild(false);P.st=P.stMax;P.fp=P.fpMax};const sl=ms=>new Promise(r=>setTimeout(r,ms));
  const act=async(x,ms)=>{let n=0;window.__inp=()=>(n++===0?x:{});await sl(ms);window.__inp=()=>({})};tp(400);
- o.manifest=!!ARS.ART;const ids=[...Object.keys(ARS.MELEE),...Object.keys(ARS.GUNS),...Object.keys(ARS.RANGED)];o.missing=ids.filter(i=>!s.textures.exists('arsw_'+i)).concat(Object.keys(ARS.SHIELDS).filter(i=>!s.textures.exists('arss_'+i)),Object.keys(ARS.THROWN).filter(i=>!s.textures.exists('arst_'+i)));
- const R=s.pxc.rig;o.melee={};for(const id of['katana','whip','scythe']){equip(id);P.f=1;await act({atkP:1},700);o.melee[id]=!!(R.arsW&&R.arsW.texture.key==='arsw_'+id)}
- o.gunFrames=[];for(const id of['flintlock','blunderbuss','handcannon','lightxbow','longbow']){equip(id);sv.ammo=9;delete sv.gmag[id];s.ars.reload=0;P.f=1;P.state='idle';dummy(60);let n=0;window.__inp=()=>(n++===0?{atkP:1}:{});
+ o.manifest=!!ARS.ART;const ids=[...Object.keys(ARS.MELEE),...Object.keys(ARS.GUNS),...Object.keys(ARS.RANGED),'dagger','spear','axe','staff','bow'];o.missing=ids.filter(i=>!s.textures.exists('arsw_'+i)).concat(Object.keys(ARS.SHIELDS).filter(i=>!s.textures.exists('arss_'+i)),Object.keys(ARS.THROWN).filter(i=>!s.textures.exists('arst_'+i)));
+ const R=s.pxc.rig;o.bowArt=null;o.melee={};for(const id of['katana','whip','scythe','dagger','axe']){equip(id);P.f=1;await act({atkP:1},700);o.melee[id]=!!(R.arsW&&R.arsW.texture.key==='arsw_'+id)}
+ o.gunFrames=[];for(const id of['flintlock','blunderbuss','handcannon','runepistol','lightxbow','longbow','bow']){equip(id);sv.ammo=9;delete sv.gmag[id];s.ars.reload=0;P.f=1;P.state='idle';dummy(60);let n=0;window.__inp=()=>(n++===0?{atkP:1}:{});
   for(let i=0;i<25;i++){await sl(30);o.gunFrames.push(+R.base.frame.name)}window.__inp=()=>({});await sl(900);for(const e of s.enemies)if(e.temp){e.dead=true;e.b.body.enable=false}}
- o.badFrames=o.gunFrames.filter(f=>f>=16&&f<24).length;o.fx=s.stats.arsFxArt||0;
+ o.runeMuzzle=s.stats.arsMuzzle;o.badFrames=o.gunFrames.filter(f=>f>=16&&f<24).length;o.fx=s.stats.arsFxArt||0;
  equip('flintlock');sv.ammo=5;sv.gmag.flintlock=0;s.gunReload('flintlock');await sl(150);o.reloadOverlay=R.arsW&&R.arsW.texture.key;await sl(1500);
  equip('longsword');equip('towershield','off');window.__inp=()=>({guard:1});await sl(400);o.guardArt=R.arsS&&R.arsS.visible&&R.arsS.texture.key;window.__inp=()=>({});
  sv.thr={firebomb:3};sv.eq.q2='firebomb';P.f=1;dummy(95);await act({throwP:1},250);o.spin=(s.arsSpr&&s.arsSpr.size)||0;await sl(1200);
  const g=s.add.graphics();o.icon=WEAPART.icon(s,g,'blunderbuss',0,0,24);g.destroy();return o});
 await AR.shot('ars11_art_on');mark('art',1);await AR.ctx.close();
-ok('art_flag_on_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
+ok('art_flag_on_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.runeMuzzle==='muzzle_rune'&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
 ok('no_errors',errs.length===0,errs);
 const clip=(out,a,b)=>{let s='';for(let i=a;i<b;i++)s+=`file '${VD}/${String(i).padStart(5,'0')}.jpg'\nduration ${Math.min(.5,((FR[i+1]||FR[i]+100)-FR[i])/1000).toFixed(3)}\n`;fs.writeFileSync(VD+'/l.txt',s);
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${VD}/l.txt -vf "scale=640:360,fps=30" -c:v libx264 -pix_fmt yuv420p -crf 27 ${out}`)};
