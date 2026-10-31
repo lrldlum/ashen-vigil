@@ -26,7 +26,7 @@ ok('items_menu_lists_inventory_spells_flask',R.itemsMenu.mode==='items'&&['longs
 // 2. lore stones: 3 per stage + the shrine, readable, saved
 R.loreCount=await ev(()=>({total:Object.keys(LORE).length,per:Object.fromEntries(Object.entries(STAGE_DEFS).map(([k,d])=>[k,(d.lore||[]).length]))}));
 await ev(()=>{tp(420);idle()});await wait(200);await shot('e03_lore_stone_prompt');await ev(()=>press('restP'));await wait(400);await shot('e04_lore_stone_read');
-R.lore=await ev(()=>({view:S().loreView&&S().loreView.id,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).lore}));await ev(()=>press('jumpP'));await wait(300);R.loreClosed=await ev(()=>!S().loreView);
+R.lore=await ev(()=>({view:S().loreView&&S().loreView.id,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v2')).lore}));await ev(()=>press('jumpP'));await wait(300);R.loreClosed=await ev(()=>!S().loreView);
 ok('lore_scattered_and_readable',R.loreCount.total===10+(R.loreCount.per.belltower||0)+(R.loreCount.per.catacomb||0)+(R.loreCount.per.drowned||0)+(R.loreCount.per.keep||0)+(R.loreCount.per.spire||0)+(R.loreCount.per.cloister||0)+(R.loreCount.per.throne||0)&&R.loreCount.per.ramparts===3&&R.loreCount.per.cathedral===3&&R.loreCount.per.cinderdeep===3&&R.loreCount.per.shrine===1&&R.lore.view==='r1'&&R.lore.saved.includes('r1')&&R.loreClosed,{...R.loreCount,...R.lore,closed:R.loreClosed});
 // 3. hub between stages: stage 1 lord -> REST AT THE ASH SHRINE -> hub -> exit -> stage 2
 await ev(()=>{S().souls=4000;tp(3020,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000});await ev(()=>{S().boss.hp=0});await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});
@@ -42,7 +42,7 @@ ok('keeper_dialogue_changes_with_progress',R.talk1.mode==='talk'&&R.talk1.tier==
 // 5. merchant
 await ev(()=>{const s=S();s.menu={mode:'keeper',sel:1,t:0,prev:{}};s.souls=5000;s.menuKey('ok')});await wait(200);await shot('e08_keeper_merchant');
 R.buy=await ev(()=>{const s=S(),L=s.shopList(),i=L.findIndex(x=>x[0]==='talisman');s.menu.sel=i;const s0=s.souls;s.menuKey('ok');const j=s.shopList().findIndex(x=>x[0]==='lspear');s.menu.sel=j;s.menuKey('ok');const f0=s.player.flasks;s.menu.sel=s.shopList().findIndex(x=>x[0]==='flask');s.menuKey('ok');
- return{spent:s0-s.souls,inv:s.sv.inv.filter(i=>['talisman','lspear'].includes(i)),flaskBonus:s.sv.flaskBonus,flasks:s.player.flasks-f0,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).inv.includes('talisman'),poor:(s.souls=0,s.menu.sel=0,s.menuKey('ok'),s.menu.say)}});
+ return{spent:s0-s.souls,inv:s.sv.inv.filter(i=>['talisman','lspear'].includes(i)),flaskBonus:s.sv.flaskBonus,flasks:s.player.flasks-f0,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v2')).inv.includes('talisman'),poor:(s.souls=0,s.menu.sel=0,s.menuKey('ok'),s.menu.say)}});
 await wait(150);await shot('e09_merchant_not_enough_souls');await ev(()=>{S().menu=null});
 ok('merchant_sells_items_for_souls',R.buy.spent===600+1200+2000&&R.buy.inv.length===2&&R.buy.flaskBonus===1&&R.buy.flasks===0&&/* r5: a bought flask arrives at the next rest */R.buy.saved&&/LACK/.test(R.buy.poor),R.buy);
 // 6. hub leveling at the shrine bonfire
@@ -56,7 +56,7 @@ await ev(()=>{const s=S();s.menu.sel=s.mainOpts().indexOf('TRAVEL TO HOME');s.me
 await ev(()=>{idle();S().menu=null;tp(S().def.exit)});await wait(250);await ev(()=>press('restP'));await wait(1500);await ready();R.back2=await ev(()=>({sid:S().sid,x:Math.round(S().player.x),bonfire:S().bonfire.x}));
 ok('shrine_exit_and_bonfire_travel',R.exit.sid==='cathedral'&&R.exit.inv&&R.travelOpt.includes('TRAVEL TO HOME')&&R.back.sid==='shrine'&&R.back.next==='cathedral'&&R.back2.sid==='cathedral'&&Math.abs(R.back2.x-R.back2.bonfire)<30,{exit:R.exit,opts:R.travelOpt,back:R.back,back2:R.back2});
 // 7. faith miracles scale with FTH
-await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await go('?play&mute&novideo&slot=3&class=cleric');
+await ev(()=>(localStorage.removeItem('ashenVigil.save.v1.s3'),localStorage.removeItem('ashenVigil.save.v2.s3')));await go('?play&mute&novideo&slot=3&class=cleric');
 R.mir=await ev(()=>new Promise(async res=>{const s=S(),P=s.player,o={};const w=ms=>new Promise(r=>setTimeout(r,ms));arena();
  const heal=async f=>{s.sv.stats.fth=f;s.applyBuild(false);P.hp=20;P.fp=999;P.state='idle';press('healP');await w(700);return P.hp-20};o.inv=s.sv.inv.filter(i=>MIRACLES[i]);o.off=s.sv.eq.off;
  o.heal16=await heal(16);o.heal40=await heal(40);
@@ -85,14 +85,14 @@ await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});
 R.choice=await ev(()=>({phase:S().victory.phase,opts:S().victoryOpts()}));await pg.keyboard.press('ArrowDown');await wait(200);await shot('e18_choice_let_it_fade');await pg.keyboard.press('Enter');
 await pg.waitForFunction(()=>__G.scene.isActive('ending'),null,{timeout:8000});await wait(4500);await shot('e19_fade_cinematic');await wait(4000);await shot('e20_fade_cinematic_late');
 await pg.waitForFunction(()=>__G.scene.getScene('ending').card&&__G.scene.getScene('ending').card.t>.8,null,{timeout:8000});await shot('e21_fade_end_card');
-R.fade=await ev(()=>({kind:__G.scene.getScene('ending').kind,endings:JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).endings}));
+R.fade=await ev(()=>({kind:__G.scene.getScene('ending').kind,endings:JSON.parse(localStorage.getItem('ashenVigil.save.v2.s3')).endings}));
 await pg.keyboard.press('Enter');await wait(1500);await ready();R.ng=await ev(()=>({sid:S().sid,ng:S().ng,endings:S().sv.endings,lore:S().sv.lore.length}));
 await pg.goto(B+'?mute&slot=3&ending=rekindle');await wait(5200);await shot('e22_rekindle_cinematic');await wait(3500);await shot('e23_rekindle_cinematic_late');await pg.keyboard.press('Enter');await wait(900);await shot('e24_rekindle_end_card');
-R.rek=await ev(()=>({kind:__G.scene.getScene('ending').kind,card:!!__G.scene.getScene('ending').card,endings:JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).endings}));
+R.rek=await ev(()=>({kind:__G.scene.getScene('ending').kind,card:!!__G.scene.getScene('ending').card,endings:JSON.parse(localStorage.getItem('ashenVigil.save.v2.s3')).endings}));
 await pg.keyboard.press('ArrowDown');await wait(150);await pg.keyboard.press('Enter');await wait(1500);R.title=await ev(()=>__G.scene.isActive('title'));
 ok('two_endings_with_cinematic_and_card',R.final[0]==='APPROACH THE FIRST FLAME'&&R.choice.phase==='choose'&&R.choice.opts.length===2&&R.fade.kind==='fade'&&R.fade.endings.includes('fade')&&R.ng.sid==='ramparts'&&R.ng.ng===1&&R.ng.endings.includes('fade')&&R.rek.kind==='rekindle'&&R.rek.card&&R.rek.endings.includes('rekindle')&&R.title,{final:R.final,choice:R.choice,fade:R.fade,ng:R.ng,rek:R.rek,title:R.title});
 // keeper's post-ending line
-await ev(()=>{const k='ashenVigil.save.v1.s3',s=JSON.parse(localStorage.getItem(k));s.stage='shrine';localStorage.setItem(k,JSON.stringify(s))});await go('?play&continue&mute&slot=3');R.tier3=await ev(()=>S().keeperTier());await ev(()=>{tp(S().def.keeper-6);idle()});await wait(250);await ev(()=>press('restP'));await wait(300);await ev(()=>{S().menuKey('ok');S().menu.t=99});await wait(200);await shot('e25_keeper_after_ending');
+await ev(()=>{const k='ashenVigil.save.v2.s3',s=JSON.parse(localStorage.getItem(k));s.stage='shrine';localStorage.setItem(k,JSON.stringify(s))});await go('?play&continue&mute&slot=3');R.tier3=await ev(()=>S().keeperTier());await ev(()=>{tp(S().def.keeper-6);idle()});await wait(250);await ev(()=>press('restP'));await wait(300);await ev(()=>{S().menuKey('ok');S().menu.t=99});await wait(200);await shot('e25_keeper_after_ending');
 ok('keeper_remembers_endings',R.tier3===3,R.tier3);
 ok('no_page_errors_no_external_requests',errs.length===0&&ext.length===0,{errs,ext});
 console.log(`PASS ${pass} / ${pass+fail}`);await br.close();

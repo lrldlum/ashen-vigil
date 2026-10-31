@@ -8,7 +8,7 @@ const errs=[];pg.on('pageerror',e=>errs.push(e.message));const wait=ms=>pg.waitF
 import fs from 'fs';fs.mkdirSync('screenshots/r4fix',{recursive:true});
 await pg.goto(B+'assets/README.md');await pg.evaluate(()=>{localStorage.clear();localStorage.setItem('ashenVigil.save.v1',JSON.stringify({cls:'knight',stage:'ramparts',souls:111}))});
 // 1. title erase
-await pg.goto(B+'?mute');await wait(1600);const has=()=>pg.evaluate(()=>!!localStorage.getItem('ashenVigil.save.v1'));
+await pg.goto(B+'?mute');await wait(1600);const has=()=>pg.evaluate(()=>!!localStorage.getItem('ashenVigil.save.v2'));
 for(let i=0;i<4;i++){await pg.keyboard.press('x');await wait(120)}const afterX=await has();
 await pg.keyboard.press('Delete');await wait(150);const prompt=await pg.evaluate(()=>__G.scene.getScene('title').erase);await pg.screenshot({path:'screenshots/r4fix/erase_prompt.png'});
 await pg.keyboard.press('x');await wait(150);const cancelled=await pg.evaluate(()=>__G.scene.getScene('title').erase)===-1&&await has();

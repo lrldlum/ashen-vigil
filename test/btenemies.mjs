@@ -16,7 +16,7 @@ const ic=await S(async()=>{const e=s.enemies.find(e=>e.k==='ringer'&&!e.dead);s.
 ok('ringer_swing_drop_icicles',ic.saw&&ic.n===5,ic);await pg.screenshot({path:'screenshots/btenemies/ringer_icicles.png'});
 await pg.waitForTimeout(1500);ok('icicles_land',await S(()=>(s.icicles||[]).length===0));
 // bats split when you roll into them
-const sp=await S(async()=>{const e=s.enemies.find(e=>e.k==='bellbats'&&!e.dead);s.pb.setPosition(e.b.x-20,e.b.y);s.player.state='roll';await new Promise(r=>setTimeout(r,120));return e.splitT>0});ok('bats_split_on_roll',sp);
+const sp=await S(async()=>{const e=s.enemies.find(e=>e.k==='bellbats'&&!e.dead);s.pb.setPosition(e.b.x-20,e.b.y);await new Promise(r=>setTimeout(r,400));let ok=0;for(let i=0;i<10&&!ok;i++){s.player.state='roll';await new Promise(r=>setTimeout(r,30));ok=e.splitT>0}return{ok,parked:e.parked,dx:Math.round(s.player.x-e.b.x),st:s.player.state}});ok('bats_split_on_roll',sp&&sp.ok,sp);
 // kill: death strip plays then sprite hides
 const dd=await S(async()=>{const e=s.enemies.find(e=>e.k==='clapper'&&!e.dead);s.pb.setPosition(e.b.x-70,e.b.y-20);e.hp=0;try{s.hitEnemy(e,99,1)}catch(x){e.dead=true;e.deadT=0}await new Promise(r=>setTimeout(r,250));const mid=e.anN;await new Promise(r=>setTimeout(r,1200));return{mid,dead:e.dead,vis:e.spr.visible}});
 ok('death_strip_then_hidden',dd.dead&&dd.mid==='death'&&!dd.vis,dd);

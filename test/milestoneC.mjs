@@ -26,7 +26,7 @@ await ev(()=>{S().pb.setPosition(3020,140)});await pg.waitForFunction(()=>S().bo
 await ev(()=>{S().boss.hp=0});await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});
 R.card1=await ev(()=>({clear:S().victory.clear,next:S().def.next}));await pg.screenshot({path:S+'c01_stage1_clear_card.png'});
 await pg.keyboard.press('Enter');await wait(1500);await ready();
-R.link12=await ev(()=>({sid:S().sid,name:S().def.name,save:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).stage}));
+R.link12=await ev(()=>({sid:S().sid,name:S().def.name,save:JSON.parse(localStorage.getItem('ashenVigil.save.v2')).stage}));
 ok('link_stage1_to_stage2',R.card1.clear&&R.card1.next==='cathedral'&&R.link12.sid==='cathedral'&&R.link12.save==='cathedral',{...R.card1,...R.link12});
 const ST={cathedral:{pre:'s2',pr:1700,cr:2380,tw:200,os:1000,n:2},cinderdeep:{pre:'s3',pr:900,cr:300,tw:2200,os:1950,n:3}};
 async function stage(sid){const T=ST[sid],p=T.pre,sh=(n)=>pg.screenshot({path:`${S}c${T.n}_${n}.png`});const r={};
@@ -96,7 +96,7 @@ async function stage(sid){const T=ST[sid],p=T.pre,sh=(n)=>pg.screenshot({path:`$
  if(sid==='cinderdeep')r.opts=await ev(()=>S().victoryOpts());
  await wait(1500);await ready()}
 await stage('cathedral');
-R.link23=await ev(()=>({sid:S().sid,freed:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).freed.filter(i=>i.startsWith('s2_')).length}));
+R.link23=await ev(()=>({sid:S().sid,freed:JSON.parse(localStorage.getItem('ashenVigil.save.v2')).freed.filter(i=>i.startsWith('s2_')).length}));
 ok('link_stage2_to_stage3_keeps_progress',R.link23.sid==='cinderdeep'&&R.link23.freed>=5,R.link23);
 await stage('cinderdeep');
 R.ng=await ev(()=>({sid:S().sid,ng:S().ng,opts:R.cinderdeep.opts}));ok('cinderdeep_returns_home_no_early_first_flame',R.ng.sid==='shrine'&&!R.ng.ng&&!R.ng.opts.some(o=>/FLAME/.test(o)),R.ng);

@@ -90,7 +90,7 @@ await pg.screenshot({path:S+'28_ossuary_trial.png'});
 await ev(()=>{const s=S(),c=s.chs.find(c=>c.id==='c_waves');c.live.forEach(e=>{if(!e.dead)s.damageEnemy(e,99,1)})});await wait(400);
 R.w2=await ev(()=>{const c=S().chs.find(c=>c.id==='c_waves');return{wave:c.wave,live:c.live.length}});
 await ev(()=>{const s=S(),c=s.chs.find(c=>c.id==='c_waves');c.live.forEach(e=>{if(!e.dead)s.damageEnemy(e,99,1)})});await wait(400);
-R.w3=await ev(()=>{const s=S(),c=s.chs.find(c=>c.id==='c_waves');return{done:c.done,active:c.active,gates:c.gateObjs.map(g=>g.body.body.enable),cageLocked:s.cages.find(c=>c.id==='e5').locked,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).chDone}});
+R.w3=await ev(()=>{const s=S(),c=s.chs.find(c=>c.id==='c_waves');return{done:c.done,active:c.active,gates:c.gateObjs.map(g=>g.body.body.enable),cageLocked:s.cages.find(c=>c.id==='e5').locked,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v2')).chDone}});
 await ev(()=>{tp(2806,300);S().player.f=1;attack()});await wait(500);R.e5=await ev(()=>S().cages.find(c=>c.id==='e5').freed);
 ok('waves_challenge',R.w1.active&&R.w1.gates.every(Boolean)&&R.w1.cageLocked&&R.w2.wave===1&&R.w3.done&&!R.w3.gates.some(Boolean)&&!R.w3.cageLocked&&R.e5,{w1:R.w1,w2:R.w2,w3:R.w3,e5:R.e5});
 // 12. climb out of the ossuary on the chain

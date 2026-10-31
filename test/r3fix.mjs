@@ -16,7 +16,7 @@ for(const s of ['ramparts','cathedral','cinderdeep']){await load('?play&mute&nov
 await pg.evaluate(()=>localStorage.clear());await load('?play&mute&novideo');
 R.run=await pg.evaluate(()=>new Promise(res=>{const s=S(),ch=s.chs.find(c=>c.id==='c_run');const before=ch.gateObjs.map(g=>g.closed&&g.body.body.enable);
  s.pb.setPosition(1770,-110);s.pb.setVelocity(0,0);s.player.inv=999;s.camY=s.camTY=-200;window.__inp=()=>({});
- setTimeout(()=>{const started=ch.active,open=ch.gateObjs.every(g=>!g.closed);s.freeCage(s.cages.find(c=>c.id==='e4'));setTimeout(()=>{res({before,started,open,done:ch.done,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1')||'{}').chDone})},300)},500)}));
+ setTimeout(()=>{const started=ch.active,open=ch.gateObjs.every(g=>!g.closed);s.freeCage(s.cages.find(c=>c.id==='e4'));setTimeout(()=>{res({before,started,open,done:ch.done,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v2')||'{}').chDone})},300)},500)}));
 ok('ember_run_gate_closed_until_start_and_clear_saved',R.run.before.every(Boolean)&&R.run.started&&R.run.open&&R.run.done&&(R.run.saved||[]).includes('c_run'),R.run);
 ok('no_page_errors',errs.length===0,errs);
 console.log(`PASS ${pass} / ${pass+fail}`);await br.close();

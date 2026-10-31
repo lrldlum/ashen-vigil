@@ -21,23 +21,23 @@ ok('ten_classes_ds3_levels_and_stats',Object.entries(ds3).every(([c,[l,s]])=>R.c
 // 2. title: 3 slots, class select via keyboard, independent saves, erase
 await pg.goto(B+'?mute');await ev(()=>localStorage.clear());await pg.reload();await wait(1600);
 await pg.keyboard.press('Enter');await wait(250);for(let i=0;i<2;i++){await pg.keyboard.press('ArrowDown');await wait(120)}await wait(200);await shot('d01_class_select_warrior');
-await pg.keyboard.press('Enter');await ready();R.s1=await ev(()=>({cls:S().sv.cls,key:!!localStorage.getItem('ashenVigil.save.v1')}));
+await pg.keyboard.press('Enter');await ready();R.s1=await ev(()=>({cls:S().sv.cls,key:!!localStorage.getItem('ashenVigil.save.v2')}));
 await pg.goto(B+'?mute');await wait(1600);await pg.keyboard.press('ArrowDown');await wait(150);await pg.keyboard.press('Enter');await wait(250);for(let i=0;i<6;i++){await pg.keyboard.press('ArrowDown');await wait(120)}
-await pg.keyboard.press('Enter');await ready();R.s2=await ev(()=>({cls:S().sv.cls,key:!!localStorage.getItem('ashenVigil.save.v1.s2')}));
+await pg.keyboard.press('Enter');await ready();R.s2=await ev(()=>({cls:S().sv.cls,key:!!localStorage.getItem('ashenVigil.save.v2.s2')}));
 await pg.goto(B+'?mute');await wait(1600);await shot('d02_title_three_slots');
 R.slots=await ev(()=>__G.scene.getScene('title').saves.map(s=>s&&s.cls));R.lastSlot=await ev(()=>__G.scene.getScene('title').sel);
 await pg.keyboard.press('ArrowUp');await wait(150);await pg.keyboard.press('Enter');await ready();R.cont1=await ev(()=>S().sv.cls);
 await pg.goto(B+'?mute');await wait(1600);await pg.keyboard.press('ArrowDown');await wait(150);await pg.keyboard.press('Delete');await wait(150);await shot('d03_erase_confirm');await pg.keyboard.press('Delete');await wait(200);
-R.erase=await ev(()=>({title:__G.scene.getScene('title').saves.map(s=>s&&s.cls),s2:localStorage.getItem('ashenVigil.save.v1.s2'),s1:!!localStorage.getItem('ashenVigil.save.v1')}));
+R.erase=await ev(()=>({title:__G.scene.getScene('title').saves.map(s=>s&&s.cls),s2:localStorage.getItem('ashenVigil.save.v2.s2'),s1:!!localStorage.getItem('ashenVigil.save.v2')}));
 ok('three_save_slots_class_select_continue_erase',R.s1.cls==='warrior'&&R.s1.key&&R.s2.cls==='sorcerer'&&R.s2.key&&R.slots[0]==='warrior'&&R.slots[1]==='sorcerer'&&R.slots[2]===null&&R.lastSlot===1&&R.cont1==='warrior'&&R.erase.s2===null&&R.erase.s1,{s1:R.s1,s2:R.s2,slots:R.slots,cont1:R.cont1,erase:R.erase});
 // 3. leveling at the bonfire, rising soul costs
-await pg.goto(B+'?play&mute&novideo&slot=3&class=knight');await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await pg.goto(B+'?play&mute&novideo&slot=3&class=knight');await ready();
+await pg.goto(B+'?play&mute&novideo&slot=3&class=knight');await ev(()=>(localStorage.removeItem('ashenVigil.save.v1.s3'),localStorage.removeItem('ashenVigil.save.v2.s3')));await pg.goto(B+'?play&mute&novideo&slot=3&class=knight');await ready();
 await ev(()=>{const s=S();s.souls=3000;s.pb.setPosition(1600,148);s.camY=s.camTY=0;window.__inp=()=>S().menu?{}:{restP:1}});await pg.waitForFunction(()=>!!S().menu,null,{timeout:5000});await wait(300);
 R.menuOpen=await ev(()=>!!S().menu);await ev(()=>{const s=S();s.menuKey('ok')});
 R.lv0=await ev(()=>({lvl:S().lvl,hp:S().player.hpMax,souls:S().souls}));
 R.costs=await ev(()=>{const s=S(),c=[];for(let i=0;i<5;i++){const before=s.menu.spent;s.menuKey('right');c.push(s.menu.spent-before)}return c});await wait(200);await shot('d04_level_up_menu');
 await ev(()=>{const s=S();s.menu.sel=8;s.menuKey('ok')});await wait(200);
-R.lv1=await ev(()=>({lvl:S().lvl,hp:S().player.hpMax,souls:S().souls,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).stats.vig}));
+R.lv1=await ev(()=>({lvl:S().lvl,hp:S().player.hpMax,souls:S().souls,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v2.s3')).stats.vig}));
 ok('level_up_at_bonfire_rising_costs',R.menuOpen&&R.costs.every((c,i)=>i===0||c>R.costs[i-1])&&R.lv1.lvl===R.lv0.lvl+5&&R.lv1.hp===R.lv0.hp+25&&R.lv1.souls===R.lv0.souls-R.costs.reduce((a,b)=>a+b)&&R.lv1.saved===17,{costs:R.costs,lv0:R.lv0,lv1:R.lv1});
 // equipment menu: cycle through owned weapons and armor
 await ev(()=>{const s=S();s.sv.inv.push('greatsword','iron','spear');s.menu.mode='main';s.menu.sel=1;s.menuKey('ok');s.menuKey('ok');s.menuKey('right');s.menuKey('ok')});await wait(200);await shot('d05_equipment_menu');
@@ -80,9 +80,9 @@ R.cat={staff:await cast({main:'staff',off:null},16),staffHiInt:await cast({main:
 await ev(()=>{arena();S().sv.stats.int=16;equip({main:'axe',off:'wand'});S().player.fp=99;press('iceP')});await wait(180);await shot('d10_wand_offhand_cast');await wait(400);
 ok('staffs_and_offhand_wand_cast_int_spells',R.cat.staff.state==='cast'&&R.cat.wandOff.state==='cast'&&R.cat.wandOff.cat==='VIGIL WAND'&&R.cat.none.state!=='cast'&&R.cat.lowInt.state!=='cast'&&R.cat.staffHiInt.mul>R.cat.staff.mul&&R.cat.staff.mul>R.cat.wandOff.mul,R.cat);
 // 8. pickups along the stage
-await pg.goto(B+'?play&mute&novideo&slot=3&class=deprived');await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await pg.goto(B+'?play&mute&novideo&slot=3&class=deprived');await ready();
+await pg.goto(B+'?play&mute&novideo&slot=3&class=deprived');await ev(()=>(localStorage.removeItem('ashenVigil.save.v1.s3'),localStorage.removeItem('ashenVigil.save.v2.s3')));await pg.goto(B+'?play&mute&novideo&slot=3&class=deprived');await ready();
 await ev(()=>{const s=S();s.pb.setPosition(480,148);s.player.inv=99;window.__inp=()=>({r:1})});await wait(900);await ev(()=>idle());
-R.pick=await ev(()=>({inv:S().sv.inv,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).inv}));await shot('d11_pickup_bow');
+R.pick=await ev(()=>({inv:S().sv.inv,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v2.s3')).inv}));await shot('d11_pickup_bow');
 ok('item_pickups_persist',R.pick.inv.includes('bow')&&R.pick.saved.includes('bow'),R.pick);
 // 9. armor look per set + distinct lord arenas
 await ev(()=>{arena();S().pb.setPosition(1580,148);equip({main:'greatsword',armor:'iron'})});await wait(500);await shot('d12_iron_greatsword_look');

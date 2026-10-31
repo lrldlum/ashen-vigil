@@ -31,7 +31,7 @@ R.rest=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage');s.p
 ok('rest_at_25px',R.rest.lit&&R.rest.flasks===3,R.rest);
 // --- souls drop + recovery
 R.souls=await ev(pg,()=>new Promise(res=>{let s=__G.scene.getScene('stage');s.souls=777;s.pb.x=900;setTimeout(()=>{s.player.hp=0;setTimeout(()=>{s=__G.scene.getScene('stage');const st=s.stain&&{...s.stain},souls0=s.souls;
-  s.pb.x=st.x-60;setTimeout(()=>{s.pb.x=st.x;setTimeout(()=>res({stain:st,soulsAfterDeath:souls0,soulsAfterPickup:s.souls,stainLeft:!!s.stain,save:JSON.parse(localStorage.getItem('ashenVigil.save.v1'))}),400)},300)},3600)},200)}));
+  s.pb.x=st.x-60;setTimeout(()=>{s.pb.x=st.x;setTimeout(()=>res({stain:st,soulsAfterDeath:souls0,soulsAfterPickup:s.souls,stainLeft:!!s.stain,save:JSON.parse(localStorage.getItem('ashenVigil.save.v2'))}),400)},300)},3600)},200)}));
 ok('souls_recovered',R.souls.stain&&R.souls.stain.souls===777&&R.souls.soulsAfterDeath===0&&R.souls.soulsAfterPickup===777&&!R.souls.stainLeft,R.souls);
 // --- parry + riposte on hollow, knight block
 R.parry=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage'),P=s.player;const e=s.enemies.find(e=>e.k==='hollow'&&!e.dead);s.pb.x=e.b.x-14;P.f=1;P.inv=0;

@@ -1,12 +1,13 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Ashen Vigil</title><link rel="icon" type="image/png" href="assets/favicon.png">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>html,body{margin:0;background:#07050f;width:100%;height:100%;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+#boot{position:fixed;inset:0;z-index:8;background:#07050f url(assets/cover.png) center/contain no-repeat;image-rendering:pixelated;pointer-events:none}#boot b{position:absolute;left:0;right:0;bottom:8%;text-align:center;color:#ffb04a;font:bold 14px monospace;letter-spacing:3px}
 #rot{display:none;position:fixed;inset:0;z-index:9;background:#07050f;color:#ffb04a;font:bold 18px monospace;letter-spacing:2px;align-items:center;justify-content:center;text-align:center;flex-direction:column}
 #rot i{display:block;width:40px;height:66px;border:4px solid #ffb04a;border-radius:6px;margin-bottom:18px;animation:r 1.6s steps(4) infinite}
 @keyframes r{0%,40%{transform:rotate(0)}70%,100%{transform:rotate(-90deg)}}
 @media (orientation:portrait) and (pointer:coarse){#rot{display:flex}}</style>
-<script src="vendor/phaser.min.js"></script></head>
-<body><div id="rot"><i></i>ROTATE TO LANDSCAPE</div><script src="stages.js"></script><script src="rpg.js"></script><script src="story.js"></script><script src="loot.js"></script><script src="vendor/peerjs.min.js"></script><script src="bg.js"></script>
-<script src="tiles.js"></script>
-<script src="gamepad.js"></script>
-<script src="game.js"></script><script src="intros.js"></script><script src="net.js"></script><script src="home.js"></script><script src="quit.js"></script><script src="inventory.js"></script><script src="weapons.js"></script><script src="rings.js"></script><script src="btenemies.js"></script><script src="spells.js"></script><script src="pixelchars.js"></script><script src="armorlayers.js"></script><script src="weaponart.js"></script><script src="smith.js"></script><script src="objective.js"></script></body></html>
+<script>performance.mark("boot")</script><script defer src="vendor/phaser.min.js"></script></head>
+<body><div id="boot"><b>ASHEN VIGIL</b></div><div id="rot"><i></i>ROTATE TO LANDSCAPE</div><script defer src="stages.js"></script><script defer src="rpg.js"></script><script defer src="story.js"></script><script defer src="loot.js"></script><script defer src="bg.js"></script>
+<script defer src="tiles.js"></script>
+<script defer src="gamepad.js"></script>
+<script defer src="game.js"></script><script defer src="intros.js"></script><script defer src="net.js"></script><script defer src="home.js"></script><script defer src="quit.js"></script><script defer src="inventory.js"></script><script defer src="weapons.js"></script><script defer src="rings.js"></script><script defer src="btenemies.js"></script><script defer src="spells.js"></script><script defer src="pixelchars.js"></script><script defer src="armorlayers.js"></script><script defer src="weaponart.js"></script><script defer src="smith.js"></script><script defer src="objective.js"></script><script defer src="ow1.js"></script></body></html>

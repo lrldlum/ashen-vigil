@@ -36,7 +36,7 @@ await K(A,'Escape');ok('kb_esc_cancels_stays_paused',await A.ev(()=>!S().quitQ&&
 await K(A,'Enter');await K(A,'Enter');ok('kb_no_is_default',await A.ev(()=>!S().quitQ&&S().paused));
 await K(A,'Enter');await K(A,'ArrowLeft');await K(A,'Enter');ok('kb_mashed_yes_is_ignored',await A.ev(()=>!!S().quitQ&&S().paused&&S().quitQ.sel===1));
 await K(A,'ArrowLeft');await wait(700);await K(A,'Enter');await wait(600);
-const t1=await A.ev(()=>({title:__G.scene.getScene('title').sys.isActive(),sv:JSON.parse(localStorage.getItem('ashenVigil.save.v1.s1')||'null')||JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>/save/.test(k))))}));
+const t1=await A.ev(()=>({title:__G.scene.getScene('title').sys.isActive(),sv:JSON.parse(localStorage.getItem('ashenVigil.save.v2.s1')||'null')||JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>/save/.test(k))))}));
 ok('kb_yes_saves_and_goes_to_title',t1.title&&t1.sv.souls===4321&&t1.sv.lords.includes('warden')&&t1.sv.bonfire,{title:t1.title,souls:t1.sv&&t1.sv.souls,lords:t1.sv&&t1.sv.lords,bf:t1.sv&&t1.sv.bonfire});
 // 2. touch: tap the quit row, tap YES
 await A.pg.goto(B+'?play&mute&novideo&slot=1&class=knight&stage=ramparts&seed=0&touch');await inStage(A);

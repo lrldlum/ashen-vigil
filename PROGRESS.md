@@ -322,3 +322,10 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - NG+ / JOURNEY ON only at the finale after the Hollow Heir: Stage.ngFinal() gates both NG+ save writes; Ending gets {final} from the finale (also sent to the co-op guest); old saves with lords/ng set cannot trigger it mid-game. test/ngguard.mjs + clips/ngguard.mp4.
 - Quit to title: YES only counts after 0.6 s calm on the confirm dialog (QUIT_GUARD_MS), so mashed Esc/Enter/arrows cannot quit.
 - test/G Crownbreaker special: retries if a stray hit or frame hitch interrupts the 0.4 s wind-up (shots cleared, i-frames).
+
+## OW1 — room engine (ow1.js)
+- Regions are cut into rooms (Ramparts by hand: 6 rooms at x 0/560/1240/1820/2380/2860; other regions auto-cut ~720 px until OW2 draws their graphs). Camera bounded to the room, 150 ms eased slide on crossing (no fade, no restart), vertical scroll inside rooms kept; boss intro unlocks the arena room.
+- Enemies outside the current room are parked (no body/AI/draw), state in roomState; unparked on return. Co-op: parking off while linked (cross-room following is OW7); host sends {t:'room'}.
+- Save schema v2 (ashenVigil.save.v2[.sN]): region, room, bonfires[], doors[], rooms.visited, abilities[], mapsOwned[]. v1 migrates on load (v1 key never written; re-migrates only if the v1 text changes); lords grant abilities (warden dash, cantor cling, abbess tide, marshal djump, astronomer grapple, prioress thorn), cleared regions visited + bonfire lit, stain gets a room. Tests that read v1 keys now read v2.
+- Fast boot: PeerJS lazy (loadPeer on host/join), all scripts defer, HTML cover title shows instantly, marks boot/title-ready/region-ready/room-swap/peer-ready. Localhost title-ready 319-514 ms (FCP 44-76 ms), 3 runs.
+- test/ow1.mjs 18/18; clip clips/ow1_rooms.mp4 (test/clipOW1.mjs). Spell HUD now yields to the message bar (they overlapped).

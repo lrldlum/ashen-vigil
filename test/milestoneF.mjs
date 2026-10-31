@@ -35,7 +35,7 @@ await inStage(H);await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{ti
 const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;ok('host_room_code',/^[A-Z0-9]{4}$/.test(code)&&await H.ev(()=>NET.host()&&NET.peer.open),{code,status:await H.ev(()=>NET.status)});
 // real broker: a raw PeerJS client (no relay) gets the host's SDP answer back through 0.peerjs.com
 {const X=await br.newContext();const xp=await X.newPage();await xp.goto(B+'?mute'+PX);await xp.waitForTimeout(800);
- const sig=await xp.evaluate(id=>new Promise(r=>{const p=new Peer(undefined,NET.opts());p.on('error',e=>r({err:e.type}));p.on('open',()=>{const c=p.connect(id,{serialization:'json'});const t0=performance.now(),g=()=>{const pc=c.peerConnection,rd=pc&&pc.remoteDescription;if(rd)r({broker:p.options.host,answer:rd.type,me:p.id.slice(0,8)});else if(performance.now()-t0>12000)r({timeout:1});else setTimeout(g,100)};g()})}),'ashenvigil-'+code.toLowerCase());
+ const sig=await xp.evaluate(id=>loadPeer().then(()=>new Promise(r=>{const p=new Peer(undefined,NET.opts());p.on('error',e=>r({err:e.type}));p.on('open',()=>{const c=p.connect(id,{serialization:'json'});const t0=performance.now(),g=()=>{const pc=c.peerConnection,rd=pc&&pc.remoteDescription;if(rd)r({broker:p.options.host,answer:rd.type,me:p.id.slice(0,8)});else if(performance.now()-t0>12000)r({timeout:1});else setTimeout(g,100)};g()})})),'ashenvigil-'+code.toLowerCase());
  ok('signaling_through_broker',sig.answer==='answer',sig);await X.close();await wait(500);}
 // ---- 2. guest joins by TOUCH: taps CO-OP row, JOIN, then the keypad
 const G=await mk(true,'guest');await G.pg.goto(B+'?mute&class=pyromancer'+PX);await G.pg.waitForTimeout(1200);
