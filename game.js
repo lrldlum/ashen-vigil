@@ -271,7 +271,7 @@ function rasterHero(B,P){B.clear();
  if(P.item==='flask'){B.rect(P.fa[0],P.fa[1]-1,2,3,HC.fl);B.set(P.fa[0],P.fa[1]-2,HC.sd)}
  B.set(P.fa[0],P.fa[1],HC.h);B.outline()}
 function heroStyle(wp,heavy,arm){HSTY.wt=wp?wp.type:'sword';HSTY.swL=wp?(wp.swL||9):9;HSTY.heavy=!!heavy;Object.assign(HC,HC0,arm&&arm.pal||{})}
-function drawHero(g,x,y,f,st,fr,t,o={}){rasterHero(HERO,heroPose(st,fr,t,o.combo));HERO.blit(g,x,y,f,o.flash,o.alpha??1)}
+function drawHero(g,x,y,f,st,fr,t,o={}){rasterHero(HERO,heroPose(st,fr,t,o.combo));if(o.outline)for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1]])HERO.blit(g,x+dx,y+dy,f,true,o.outline);/* r9: 1px pale outline, old procedural hero art only */HERO.blit(g,x,y,f,o.flash,o.alpha??1)}
 // ---------- LevelKit: tile grid built from a STAGE_DEFS entry (stages.js). Shared by every stage. ----------
 const TS=8,K_EMPTY=0,K_SOLID=1,K_ONEWAY=2,K_CHAIN=3,K_SPIKE=4,LEVELS={};
 class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.cols=Math.ceil(def.world/TS);this.rows=Math.ceil((def.bottom-def.top)/TS);
@@ -1505,8 +1505,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(st==='parry')fr=P.t<TUNE.parryWin?0:1;
   else if(st==='climb')fr=Math.floor(P.run)%2;
   if(P.land>0&&st==='idle')st='rollrec';
-  const pf=P.pflash>0;if(pf)P.pflash--;NET.localStyle(this);{// r9: readability on dark stages - a 1px pale outline (4 offset flash blits) under the hero, brighter rim
-   rasterHero(HERO,heroPose(st,fr,t,P.combo));const oa=this.def.theme==='cinderdeep'?.22:.4;for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1]])HERO.blit(g,x+dx,y+dy,f,true,oa);HERO.blit(g,x,y,f,P.flash>0||pf,1)}this._hero={st,fr,hv:P.heavy&&P.state==='atk'};HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.55);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);
+  const pf=P.pflash>0;if(pf)P.pflash--;NET.localStyle(this);drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo,outline:this.def.theme==='cinderdeep'?.22:.4});this._hero={st,fr,hv:P.heavy&&P.state==='atk'};HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.55);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);
   if(P.state==='atk'){const m=this.move();if(P.t>=m.h0-.02&&P.t<m.h1+.08){const k=(P.t-m.h0+.02)/(m.h1-m.h0+.1);
     if(m.arc)drawSlash(ga,x+f*2,y-10-(m.spin?0:0),f,k,this.wp===WEAPONS.longsword&&!P.heavy?SLASH:m.arc,P.combo===1);
     else if(m.stab){const L=(m.reach||12)+6,yy=y-9+(P.combo===1?-2:P.combo===2?1:0);for(let i=0;i<L;i++){const a=(1-Math.abs(i/L-k))*.8;if(a>0)px(ga,x+f*(4+i),yy,i>L-4?0xffffff:C.f1,a)}glow(ga,x+f*(4+L*k),yy,4,C.f2,.3)}
