@@ -34,7 +34,7 @@ await go('?play&mute&novideo&slot=1&class=knight&stage=belltower');
 const D=await ev(()=>{const d=STAGE_DEFS.belltower;return{name:d.name,side:d.side,bells:d.bells.length,ch:CHESTS.belltower.length,hidden:CHESTS.belltower.filter(c=>c.hidden).length,mimic:CHESTS.belltower.filter(c=>c.mimic).length,
  lock:d.cages.filter(c=>c.lock==='bt_bells').length,covers:d.covers.length,lore:d.lore.map(l=>l.id),high:d.oneway.filter(r=>r[1]===-60).length,low:d.carve.filter(r=>r[1]>=180).length,boss:d.boss.kind,lords:(d.boss.phases||[]).length+1,
  desc:['clapper','rime','frostbrand','requiemspear','crownbreaker','ember','bluesap','soulshard','rimesalt','cinderleaf'].every(i=>DESC[i]&&DESC[i].length>=2),lorex:['b1','b2','b3'].every(i=>LORE[i])}});
-ok('stage_defined_with_branches_secrets_collectibles',D.name==='THE FROZEN BELL TOWER'&&D.bells===5&&D.ch>=4&&D.hidden>=2&&D.mimic>=1&&D.lock===1&&D.covers>=4&&D.high>=3&&D.low>=3&&D.boss==='toller'&&D.lords===3&&D.desc&&D.lorex&&D.lore.length===3,D);
+ok('stage_defined_with_branches_secrets_collectibles',D.name==='THE FROZEN BELL TOWER'&&D.bells===5&&D.ch>=4&&D.hidden>=2&&D.mimic>=1&&D.lock===1&&D.covers>=4&&D.high>=3&&D.low>=3&&D.boss==='toller'&&D.lords===3&&D.desc&&D.lorex&&D.lore.length>=3,/*Bell Tower region adds the belfry lore b4*/D);
 await shot('g01_bell_tower_start');
 // high road: climb the chain at x1000 with real input to the bell frame (-60)
 await ev(()=>{clear();tp(1003)});await wait(500);await ev(()=>hold({up:1},260));await wait(4200);await ev(()=>hold({up:1,r:1},40));await wait(1200);

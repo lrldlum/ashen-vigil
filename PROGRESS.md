@@ -329,3 +329,10 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Save schema v2 (ashenVigil.save.v2[.sN]): region, room, bonfires[], doors[], rooms.visited, abilities[], mapsOwned[]. v1 migrates on load (v1 key never written; re-migrates only if the v1 text changes); lords grant abilities (warden dash, cantor cling, abbess tide, marshal djump, astronomer grapple, prioress thorn), cleared regions visited + bonfire lit, stain gets a room. Tests that read v1 keys now read v2.
 - Fast boot: PeerJS lazy (loadPeer on host/join), all scripts defer, HTML cover title shows instantly, marks boot/title-ready/region-ready/room-swap/peer-ready. Localhost title-ready 319-514 ms (FCP 44-76 ms), 3 runs.
 - test/ow1.mjs 18/18; clip clips/ow1_rooms.mp4 (test/clipOW1.mjs). Spell HUD now yields to the message bar (they overlapped).
+
+## Bell Tower region (btregion.js)
+- 4-screen shaft above the Bell-Rope Vigil (x 1660-2020, up to y -760; stage top -780): 29 ledges, 30 px apart and alternating sides with a 20 px gap, with tower walls drawn either side. Every third ledge is ice and keeps your momentum. The belfry at the top has the great bell, chest ch_b6 and lore b4. It is its own room (ROOM_CUTS.belltower).
+- Bell tolls every 4.5 s: a flat ring sweeps down the shaft at 260 px/s, knocks a standing hero off the ledge (rolling through keeps your footing), and shatters hanging icicles. They fall (10 dmg) and freeze into 7 s ledges where they land, then grow back.
+- Frost Ringer mini-boss (Artist's strip): swings across the middle of the shaft on its rope (amplitude 120), drops swing_drop icicles, 40 HP, stays dead (sv.mbDead.bt_ringer), gives 2 Ember Shards. The ground Ringer at 1960 moved into the shaft.
+- Spell HUD sits below the bells counter / buff timers.
+- test/btregion.mjs 15/15; clip clips/btregion.mp4 (test/clipBT.mjs, bot climbs ~16 ledges through tolls).

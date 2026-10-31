@@ -156,7 +156,7 @@ const spTierOf=lv=>lv>=10?3:lv>=7?2:lv>=4?1:0;
   if(S.sorc&&!lock){g.fillStyle(0xb070ff);g.fillRect(x+1,y+s-2,2,1)}};
  const hud=SP.drawHUD;SP.drawHUD=function(){hud.call(this);try{this.spDrawHud()}catch(e){}};
  SP.spDrawHud=function(){if(!this.sv||!this.sv.att||this.cine||this.menu||this.victory)return;if(this.msg&&this.msg.t>0&&!(this.spHud>0)&&!this.touch)return;// the message bar sits on the same row: it wins while it shows
- const g=this.gu,A=this.sv.att,id=this.spCur(),B=this.spBox;if(this.touch){B.x=W/2-43;B.y=4}
+ const g=this.gu,A=this.sv.att,id=this.spCur(),B=this.spBox;if(this.touch){B.x=W/2-43;B.y=4}else{const bf=this.buffs||{};B.y=34+(this.bells&&this.bells.length?11:0)+((bf.guard>0||bf.stam>0)?10:0)}// below the bells counter and buff timers
   if(this.paused){drawText(g,(typeof PAD!=='undefined'&&PAD.connected()?'X':'TAB')+'  SPELLS / EQUIP',SP_PAUSE_ROW.x,SP_PAUSE_ROW.y,0xffb04a);SP_PAUSE_ROW.w=textW('TAB  SPELLS / EQUIP');return}
   g.fillStyle(0x07050f,.75);g.fillRect(B.x,B.y,B.w,B.h);g.fillStyle(this.spHud>0?0xffd04a:0x4a3a6a);g.fillRect(B.x,B.y,B.w,1);g.fillRect(B.x,B.y+B.h-1,B.w,1);
   this.spIcon(g,id,B.x+2,B.y+2,11);const S=SPELLBOOK[id],lv=id?(this.sv.spLv[id]||0):0;
