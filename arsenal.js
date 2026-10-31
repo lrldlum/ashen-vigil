@@ -309,6 +309,54 @@ if(typeof WEAPART!=='undefined'){
   const W=id&&WEAPONS[id],rim=R.arsRim;if(W&&W.gun&&R.arsW&&R.arsW.visible&&R.arsW.texture.key==='arsw_'+id){let q=rim;if(!q||q.texture.key!==R.arsW.texture.key){if(q)q.destroy();q=R.arsRim=s.add.sprite(0,0,R.arsW.texture.key,0).setOrigin(R.arsW.originX,R.arsW.originY)}
    q.setVisible(true).setFrame(R.arsW.frame.name).setFlipX(R.arsW.flipX).setPosition(R.arsW.x,R.arsW.y-1).setDepth(R.arsW.depth-.0005).setTintFill(0xe8c878).setAlpha(.8);s.stats&&(s.stats.arsRim=(s.stats.arsRim||0)+1)}else if(rim)rim.setVisible(false)}}
 
+// ===================== r7: PixelFX effects (MIT, assets/fx/pixelfx; baked by assets/fx/arsfx.mjs) recolored per stage palette =====================
+// Muzzle flashes, bullet/element impacts, firebomb/jar/hand-cannon explosions and melee infusion hits. Spell FX belong to
+// Video Games (spells.js); they can opt in through window.ArsFX below.
+// Baked lazily into Phaser sprite strips per (effect, ramp, stage theme) and cached; falls back to the old drawn effects until
+// a texture exists or if the module fails to load. ?pfx=0 turns PixelFX off.
+ARS.pfxOn=()=>{try{return new URLSearchParams(location.search).get('pfx')!=='0'}catch(e){return true}};
+ARS.pfx=null;ARS.pfxErr=null;
+if(typeof window!=='undefined'&&typeof document!=='undefined'&&ARS.pfxOn()){try{import('./assets/fx/arsfx.mjs').then(m=>{ARS.pfx=m},e=>{ARS.pfxErr=String(e&&e.message||e)})}catch(e){ARS.pfxErr=String(e)}}
+ARS.PFX_SCALE={plasma:.6,boom:.8,mana:.6};
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ SP.pfxTheme=function(){return this.def&&this.def.theme||'ramparts'};
+ SP.pfxTex=function(key,ramp){const M=ARS.pfx;if(!M||!ARS.pfxOn())return null;const th=this.pfxTheme(),tk='pfx_'+key+'_'+(ramp?String(ramp).replace('#',''):'base')+'_'+th;
+  if(!this.textures.exists(tk)){const t0=performance.now();let b;try{b=M.bakeCanvas(key,{ramp:ramp?M.rampOf(ramp):null,theme:th})}catch(e){ARS.pfxErr=String(e);return null}
+   this.textures.addSpriteSheet(tk,b.canvas,{frameWidth:b.w,frameHeight:b.h});this.anims.create({key:tk,frames:this.anims.generateFrameNumbers(tk,{start:0,end:b.n-1}),frameRate:b.fps,repeat:0});
+   (ARS.PFXMETA||(ARS.PFXMETA={}))[tk]={ox:b.ox,oy:b.oy,w:b.w,h:b.h,n:b.n};const st=this.stats.pfxBake=this.stats.pfxBake||{n:0,ms:0};st.n++;st.ms+=performance.now()-t0}
+  return tk};
+ SP.pfxPlay=function(key,x,y,o={}){const tk=this.pfxTex(key,o.ramp);if(!tk)return null;const m=ARS.PFXMETA[tk],f=o.f||1,sc=(o.scale||1)*(ARS.PFX_SCALE[key]||1);
+  const sp=this.add.sprite(Math.round(x),Math.round(y),tk,0).setOrigin((f<0?m.w-m.ox:m.ox)/m.w,m.oy/m.h).setFlipX(f<0).setScale(sc).setDepth(o.depth||7.5);sp.play(tk);sp.once('animationcomplete',()=>sp.destroy());
+  const S=this.stats.pfx=this.stats.pfx||{};S[key]=(S[key]||0)+1;(this.pfxLive||(this.pfxLive=new Set())).add(sp);sp.once('destroy',()=>this.pfxLive.delete(sp));return sp};
+ // pre-bake the common ones for this stage a frame at a time, so the first shot does not hitch
+ const cr7=SP.create;SP.create=function(...a){const r=cr7.apply(this,a);const Q=[['muzzle'],['spark'],['muzzle','lightning'],['spark','fire'],['spark','frost'],['spark','lightning'],['muzzleBig'],['boom'],['snow'],['plasma']];
+  const step=()=>{if(!this.sys||!this.sys.isActive())return;if(!ARS.pfx){if(!ARS.pfxErr&&ARS.pfxOn())this.time.delayedCall(200,step);return}const q=Q.shift();if(q){this.pfxTex(q[0],q[1]);this.time.delayedCall(40,step)}};this.time.delayedCall(300,step);return r};
+ // muzzle flashes (replace the drawn flash and the Artist muzzle sprite; the Artist smoke puff stays)
+ const gf7=SP.gunFire;SP.gunFire=function(W,id){const n0=(this.arsFx||[]).length;gf7.call(this,W,id);const P=this.player,G=W.gun,f=P.f,big=G.pellets>1||G.recoil>200,el=G.rune?(this.sv.rune||'fire'):null;
+  const sp=this.pfxPlay(big?'muzzleBig':'muzzle',P.x+f*(big?16:14),P.y-11,{f,ramp:el});if(sp){this.arsFx=(this.arsFx||[]).filter((q,i)=>q.k!=='flash');for(const c of this.children.list)if(c.texture&&/^arsfx_muzzle/.test(c.texture.key)&&c.anims&&c.anims.isPlaying&&c.anims.getProgress()<.2)c.destroy()}};
+ // impacts: every projectile / blast hit
+ const he7=SP.arsHitE;SP.arsHitE=function(e,n,dir,el){const r=he7.call(this,e,n,dir,el);const bb=e.b&&e.b.body,t=this.t||0;if(bb&&!(e.pfxT>t-.08)){e.pfxT=t;this.pfxPlay('spark',bb.center.x-dir*4,bb.center.y,{f:-dir,ramp:el||null})}return r};
+ // explosions: firebomb / jars / hand cannon
+ const bl7=SP.arsBlast;SP.arsBlast=function(p){const r=bl7.call(this,p);const k=p.elem==='frost'?'snow':p.elem==='lightning'?'plasma':'boom';const y=p.elem==='lightning'?p.y:Math.min(p.y+6,GY);if(this.pfxPlay(k,p.x,y,{ramp:k==='boom'&&p.elem&&p.elem!=='fire'?p.elem:null}))this.arsFx=(this.arsFx||[]).filter(q=>q.k!=='boom');return r};
+ // melee infusion hits carry their element's spark
+ const de7=SP.damageEnemy;SP.damageEnemy=function(e,n,dir,fromNet){const el=this._arsEl,r=de7.call(this,e,n,dir,fromNet);if(el&&e&&e.b&&e.b.body&&!(e.pfxT>(this.t||0)-.08)){e.pfxT=this.t||0;this.pfxPlay('spark',e.b.body.center.x,e.b.body.center.y,{f:-(dir||1),ramp:el})}return r};
+}
+
+// ---- window.ArsFX: small helper API for other code (e.g. Video Games' spell FX). All calls draw into the active stage,
+// recolored with the stage tint, and fall back to the game's own spark particles when PixelFX is off / not loaded yet.
+//  color: an element or school name ('fire'|'frost'|'lightning'|'dark'|'holy'|'arcane'), a '#rrggbb' string or a 0xRRGGBB number;
+//         omit for the effect's own palette.            o: { f: 1|-1 facing, scale: number, depth: number }
+//  ArsFX.impact(x, y, color?, o?)            hit spark (0.4 s)                          -> Phaser.Sprite | null (fallback drawn)
+//  ArsFX.explosion(x, y, kind?, color?, o?)  kind 'fire'|'frost'|'lightning' (default fire): blast / snow burst / plasma; y = floor
+//  ArsFX.burst(x, y, color?, o?)             arcane mana burst (0.7 s), e.g. a cast flash
+//  ArsFX.ready()                             true once PixelFX is loaded;  ArsFX.on()  false with ?pfx=0
+if(typeof window!=='undefined'){const stage=()=>{try{const s=window.__G&&__G.scene.getScene('stage');return s&&s.sys&&s.sys.isActive()&&s.pfxPlay?s:null}catch(e){return null}};
+ const norm=c=>c==null?null:typeof c==='number'?'#'+c.toString(16).padStart(6,'0'):String(c);
+ const num=c=>{const n=norm(c);if(!n)return 0xffe0a0;if(n[0]==='#')return parseInt(n.slice(1),16);return(ARS.ELEM[n]||({dark:0xb070ff,holy:0xffe8a0,arcane:0xb8a8ff})[n]||0xffe0a0)};
+ const play=(key,x,y,c,o={})=>{const s=stage();if(!s)return null;const sp=s.pfxPlay(key,x,y,{...o,ramp:norm(c)});if(!sp&&s.fx&&s.fx.spark)s.fx.spark(x,y,key==='spark'?8:16,num(c),key==='spark'?80:130);s.stats.arsFxApi=(s.stats.arsFxApi||0)+1;return sp};
+ window.ArsFX={impact:(x,y,c,o)=>play('spark',x,y,c,o),explosion:(x,y,kind='fire',c,o)=>play(kind==='frost'?'snow':kind==='lightning'?'plasma':'boom',x,y,c!=null?c:kind==='fire'?null:undefined,o),
+  burst:(x,y,c,o)=>play('mana',x,y,c,{scale:.6,...(o||{})}),ready:()=>!!ARS.pfx,on:()=>ARS.pfxOn()}}
+
 // ===================== r9: Tester r16 =====================
 // P3-5: throwables use their own DEX-scaled attack rating (scaling B), independent of the weapon in hand
 ARS.throwAR=dex=>+(0.9+Math.max(0,(dex||10)-10)*0.045).toFixed(3);

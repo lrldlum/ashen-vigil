@@ -32,3 +32,24 @@ You can play with the keyboard or an **Xbox controller**. Other pads that use th
 
 ## Foreground autotiles
 `autotile.js` adds render-only edges, corners, variants and decor on top of the `tiles.js` materials, with 47 blob frames per stage. Collision is unchanged. `?tiles=0` turns it off. To add Artist PNG atlases, put them in `assets/art/tiles/<stage>/` with a `manifest.json` and list the stage in `assets/art/tiles/index.json`. See `test/tiles.mjs`.
+
+## Credits
+
+Combat effects (muzzle flashes, impacts, explosions, elemental infusion hits) use a vendored subset of
+[PixelFX](https://github.com/patch-gg/pixelfx) by Patch and Hugo Duprez, MIT License. Its license and notices are in
+`assets/fx/pixelfx/LICENSE` and `assets/fx/pixelfx/NOTICE.md`. The Patch Pixel font is not used. Add `?pfx=0` to the URL to
+fall back to the older drawn effects.
+
+### ArsFX helper (for spell code and anything else)
+
+`arsenal.js` exposes `window.ArsFX`, which draws PixelFX effects into the running stage, recolored with the stage tint. When
+PixelFX is off (`?pfx=0`) or still loading, it falls back to the game's own spark particles.
+
+- `ArsFX.impact(x, y, color?, o?)`: a hit spark (0.4 s).
+- `ArsFX.explosion(x, y, kind = 'fire', color?, o?)`: `kind` is `'fire'` (blast), `'frost'` (snow burst) or `'lightning'` (plasma). `y` is the floor.
+- `ArsFX.burst(x, y, color?, o?)`: an arcane mana burst (0.7 s), for example a cast flash.
+- `ArsFX.ready()` / `ArsFX.on()`: whether PixelFX is loaded / enabled.
+
+`color` is an element or school name (`fire`, `frost`, `lightning`, `dark`, `holy`, `arcane`), a `'#rrggbb'` string or a
+`0xRRGGBB` number. Leave it out to use the effect's own palette. `o` is `{ f: 1 | -1, scale, depth }`. Each call returns the
+sprite, or `null` when the fallback drew instead. Spells don't use it yet: spell effects are Video Games' code.

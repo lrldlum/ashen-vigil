@@ -137,7 +137,7 @@ const T15=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Prom
  equip('runepistol');sv.rune='lightning';tp(400);P.f=1;e=dummy(40);let st=0,fr=0;for(let i=0;i<40;i++){P.fp=P.fpMax;s.ars.reload=0;await act({atkP:1},150);if(e.state==='stag')st++;fr++}o.uptime=+(st/fr).toFixed(2);kill();
  e=dummy(40);e.state='stag';e.t=0;h=e.hp;s.arsHitE(e,1,1,null);o.projOnStag=+(h-e.hp).toFixed(2);kill();
  // P2-3 parked / other-room enemies are out of reach; shots end at the room cut
- equip('longrifle');sv.ammo=9;const r=s.room;o.room=r&&[r.x0,r.x1];tp(r.x1-30);await sl(150);P.f=1;e=dummy(60);h=e.hp;delete sv.gmag.longrifle;await act({atkP:1},600);o.otherRoom=+(h-e.hp).toFixed(2);kill();
+ equip('longrifle');sv.ammo=9;const r=s.room;o.room=r&&[r.x0,r.x1];tp(r.x1-30);await sl(150);P.f=1;e=dummy(60);o.ex=Math.round(e.b.x);h=e.hp;delete sv.gmag.longrifle;await act({atkP:1},600);o.otherRoom=+(h-e.hp).toFixed(2);kill();
  tp(400);P.f=1;e=dummy(60);e.parked=1;h=e.hp;delete sv.gmag.longrifle;s.ars.reload=0;await act({atkP:1},600);o.parked=+(h-e.hp).toFixed(2);e.parked=0;kill();
  // P2-4 environment ignores the guard
  equip('longsword');equip('towershield','off');window.__inp=()=>({guard:1});await sl(200);P.inv=0;P.hp=P.hpMax;const b0=s.stats.blocks||0;const a0=P.air;P.air=0;let h0=P.hp;s.hurtPlayer(8,P.x,'env');o.drown=h0-P.hp;P.air=a0;P.inv=0;P.state='idle';
@@ -168,6 +168,21 @@ ok('p2_5_guard_break_punishes',T15.gb.lost===T15.gb.base&&T15.gb.base>0&&T15.gb.
 ok('p2_6_hud_full_mag_top_right',T15.hud&&/MAG 1\/1/.test(T15.hud.s)&&T15.hud.y===22,T15.hud);
 ok('p2_7_balance',JSON.stringify(T15.bal)===JSON.stringify({rune:[.6,7],bb:[.9,.22],fl:1,whip:[22,20],hal:1.6,scy:{str:'B',dex:'C'}}),T15.bal);
 ok('p3_labels_pause_merch_infuse_pad_reload',T15.keys.every(k=>!/^[GTR]$/.test(k))&&T15.pause===3&&T15.pauseR<=T15.W&&/PISTOL SHOT/.test(T15.merch)&&T15.inf&&T15.inf.x+T15.inf.w<=312&&/12 PISTOL/.test(T15.desc)&&T15.padMoving===0&&T15.reloadAfterSwap===0&&T15.runeFired===1,{k:T15.keys,p:T15.pause,m:T15.merch,i:T15.inf,pm:T15.padMoving,r:T15.reloadAfterSwap,rf:T15.runeFired});
+
+// ---------- 15. PixelFX (MIT, vendored subset): loads, bakes per stage palette, renders on shots / blasts / impacts / spells
+mark('pfx');
+const PF=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Promise(r=>setTimeout(r,ms));await until(()=>ARS.pfx||ARS.pfxErr,5000);o.mod=!!ARS.pfx;o.err=ARS.pfxErr;
+ tp(400);s.stats.pfx={};equip('flintlock');sv.ammo=9;delete sv.gmag.flintlock;s.ars.reload=0;P.f=1;let e=dummy(50);await act({atkP:1},120);o.live=s.pfxLive?s.pfxLive.size:0;await sl(500);kill();
+ s.arsBlast({x:P.x+60,y:150,blast:30,dmg:.1,elem:'frost'});s.arsBlast({x:P.x+60,y:150,blast:30,dmg:.1,elem:'lightning'});s.arsBlast({x:P.x+60,y:150,blast:30,dmg:.1});
+ o.sp0=s.stats.spFired||0;o.pfx={...s.stats.pfx};
+ // helper API for other code: impact / explosion / burst with names, hex and numbers
+ s.stats.pfx={};o.api=[typeof ArsFX,ArsFX.ready(),ArsFX.on()];o.ret=[!!ArsFX.impact(P.x+30,P.y-12,'holy'),!!ArsFX.impact(P.x+30,P.y-12,'#40c0ff'),!!ArsFX.explosion(P.x+40,150,'frost'),!!ArsFX.explosion(P.x+40,150,'fire',0x80ff80),!!ArsFX.burst(P.x,P.y-8,'arcane')];
+ o.apiPfx={...s.stats.pfx};o.calls=s.stats.arsFxApi;o.spellHooks=String(Stage.prototype.spBurst).includes('pfxPlay')||String(Stage.prototype.spFire).includes('pfxPlay');
+ const tk=Object.keys(ARS.PFXMETA||{}).find(k=>k.startsWith('pfx_muzzle_base_'));let lit=0;if(tk){const src=s.textures.get(tk).getSourceImage(),d=src.getContext('2d').getImageData(0,0,src.width,src.height).data;for(let i=3;i<d.length;i+=4)if(d[i]>40)lit++}o.tk=tk;o.lit=lit;
+ const a=ARS.pfx.bake('spark',{theme:'ramparts'}).data,b=ARS.pfx.bake('spark',{theme:'cinderdeep'}).data;let diff=0;for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1])diff++;o.themeDiff=diff;o.bake=s.stats.pfxBake;return o});
+await shot('ars13_pfx');mark('pfx',1);
+ok('pixelfx_loads_bakes_and_renders',PF.mod&&!PF.err&&PF.live>0&&PF.pfx.muzzle>=1&&PF.pfx.spark>=1&&PF.pfx.snow>=1&&PF.pfx.plasma>=1&&PF.pfx.boom>=1&&PF.lit>50&&PF.themeDiff>50&&PF.bake.ms/PF.bake.n<80,{...PF,apiPfx:undefined,ret:undefined});
+ok('arsfx_helper_api_and_no_spell_hooks',PF.api[0]==='object'&&PF.api[1]&&PF.ret.every(Boolean)&&PF.apiPfx.spark===2&&PF.apiPfx.snow===1&&PF.apiPfx.boom===1&&PF.apiPfx.mana===1&&PF.calls>=5&&!PF.spellHooks,{api:PF.api,ret:PF.ret,p:PF.apiPfx,c:PF.calls,h:PF.spellHooks});
 
 // ---------- 16. Tester r16
 mark('r16');
