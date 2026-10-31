@@ -43,7 +43,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
  tick(S,dt){if(!this.on())return;const now=performance.now();
   if(this.linked()&&now-this.last>7000)this.dropped('timeout');
   this.sendT-=dt;if(this.sendT<=0&&this.linked()){this.sendT=.05;this.send({t:'p',p:this.me()})}
-  if(this.host()&&this.linked()){this.snapT-=dt;if(this.snapT<=0){this.snapT=1/15;this.snapN++;this.send(this.snap(S,this.snapN%15===1))}}
+  if(this.host()&&this.linked()){this.snapT-=dt;if(this.snapT<=0){this.snapT=1/15;this.snapN++;const bk=(S.sv&&S.sv.bells||[]).join();const bc=bk!==this._bk;this._bk=bk;this.send(this.snap(S,bc||this.snapN%15===1))}}
   const R=this.remote;if(R){R.rx=R.rx==null?R.x:lerp(R.rx,R.x,Math.min(1,dt*14));R.ry=R.ry==null?R.y:lerp(R.ry,R.y,Math.min(1,dt*14))}},
  snap(S,full){const m={t:'s',sid:S.sid,bs:S.bossState,
   e:S.enemies.map(e=>[e.k,Math.round(e.b.x),Math.round(e.b.y),e.f,e.state,+e.hp.toFixed(2),e.dead?1:0,+e.t.toFixed(2),e.combo?1:0,e.mst||0,e.flash>0?1:0]),

@@ -15,7 +15,7 @@ const PIXCH=(()=>{
   // r9 readability: crisp 1px light outline (4 tint-filled copies offset +-1px behind the hero) + a soft additive lift copy
   c.ol=[[1,0],[-1,0],[0,1],[0,-1]].map(o=>{const q=s.add.sprite(0,0,'av_hero',0).setOrigin(.5,58/64).setDepth(3.09).setTintFill(OLC).setAlpha(.9).setVisible(false);q.o=o;return q});
   c.lift=s.add.sprite(0,0,'av_hero',0).setOrigin(.5,58/64).setDepth(3.11).setBlendMode(Phaser.BlendModes.ADD).setAlpha(.28).setVisible(false);
-  s.events.on('postupdate',()=>{if(s.pxc!==c)return;c.t+=(s.dt||1/60);const v=!!c.drawn;c.hero.setVisible(v);c.lift.setVisible(v);for(const q of c.ol)q.setVisible(v);c.drawn=0});
+  s.events.on('postupdate',()=>{if(s.pxc!==c)return;c.t+=(s.dt||1/60);if(c.drawn)c.seen=c.t;const v=c.seen!=null&&c.t-c.seen<.12;c.hero.setVisible(v);c.lift.setVisible(v);for(const q of c.ol)q.setVisible(v);c.drawn=0});
   s.events.once('shutdown',()=>{s.pxc=null})}
  function pick(c,st,a){if(st.a!==a){st.a=a;st.t0=c.t}const [s0,n,fps]=AN[a],k=Math.floor((c.t-st.t0)*fps);return s0+(a==='attack'||a==='hit'?Math.min(n-1,k):k%n)}
  // returns true when the pixel hero was drawn (caller then skips the old hero + its rim)
