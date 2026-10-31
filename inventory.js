@@ -40,7 +40,7 @@ const INV_HS=4,INV_HX=52,INV_HY=129;
   if(k==='armor')return['none',...inv.filter(i=>ARMORS[i]&&i!=='none')];if(k==='head'||k==='hands'||k==='legs')return[null,...inv.filter(i=>GEAR[i]&&GEAR[i].slot===k)];
   if(k==='ring1'||k==='ring2'){const other=sv.eq[k==='ring1'?'ring2':'ring1'];return[null,...inv.filter(i=>GEAR[i]&&GEAR[i].slot==='ring'&&i!==other)]}
   if(k.startsWith('sp'))return[null,...this.invSpellsKnown()];if(k[0]==='q')return k==='q1'?['flask']:[null,...inv.filter(i=>typeof THROWN!=='undefined'&&THROWN[i])];return[]};
- SP.invEquip=function(k,id){const sv=this.sv;if(k.startsWith('sp')){const A=this.invAtt(),i=+k[2];const s=A.slots.slice(0,INV_SPELLS);while(s.length<INV_SPELLS)s.push(null);const j=s.indexOf(id);if(id&&j>=0&&j!==i)s[j]=s[i];s[i]=id;A.slots=s.filter(Boolean);A.sel=0}
+ SP.invEquip=function(k,id){const sv=this.sv;if(k.startsWith('sp')&&id&&this.spLocked&&this.spLocked(id)){if(this.menu)this.menu.say='SORCERER ONLY - NEEDS THE SORCERER CLASS OR INT 24';this.sfx('clang',.2);return false}if(k.startsWith('sp')){const A=this.invAtt(),i=+k[2];const s=A.slots.slice(0,INV_SPELLS);while(s.length<INV_SPELLS)s.push(null);const j=s.indexOf(id);if(id&&j>=0&&j!==i)s[j]=s[i];s[i]=id;A.slots=s.filter(Boolean);A.sel=0}
   else if(k==='q1'){}else sv.eq[k]=id;this.applyBuild(false);Save.write(sv);this.stats.invEquips=(this.stats.invEquips||0)+1};
  SP.invBuildWith=function(k,id){const sv=this.sv;if(k.startsWith('sp')||k[0]==='q')return this.build;return RPG.derive(sv.stats,{...sv.eq,[k]:id})};
  const mk=SP.menuKey;SP.menuKey=function(k){const M=this.menu;
@@ -51,7 +51,7 @@ const INV_HS=4,INV_HX=52,INV_HY=129;
     if(k==='back'){this.menu={mode:'main',sel:this.mainOpts().indexOf('EQUIPMENT'),t:1,prev:{}};return}}
    else{const o=this.invOpts(S.k),n=o.length,C=6;
     if(k==='left')M.gi=(M.gi+n-1)%n;else if(k==='right')M.gi=(M.gi+1)%n;else if(k==='up')M.gi=M.gi-C>=0?M.gi-C:M.gi;else if(k==='down')M.gi=Math.min(n-1,M.gi+C);
-    else if(k==='ok'){this.invEquip(S.k,o[M.gi]);this.sfx('pickup',.3);M.flash=.3}else if(k==='back')M.focus='slots';return}}
+    else if(k==='ok'){if(this.invEquip(S.k,o[M.gi])!==false){this.sfx('pickup',.3);M.flash=.3;M.say=null}}else if(k==='back')M.focus='slots';return}}
   return mk.call(this,k)};
  // Esc on the inventory goes back a level instead of closing everything
  const cr=SP.create;SP.create=function(...a){const r=cr.apply(this,a);
@@ -80,7 +80,7 @@ const INV_HS=4,INV_HX=52,INV_HY=129;
    else if(sl==='hands'){R(3,6,5,7,P);R(10,6,5,7,P);R(3,5,5,1,0xd8d0ee);R(10,5,5,1,0xd8d0ee)}else if(sl==='legs'){R(5,3,8,4,P);R(5,7,3,9,P);R(10,7,3,9,P)}
    else{R(5,6,8,8,0xd8b060);R(7,8,4,4,0x07050f);R(8,3,2,3,G.fp?0x9fe0ff:G.soul?0x58e070:0xff6a4a)}
    if(stats){const o=A||G;if(sl!=='ring')tinyO(g,Math.round((o.abs||0)*100),x+1,y+1,0xd8d0ee);tinyO(g,String(o.w),x+1,y+s-6,0xa8a0c8)}}};
- SP.invNameOf=function(id){if(!id)return'EMPTY';if(GEAR[id])return GEAR[id].name;if(typeof SPELLBOOK!=='undefined'&&SPELLBOOK[id])return SPELLBOOK[id].name;return itemName(id)};
+ SP.invNameOf=function(id){if(!id)return'EMPTY';if(GEAR[id])return GEAR[id].name;if(typeof SPELLBOOK!=='undefined'&&SPELLBOOK[id])return SPELLBOOK[id].name+(this.spLocked&&this.spLocked(id)?' (LOCKED)':'');return itemName(id)};
  const dm=SP.drawMenu0;SP.drawMenu0=function(g,ga){const M=this.menu;if(M.mode!=='inv')return dm.call(this,g,ga);const sv=this.sv,t=this.t;
   if(M.flash>0)M.flash-=this.dt;
   const panel=(x,y,w,h)=>{g.fillStyle(0x07050f,1);g.fillRect(x,y,w,h);g.fillStyle(0x7a5a24);g.fillRect(x,y,w,1);g.fillRect(x,y+h-1,w,1);g.fillRect(x,y,1,h);g.fillRect(x+w-1,y,1,h);g.fillStyle(0xd8b060);[[x,y],[x+w-1,y],[x,y+h-1],[x+w-1,y+h-1]].forEach(([a,b])=>g.fillRect(a,b,1,1))};
@@ -94,7 +94,7 @@ const INV_HS=4,INV_HX=52,INV_HY=129;
   this.invLayout={cells:[]};SLOTS.forEach((s,i)=>{const id=this.invCur(s.k),on=M.slot===i;g.fillStyle(id?0x221c3a:0x0d0a18);g.fillRect(s.x,s.y,18,18);
    g.fillStyle(on?(M.focus==='slots'?0xffe2a8:0xb08a40):id?0x6a5a88:0x3a3458);g.fillRect(s.x,s.y,18,1);g.fillRect(s.x,s.y+17,18,1);g.fillRect(s.x,s.y,1,18);g.fillRect(s.x+17,s.y,1,18);
    if(id&&id!=='none')this.invIcon(g,id,s.x,s.y,18,false);if(s.lab)tiny(g,s.lab,s.x+(s.x>60?-1:0),s.y-6,on?0xffe2a8:0x6a6490)});
-  tiny(g,'SPELLS',8,134,0x6a6490);tiny(g,'ITEMS',84,134,0x6a6490);
+  tiny(g,'SPELLS',8,134,0x6a6490);if(M.say)tiny(g,M.say,150,166,0xd8402a);tiny(g,'ITEMS',84,134,0x6a6490);
   // right: grid for the selected slot
   const S=SLOTS[M.slot],o=this.invOpts(S.k),cur=this.invCur(S.k),C=6;tiny(g,S.lab||(S.k.startsWith('sp')?'SPELL':'ITEM'),152,10,0xffb04a);tiny(g,'A EQUIP  B BACK',240,10,0x6a6490);
   const top=Math.max(0,Math.floor((M.gi||0)/C)-2)*C;

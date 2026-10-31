@@ -84,6 +84,7 @@ function px(g,x,y,c,a=1){g.fillStyle(c,a);g.fillRect(Math.round(x),Math.round(y)
 function line(g,x0,y0,x1,y1,c,a=1){x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);g.fillStyle(c,a);
  let dx=Math.abs(x1-x0),dy=-Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,e=dx+dy,n=0;
  while(n++<400){g.fillRect(x0,y0,1,1);if(x0===x1&&y0===y1)break;const e2=2*e;if(e2>=dy){e+=dy;x0+=sx}if(e2<=dx){e+=dx;y0+=sy}}}
+const SLOW_MUL=.5;
 function glow(g,x,y,r,c,a=.25){x=Math.round(x);y=Math.round(y);// stepped, banded glow (no smooth gradients)
  for(let i=3;i>=1;i--){g.fillStyle(c,a*(4-i)/6);g.fillCircle(x,y,Math.max(1,Math.round(r*i/3)))}}
 function sparkle(g,x,y,s,c,a=1){x=Math.round(x);y=Math.round(y);g.fillStyle(c,a);g.fillRect(x,y-s,1,2*s+1);g.fillRect(x-s,y,2*s+1,1);if(s>1){g.fillStyle(0xffffff,a);g.fillRect(x,y,1,1)}}
@@ -590,7 +591,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(this.loreView){this.loreView.t+=dt;if(this.loreView.t>.35&&(inp.restP||inp.atkP||inp.jumpP||inp.rollP||inp.l||inp.r))this.loreView=null;inp={}}
   else if(inp.restP&&this.pb.body.blocked.down&&this.interact())inp={...inp,restP:0};this.inp=inp;
   P.x=b.x;P.y=b.body.bottom;
-  this.updatePlayer(dt,inp);this.updateArrows(dt);this.updatePickups();this.updateLoot(dt);this.updateLevel(dt);if(NET.guest())NET.guestSim(this,dt);else{this.updateEnemies(dt);this._inE=0;this.updateBoss(dt)}NET.tick(this,dt);this.updateSpells(dt);this.updateCine(dt);
+  this.updatePlayer(dt,inp);this.updateArrows(dt);this.updatePickups();this.updateLoot(dt);this.updateLevel(dt);if(NET.guest())NET.guestSim(this,dt);else{for(const e of this.enemies)e._sx=e.slowT>0&&!e.dead?e.b.x:null;this.updateEnemies(dt);this.slowEnemies(dt);this._inE=0;this.updateBoss(dt)}NET.tick(this,dt);this.updateSpells(dt);this.updateCine(dt);
   // bloodstain: recover souls (Tester r1 P1 #2)
   const S=this.stain;if(S&&!P.dead){if(Math.random()<.5)this.fx.add({k:'soul',x:S.x+rnd(-3,3),y:(S.y||GY)-rnd(0,4),vx:rnd(-4,4),vy:rnd(-24,-10),l:.31,m:.9});
    if(Math.abs(P.x-S.x)<10&&Math.abs(P.y-(S.y||GY))<24){this.gainSouls(S.souls,1);this.fx.soul(S.x,(S.y||GY)-6,20);this.sfx('souls',.5);this.say('SOULS RETRIEVED',2);this.stain=null;this.sv.stain=null;this.sv.souls=this.souls;Save.write(this.sv)}}
@@ -1207,6 +1208,8 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(this.lv.kAt(s.x,s.y)===K_SOLID||s.t>(s.life||3)){if(fire){this.fx.fire(s.x,s.y,12,4,1.2);this.fx.ember(s.x,s.y,4,1.5)}else this.fx.shard(s.x,s.y,8);if(s.g)this.cam.shake(60,.004);this.shots.splice(i,1)}}}
  clearLine(x0,y0,x1,y1){for(let k=1;k<8;k++){const x=lerp(x0,x1,k/8),y=lerp(y0,y1,k/8);if(this.lv.kAt(x,y)===K_SOLID)return false}return true}
  // ---------------- enemies ----------------
+ // e.slowT (seconds) from frost / dark spells: half speed - movement, attack timers and cooldowns all run at 50%
+ slowEnemies(dt){for(const e of this.enemies){if(!(e.slowT>0))continue;e.slowT-=dt;if(e.dead){e.slowT=0;continue}const b=e.b;if(b&&e._sx!=null&&b.x!==e._sx){b.x=e._sx+(b.x-e._sx)*SLOW_MUL}if(b&&b.body){b.setVelocityX(b.body.velocity.x*SLOW_MUL);if(b.body.velocity.y<0)b.setVelocityY(b.body.velocity.y*.8)}e.t-=dt*(1-SLOW_MUL);e.cd+=dt*(1-SLOW_MUL);if(Math.random()<.2)this.fx.spark(b.x,b.y-4,1,0x9fd8ff,20)}}
  updateEnemies(dt){this._inE=1;for(const e of this.enemies){const P=NET.target(this,e);this._eRemote=!!P.remote;if(e.dead){e.deadT+=dt;continue}const b=e.b;e.t+=dt;e.flash-=dt;e.cd-=dt;const dx=P.x-b.x,adx=Math.abs(dx);
    // r7 P1 #3: a melee foe must never keep its lunge velocity: retarget on a teleporting target, leave swing/wind when out of range, and time swing out
    const gnd=e.base==='hollow'||e.base==='knight',jump=e.tgx!=null&&Math.abs(P.x-e.tgx)>200;e.tgx=P.x;

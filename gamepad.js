@@ -6,7 +6,7 @@
 //  - a small DOM toast ("Controller connected") and a "Press any button" hint until a pad is seen
 // Button map (W3C standard mapping, Xbox labels):
 //  A(0) jump / confirm; context-sensitive: next to an interactable (Stage.interactHint) A interacts instead (see readInput)   B(1) dodge roll / back   X(2) attack   Y(3) heavy attack
-//  LB(4) parry/block     RB(5) bolt spell         LT(6) ice spell   RT(7) dome spell
+//  LB(4) parry/block     RB(5) / LT(6) / RT(7) cast the selected spell; D-pad L/R TAP cycles spells (hold walks)
 //  View(8) flask         Start(9) pause           L3(10) heal spell  R3(11) bless
 //  D-pad(12-15) / left stick: move, up = interact/rest, down = drop; in menus: navigate
 'use strict';
@@ -14,7 +14,7 @@ const PAD=(()=>{
  const DZ=0.2,B={A:0,B:1,X:2,Y:3,LB:4,RB:5,LT:6,RT:7,VIEW:8,START:9,L3:10,R3:11,UP:12,DN:13,L:14,R:15};
  const slots=[];// slot -> gamepad index (first pad = slot 0 = this machine's player; in co-op each client's own pad drives its own player)
  const prev={},latch={},rep={};let seen=false,hintEl=null,toastEl=null,toastT=0;
- const KC={ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,Enter:13,Escape:27,t:84};
+ const KC={ArrowUp:38,ArrowDown:40,ArrowLeft:37,ArrowRight:39,Enter:13,Escape:27,t:84,Tab:9};
  const key=(k)=>{for(const type of['keydown','keyup']){const e=new KeyboardEvent(type,{key:k,bubbles:true,cancelable:true});Object.defineProperty(e,'keyCode',{get:()=>KC[k]});Object.defineProperty(e,'which',{get:()=>KC[k]});window.dispatchEvent(e)}PAD.synth.push(k)};
  const pads=()=>{try{return Array.from((navigator.getGamepads&&navigator.getGamepads())||[]).filter(g=>g&&g.connected!==false)}catch(e){return[]}};
  const pressed=(g,i)=>{const b=g.buttons[i];return!!b&&(typeof b==='object'?(b.pressed||b.value>.5):b>.5)};
@@ -44,18 +44,20 @@ const PAD=(()=>{
   const md=mode();PAD.modeNow=md;
   slots.forEach((idx,slot)=>{const g=list.find(g=>g.index===idx);if(!g)return;const s=slot===0?merge(list):read(g),p=prev[idx]||{},L=latch[slot]||(latch[slot]={});
    for(const k of['A','B','X','Y','LB','RB','LT','RT','VIEW','START','L3','R3','up'])if(s[k]&&!p[k])L[k]=1;
+   // D-pad Left/Right TAP (released within 220 ms) cycles spells; holding still walks
+   for(const k of['L','R']){if(s[k]&&!p[k])L['t'+k]=now;if(!s[k]&&p[k]&&L['t'+k]&&now-L['t'+k]<220)L['cyc'+k]=1;if(!s[k]&&p[k])delete L['t'+k]}
    L.held=s;prev[idx]=s;
    if(slot!==0)return;// menus follow the first pad
    if(md==='menu'){if(edge(idx,'u',s.mUp,now,1))key('ArrowUp');if(edge(idx,'d',s.mDn,now,1))key('ArrowDown');if(edge(idx,'l',s.mL,now,1))key('ArrowLeft');if(edge(idx,'r',s.mR,now,1))key('ArrowRight');
     if(edge(idx,'a',s.A,now))key('Enter');if(edge(idx,'b',s.B,now))key('Escape');if(edge(idx,'s',s.START,now))key('Enter');for(const k in L)if(k!=='held')delete L[k]}
-   else if(md==='pause'){if(edge(idx,'s',s.START,now)||edge(idx,'b',s.B,now))key('Escape');if(edge(idx,'y',s.Y,now))key('t');if(edge(idx,'a',s.A,now))key('Enter');if(edge(idx,'l',s.mL,now))key('ArrowLeft');if(edge(idx,'r',s.mR,now))key('ArrowRight');for(const k in L)if(k!=='held')delete L[k]}
+   else if(md==='pause'){if(edge(idx,'s',s.START,now)||edge(idx,'b',s.B,now))key('Escape');if(edge(idx,'y',s.Y,now))key('t');if(edge(idx,'x',s.X,now))key('Tab');if(edge(idx,'a',s.A,now))key('Enter');if(edge(idx,'l',s.mL,now))key('ArrowLeft');if(edge(idx,'r',s.mR,now))key('ArrowRight');for(const k in L)if(k!=='held')delete L[k]}
    else{for(const k of['u','d','l','r','a','b'])edge(idx,k,s[{u:'mUp',d:'mDn',l:'mL',r:'mR',a:'A',b:'B'}[k]],now);if(edge(idx,'s',s.START,now)){key('Escape');delete L.START}}});
   if(toastEl&&toastT&&now>toastT){toastEl.style.display='none';toastT=0}
   ui();if(hintEl){const G=window.__G,t=G&&G.scene.getScene('title');hintEl.style.display=(!slots.length&&t&&t.sys.isActive())?'block':'none'}requestAnimationFrame(poll)}
  const PAD={synth:[],slots,lastToast:null,modeNow:null,
   connected:()=>slots.length,
   // gameplay state for a slot; presses are latched until read so a tap between frames is never lost
-  take(slot=0){const L=latch[slot];if(!L||!L.held||slots[slot]===undefined)return null;const h=L.held,o={l:h.l,r:h.r,up:h.up,dn:h.dn,jump:h.A,jumpP:!!L.A,atkP:!!L.X,heavyP:!!L.Y,rollP:!!L.B,parryP:!!L.LB,boltP:!!L.RB,iceP:!!L.LT,domeP:!!L.RT,flaskP:!!L.VIEW,upP:!!L.up,healP:!!L.L3,blessP:!!L.R3};
-   for(const k in L)if(k!=='held')delete L[k];return o}};
+  take(slot=0){const L=latch[slot];if(!L||!L.held||slots[slot]===undefined)return null;const h=L.held,o={l:h.l,r:h.r,up:h.up,dn:h.dn,jump:h.A,jumpP:!!L.A,atkP:!!L.X,heavyP:!!L.Y,rollP:!!L.B,parryP:!!L.LB,spellP:!!(L.RB||L.LT||L.RT),cycL:!!L.cycL,cycR:!!L.cycR,flaskP:!!L.VIEW,upP:!!L.up,healP:!!L.L3,blessP:!!L.R3};
+   for(const k in L)if(k!=='held'&&k!=='tL'&&k!=='tR')delete L[k];return o}};
  requestAnimationFrame(poll);
  return PAD})();
