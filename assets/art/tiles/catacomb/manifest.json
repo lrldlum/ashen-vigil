@@ -3,7 +3,7 @@
  "tile": 8,
  "cell": 32,
  "pad": 12,
- "mode": "overlay",
+ "mode": "replace",
  "variants": 4,
  "tiles": "tiles.png",
  "oneway": "oneway.png",

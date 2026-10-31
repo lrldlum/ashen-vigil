@@ -50,6 +50,12 @@ for(const st of stages){
  ok(P.r.k===Q.r.k&&P.r.bodies===Q.r.bodies,`png loader: collision unchanged with PNG atlas`);
  ok(P.r.stats.props>Q.r.stats.props,`png loader: manifest decorDensity honoured (${P.r.stats.props} > ${Q.r.stats.props} props)`);
  ok(P.errs.length===0,'png loader: no page errors '+P.errs.join('|'));await P.pg.close();await Q.pg.close()}
+// r20: Catacomb manifest mode 'replace' -> no bright ember veins left on solid tiles; lava/hazard tiles stay bright
+{const C=await run('catacomb','');const v=await C.pg.evaluate(()=>{const s=__G.scene.getScene('stage'),lv=s.lv,cv=s.textures.get('lvl_catacomb').getSourceImage(),d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;
+  let sol=0,bright=0,hz=0,hzB=0;const br=(q)=>d[q]>200&&d[q+1]>90&&d[q+3]>0;
+  for(let j=0;j<lv.rows;j++)for(let i=0;i<lv.cols;i++){const k=lv.k[j*lv.cols+i];if(k!==1&&k!==4)continue;for(let y=0;y<8;y++)for(let x=0;x<8;x++){const q=((j*8+y)*cv.width+i*8+x)*4;if(k===1){sol++;if(br(q))bright++}else{hz++;if(br(q))hzB++}}}
+  return{sol,bright,hz,hzB,mode:AUTOTILE.atlas('catacomb').mode}});
+ ok(v.mode==='replace'&&v.bright===0,`catacomb: replace mode, no bright vein pixels on solids (${v.bright}/${v.sol})`,v);ok(v.hz===0||v.hzB>0,`catacomb: hazards keep their bright pixels (${v.hzB}/${v.hz})`);await C.pg.close()}
 // r20 P3-2: no tile art is requested before the title is ready; it arrives lazily after
 {const pg=await br.newPage();const rq=[];pg.on('request',r=>{if(r.url().includes('/assets/art/tiles/'))rq.push(r.url())});await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());
  await pg.goto(B+'?mute');await pg.waitForFunction(()=>performance.getEntriesByName('title-ready').length,null,{timeout:20000});const atReady=rq.length;
