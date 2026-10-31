@@ -98,7 +98,7 @@ function genTextures(scene,sx='',pal=null,theme=null){
  if(T.exists('sky'+sx))return;
  const keep={...C};if(pal)Object.assign(C,pal);try{genTex(T,sx)}finally{Object.assign(C,keep)}
  // bg pass: a stage with its own art (bg.js) replaces the shared city skyline with its own sky, far and near layers
- const A=theme&&typeof BGART!=='undefined'&&BGART[theme];if(A){for(const[k,w,fn]of[['sky',W,(x,w)=>{BGART_sky(x,w,A)}],['far',640,(x,w)=>A.far(x,w)],['near',800,(x,w)=>A.near(x,w)]]){T.remove(k+sx);T.addCanvas(k+sx,makeCanvas(w,H,fn))}}}
+ const A=theme&&typeof BGART!=='undefined'&&BGART[theme];if(A){for(const[k,w,fn]of[['sky',W,(x,w)=>{BGART_sky(x,w,A)}],['far',A.fw||640,(x,w)=>A.far(x,w)],['near',A.nw||800,(x,w)=>A.near(x,w)]]){T.remove(k+sx);T.addCanvas(k+sx,makeCanvas(w,H,fn))}}}
 function BGART_sky(x,w,A){const b=A.sky;for(let y=0;y<H;y++){const t=Math.min(.999,y/150)*(b.length-1),i=Math.floor(t),f=t-i;for(let xx=0;xx<w;xx++){x.fillStyle=b[Math.min(b.length-1,i+(f>(BAYER[y&3][xx&3]+.5)/16?1:0))];x.fillRect(xx,y,1,1)}}A.skyX&&A.skyX(x,w)}
 function genTex(T,sx){
  T.addCanvas('sky'+sx,makeCanvas(W,H,(x)=>{const bands=[C.sky0,C.sky1,C.sky2,C.sky3,C.sky4];const R=seedRand(7);

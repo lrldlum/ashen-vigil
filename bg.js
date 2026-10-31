@@ -105,7 +105,7 @@ const BGART=(()=>{
   far(x,w){const R=rnd(93);for(let xx=0;xx<w;xx+=22)wrap(w,o=>{const h=20+R()*70;spike(x,'#3a1208',o+xx+11,0,h,9);rect(x,'#e0601a',o+xx+11,h-2,1,2);const g=18+R()*50;spike(x,'#3a1208',o+xx+11,G_,g,10,true)})},
   near(x,w){const R=rnd(95);for(let xx=0;xx<w;xx+=70)wrap(w,o=>{const h=40+R()*80;spike(x,'#120403',o+xx+20,0,h,18);rect(x,'#ff9a3a',o+xx+20,h,1,3);spike(x,'#120403',o+xx+55,G_,30+R()*40,14,true);rect(x,'#c84a14',o+xx+41,G_-12,28,1)})}});
  // BELL TOWER — moonlit snow peaks under an icy sky
- O('belltower',{sky:['#0e1a3e','#1e3266','#34508e','#5a7ab4','#90b0d8'],
+ O('belltower',{fw:2304,nw:2816,sky:['#0e1a3e','#1e3266','#34508e','#5a7ab4','#90b0d8'],
   skyX(x,w){glow(x,236,46,70,'rgba(220,235,255,.45)');disc(x,'#eef4ff',236,46,24);disc(x,'#c8d6ee',228,40,5);disc(x,'#c8d6ee',244,54,4);disc(x,'#d8e2f4',240,36,3);stars(x,w,60,5,90,['#ffffff','#c8dcff'])},
   far(x,w){for(const m of mtns(w,97,80,105,90,135,58,82,.24,.36))wrap(w,o=>mtn(x,'#3a5486','#f4f8ff','#c8d8f0',o,m))},
   near(x,w){const ms=mtns(w,99,95,130,58,92,68,92,.2,.3);for(let k=0;k<ms.length;k++){const m=ms[k],xx=m.x-55;wrap(w,o=>{mtn(x,'#1a2850','#e8f0ff','#e8f0ff',o,m);for(let p=0;p<3;p++){const px=o+xx+10+p*34;tri(x,'#0c1430',px,G_,24,6);rect(x,'#e8f0ff',px-4,G_-10,9,1)}})}rect(x,'#e8f0ff',0,G_-4,w,4)}});
