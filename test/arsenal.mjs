@@ -137,11 +137,11 @@ const T15=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Prom
  equip('runepistol');sv.rune='lightning';tp(400);P.f=1;e=dummy(40);let st=0,fr=0;for(let i=0;i<40;i++){P.fp=P.fpMax;s.ars.reload=0;await act({atkP:1},150);if(e.state==='stag')st++;fr++}o.uptime=+(st/fr).toFixed(2);kill();
  e=dummy(40);e.state='stag';e.t=0;h=e.hp;s.arsHitE(e,1,1,null);o.projOnStag=+(h-e.hp).toFixed(2);kill();
  // P2-3 parked / other-room enemies are out of reach; shots end at the room cut
- equip('longrifle');sv.ammo=9;const r=s.room;o.room=r&&[r.x0,r.x1];tp(r.x1-30);P.f=1;e=dummy(60);h=e.hp;delete sv.gmag.longrifle;await act({atkP:1},600);o.otherRoom=+(h-e.hp).toFixed(2);kill();
+ equip('longrifle');sv.ammo=9;const r=s.room;o.room=r&&[r.x0,r.x1];tp(r.x1-30);await sl(150);P.f=1;e=dummy(60);h=e.hp;delete sv.gmag.longrifle;await act({atkP:1},600);o.otherRoom=+(h-e.hp).toFixed(2);kill();
  tp(400);P.f=1;e=dummy(60);e.parked=1;h=e.hp;delete sv.gmag.longrifle;s.ars.reload=0;await act({atkP:1},600);o.parked=+(h-e.hp).toFixed(2);e.parked=0;kill();
  // P2-4 environment ignores the guard
- equip('longsword');equip('towershield','off');window.__inp=()=>({guard:1});await sl(200);P.inv=0;P.hp=P.hpMax;const b0=s.stats.blocks||0;const a0=P.air;P.air=0;let h0=P.hp;s.hurtPlayer(8,P.x);o.drown=h0-P.hp;P.air=a0;P.inv=0;P.state='idle';
- h0=P.hp;s.hurtPlayer(15,P.x-1);o.spike=h0-P.hp;P.inv=0;P.state='idle';await sl(100);h0=P.hp;s.hurtPlayer(20,P.x+20*P.f);o.front=h0-P.hp;o.envBlocks=(s.stats.blocks||0)-b0;P.inv=0;P.state='idle';
+ equip('longsword');equip('towershield','off');window.__inp=()=>({guard:1});await sl(200);P.inv=0;P.hp=P.hpMax;const b0=s.stats.blocks||0;const a0=P.air;P.air=0;let h0=P.hp;s.hurtPlayer(8,P.x,'env');o.drown=h0-P.hp;P.air=a0;P.inv=0;P.state='idle';
+ h0=P.hp;s.hurtPlayer(15,P.x-1,'env');o.spike=h0-P.hp;P.inv=0;P.state='idle';await sl(100);h0=P.hp;s.hurtPlayer(20,P.x+20*P.f);o.front=h0-P.hp;o.envBlocks=(s.stats.blocks||0)-b0;P.inv=0;P.state='idle';
  // P2-5 guard break: full hit, hurt stagger, guard stays down while held
  window.__inp=()=>({});sv.eq.off=null;s.applyBuild(false);await sl(150);P.inv=0;P.hp=P.hpMax;h0=P.hp;s.hurtPlayer(16,P.x+20*P.f,{});const base=h0-P.hp;await sl(900);P.state='idle';P.inv=0;equip('kite','off');window.__inp=()=>({guard:1});P.hp=P.hpMax;await sl(200);P.st=1;P.inv=0;h0=P.hp;s.hurtPlayer(16,P.x+20*P.f,{});o.gb={lost:h0-P.hp,base,state:P.state};await sl(300);o.gb.heldGuard=!!P.guard;window.__inp=()=>({});await sl(150);P.st=P.stMax;window.__inp=()=>({guard:1});await sl(1000);o.gb.again=!!P.guard;window.__inp=()=>({});
  P.hp=P.hpMax;sv.eq.off=null;s.applyBuild(false);
@@ -168,6 +168,38 @@ ok('p2_5_guard_break_punishes',T15.gb.lost===T15.gb.base&&T15.gb.base>0&&T15.gb.
 ok('p2_6_hud_full_mag_top_right',T15.hud&&/MAG 1\/1/.test(T15.hud.s)&&T15.hud.y===22,T15.hud);
 ok('p2_7_balance',JSON.stringify(T15.bal)===JSON.stringify({rune:[.6,7],bb:[.9,.22],fl:1,whip:[22,20],hal:1.6,scy:{str:'B',dex:'C'}}),T15.bal);
 ok('p3_labels_pause_merch_infuse_pad_reload',T15.keys.every(k=>!/^[GTR]$/.test(k))&&T15.pause===3&&T15.pauseR<=T15.W&&/PISTOL SHOT/.test(T15.merch)&&T15.inf&&T15.inf.x+T15.inf.w<=312&&/12 PISTOL/.test(T15.desc)&&T15.padMoving===0&&T15.reloadAfterSwap===0&&T15.runeFired===1,{k:T15.keys,p:T15.pause,m:T15.merch,i:T15.inf,pm:T15.padMoving,r:T15.reloadAfterSwap,rf:T15.runeFired});
+
+// ---------- 16. Tester r16
+mark('r16');
+const T16=await ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={},sl=ms=>new Promise(r=>setTimeout(r,ms));kill();tp(400);P.hp=P.hpMax;
+ // P1: front shots / shards / boss charge into a tower-shield guard deal 0; tagged hazards (drowning) go through
+ equip('longsword');equip('towershield','off');P.f=1;window.__inp=()=>({guard:1});await sl(250);P.inv=0;let h=P.hp;
+ for(let i=0;i<3;i++){s.shots.push({x:P.x+60,y:P.y-7,vx:-200,vy:0,dmg:12,t:0,r:6});await sl(500);P.inv=0}o.shots=h-P.hp;
+ h=P.hp;s.hurtPlayer(16,P.x+3);P.inv=0;o.shard=h-P.hp;h=P.hp;s.hurtPlayer(20,P.x+4,'boss');P.inv=0;o.charge=h-P.hp;P.st=P.stMax;
+ h=P.hp;s.hurtPlayer(8,P.x,'env');o.drown=h-P.hp;P.inv=0;P.state='idle';
+ window.__inp=()=>({});sv.eq.off=null;s.applyBuild(false);await sl(200);h=P.hp;P.inv=0;s.hurtPlayer(8,P.x,'env');o.drownBare=h-P.hp;P.inv=0;P.state='idle';
+ const src=await (await fetch('game.js')).text(),bt=await (await fetch('btenemies.js')).text(),br=await (await fetch('btregion.js')).text();
+ o.tags=["hurtPlayer(8,P.x,'env')","hurtPlayer(12,P.x-away*8,'env')","hurtPlayer(18,x,'env')","hurtPlayer(15,cx-P.f,'env')","b+10:a-10,'env')"].filter(t=>!src.includes(t)).concat(bt.includes("hurtPlayer(14,c.x,'env')")?[]:['bt34'],br.includes("hurtPlayer(10,c.x,'env')")?[]:['br40']);
+ o.bossTags=(src.match(/hurtPlayer\(20,B\.x,'boss'\)/g)||[]).length;
+ // P2-4: tower shield vs boss heavies: 25% chip, two slams break the guard
+ equip('towershield','off');P.hp=P.hpMax;P.st=P.stMax;window.__inp=()=>({guard:1});await sl(250);const B0=s.boss;s.boss={state:'slam',x:P.x+20,y:P.y};const gb0=s.stats.guardBreaks||0;
+ P.inv=0;h=P.hp;s.hurtPlayer(24,P.x+20,'boss');o.chip=h-P.hp;o.st1=Math.round(P.st);P.inv=0;s.hurtPlayer(24,P.x+20,'boss');o.broke=(s.stats.guardBreaks||0)-gb0;s.boss=B0;window.__inp=()=>({});await sl(900);P.state='idle';P.inv=0;P.hp=P.hpMax;sv.eq.off=null;s.applyBuild(false);
+ // P2-2/3: ladder + whip (light-chain DPS = AR x light.mul / light.t), and each ladder weapon's light actually lands
+ const st0={...sv.stats},dps=(id,b)=>{Object.assign(sv.stats,b);sv.eq.main=id;s.applyBuild(false);const L=WEAPONS[id].light;return+(s.build.ar*L.mul/L.t).toFixed(2)};
+ const STR={str:40,dex:14,int:10,fth:10},DEX={str:14,dex:40,int:10,fth:10};o.ladder=ARS.STR_LADDER.map(id=>dps(id,STR));
+ o.whip={str:[dps('whip',STR),dps('longsword',STR)],dex:[dps('whip',DEX),dps('longsword',DEX)]};Object.assign(sv.stats,STR);o.lands={};
+ for(const id of ARS.STR_LADDER){equip(id);tp(400);await sl(120);P.f=1;const e=dummy(Math.max(10,(WEAPONS[id].light.reach||0)+4));const h0=e.hp;await act({atkP:1},1000);o.lands[id]=+(h0-e.hp).toFixed(2);kill()}
+ // P3-5: throw AR from DEX only
+ const knife=async(dex,main)=>{sv.stats.dex=dex;equip(main);tp(400);await sl(120);P.f=1;sv.thr={tknife:2};sv.eq.q2='tknife';const e=dummy(60);const h0=e.hp;await act({throwP:1},700);kill();return+(h0-e.hp).toFixed(2)};
+ o.knife=[await knife(10,'dagger'),await knife(10,'hollowbrand'),await knife(40,'dagger')];Object.assign(sv.stats,st0);equip('longsword');
+ // P3-6: shot pouch text fits the merchant panel (x 202..316)
+ o.pouch=ARS.MTXT.ammo.map(t=>textW(t));return o});
+await shot('ars14_r16');mark('r16',1);
+ok('r16_p1_guard_blocks_shots_shards_charge_not_hazards',T16.shots===0&&T16.shard===0&&T16.charge===0&&T16.drown>0&&T16.drown===T16.drownBare&&!T16.tags.length&&T16.bossTags===2,{s:T16.shots,sh:T16.shard,c:T16.charge,d:[T16.drown,T16.drownBare],tags:T16.tags,b:T16.bossTags});
+ok('r16_p2_str_boss_ladder',T16.ladder.every((v,i)=>!i||v>=T16.ladder[i-1]*1.1)&&Object.values(T16.lands).every(v=>v>0),{ladder:T16.ladder,lands:T16.lands});
+ok('r16_p2_whip_at_most_1_5x_longsword',T16.whip.str[0]<=T16.whip.str[1]*1.5&&T16.whip.dex[0]<=T16.whip.dex[1]*1.5,T16.whip);
+ok('r16_p2_tower_boss_chip_and_two_slams_break',T16.chip>0&&T16.broke===1,{chip:T16.chip,st1:T16.st1,broke:T16.broke});
+ok('r16_p3_throw_dex_ar_and_pouch_text',T16.knife[0]===T16.knife[1]&&T16.knife[2]>T16.knife[0]*1.5&&T16.pouch.every(w=>w<=112),{k:T16.knife,p:T16.pouch});
 await A.ctx.close();
 // ---------- 8. co-op: a guest's shot is mirrored on the host and its damage lands host-side
 const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&novideo&stage=ramparts&class=knight');
@@ -185,6 +217,11 @@ ok('coop_guest_gun_shot_mirrored_and_damages',linked&&CO[0].net>=1&&CO[0].hp<200
 await G.ev(()=>{const s=S(),sv=s.sv;sv.inv.push('kite');sv.eq.main='longsword';sv.eq.off='kite';s.applyBuild(false);window.__inp=()=>({guard:1})});await H.ev(()=>{S().stats.arsRemoteGuard=0});await wait(1200);
 const RG=[await H.ev(()=>({n:S().stats.arsRemoteGuard||0,gd:NET.remote&&NET.remote.gd,off:NET.remote&&NET.remote.off})),await G.ev(()=>!!S().player.guard)];await H.shot('ars10_coop_partner_guard');
 await G.ev(()=>{window.__inp=()=>({})});
+// r16: co-op guest's tower-shield guard takes the 25% chip from the boss charge (net.js guest path tagged 'boss')
+const GC=await G.ev(async()=>{const s=S(),sv=s.sv,P=s.player,sl=ms=>new Promise(r=>setTimeout(r,ms));sv.inv.push('towershield');sv.eq.main='longsword';sv.eq.off='towershield';s.applyBuild(false);P.f=1;P.hp=P.hpMax;P.st=P.stMax;window.__inp=()=>({guard:1});await sl(300);
+ const B0=s.boss;s.boss={state:'charge',x:P.x+4,y:P.y};P.inv=0;const h=P.hp;s.hurtPlayer(20,P.x+4,'boss');const chip=h-P.hp;window.__inp=()=>({});P.inv=0;P.state='idle';P.hp=P.hpMax;sv.eq.off=null;s.applyBuild(false);await sl(300);const h2=P.hp;s.hurtPlayer(20,P.x+4,'boss');const bare=h2-P.hp;s.boss=B0;P.inv=0;P.state='idle';P.hp=P.hpMax;
+ const src=await (await fetch('net.js')).text();return{chip,bare,tag:src.includes("S.hurtPlayer(20,B.x,'boss')")}});
+ok('r16_coop_guest_tower_boss_charge_chip_25',GC.chip>0&&Math.abs(GC.chip-GC.bare*.25)<=1&&GC.tag,GC);
 ok('coop_partner_sees_shield_guard',RG[1]&&RG[0].n>0&&RG[0].off==='kite',RG);
 await H.ctx.close();await G.ctx.close();
 

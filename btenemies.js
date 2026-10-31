@@ -31,7 +31,7 @@ if(typeof STAGE_DEFS!=='undefined'&&STAGE_DEFS.belltower){const D=STAGE_DEFS.bel
  SP.spawnIcicle=function(x,y){(this.icicles||(this.icicles=[])).push({x,y,vy:40,t:0});this.stats.icicles=(this.stats.icicles||0)+1};
  SP.stepIcicles=function(dt){const L=this.icicles;if(!L)return;const P=this.player;for(let i=L.length-1;i>=0;i--){const c=L[i];c.t+=dt;c.vy+=520*dt;c.y+=c.vy*dt;
   const fy=this.lv&&this.lv.floorAt?this.lv.floorAt(c.x,c.y-4):GY;
-  if(P&&!P.dead&&Math.abs(P.x-c.x)<6&&c.y>P.y-26&&c.y<P.y+2&&P.inv<=0){if(this.hurtPlayer(14,c.x))this.stats.icicleHits=(this.stats.icicleHits||0)+1;L.splice(i,1);this.fx.shard(c.x,c.y,6,80);continue}
+  if(P&&!P.dead&&Math.abs(P.x-c.x)<6&&c.y>P.y-26&&c.y<P.y+2&&P.inv<=0){if(this.hurtPlayer(14,c.x,'env'))this.stats.icicleHits=(this.stats.icicleHits||0)+1;L.splice(i,1);this.fx.shard(c.x,c.y,6,80);continue}
   if(c.y>=fy||c.t>3){this.fx.shard(c.x,Math.min(c.y,fy),6,70);L.splice(i,1)}}};
  const de=SP.drawEnemy;SP.drawEnemy=function(g,ga,e){const A=BT_ART[e.k];if(!A||!this.textures.exists(A.tex))return de.call(this,g,ga,e);
   if(!e.spr){e.spr=this.add.sprite(0,0,A.tex,0).setOrigin(A.ox,A.oy).setDepth(5)}const S=e.spr,b=e.b;

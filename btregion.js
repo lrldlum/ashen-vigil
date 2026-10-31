@@ -37,7 +37,7 @@ const BT_SHAFT={x0:1660,x1:2020,top:-760,bellY:-736,period:4.5};window.BT_SHAFT=
    if(w.y>160)B.waves.splice(i,1)}
   // icicles fall, then freeze into a ledge where they land (7 s), then grow back on the beam
   for(const c of B.ici){if(c.st==='fall'){c.vy+=600*dt;c.y+=c.vy*dt;const fy=this.btFloorBelow(c.x,c.y-c.vy*dt);
-    if(Math.abs(P.x-c.x)<5&&c.y>P.y-24&&c.y<P.y&&P.inv<=0)this.hurtPlayer(10,c.x);
+    if(Math.abs(P.x-c.x)<5&&c.y>P.y-24&&c.y<P.y&&P.inv<=0)this.hurtPlayer(10,c.x,'env');
     if(fy!=null&&c.y>=fy-6){c.st='gone';c.re=9;this.btChunk(c.x,fy-12);this.fx.shard(c.x,fy-6,8,80)}else if(c.y>200){c.st='gone';c.re=9}}
    else if(c.st==='gone'){c.re-=dt;if(c.re<=0){c.st='hang';c.y=c.y0??c.y;}}}
   for(let i=B.chunks.length-1;i>=0;i--){const k=B.chunks[i];k.t-=dt;if(k.t<=0){k.r.destroy();k.col.destroy();k.img.destroy();B.chunks.splice(i,1)}}

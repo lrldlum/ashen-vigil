@@ -619,7 +619,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  explore(dt,inp,dir,on){const P=this.player,b=this.pb,body=b.body,L=this.lv,cx=P.x,cy=P.y-7;P.dropT-=dt;P.wallLock-=dt;P.wallC-=dt;P.climbCd-=dt;
   if(!on||P.state!=='wall'){}
   // hazards: spikes hurt and return you to the last safe footing
-  if((L.kAt(cx,P.y-2)===K_SPIKE||L.kAt(cx,cy)===K_SPIKE)&&P.spikeT<=0&&!P.dead){P.inv=0;this.hurtPlayer(15,cx-P.f);P.spikeT=.3;this.stats.spikes=(this.stats.spikes||0)+1}
+  if((L.kAt(cx,P.y-2)===K_SPIKE||L.kAt(cx,cy)===K_SPIKE)&&P.spikeT<=0&&!P.dead){P.inv=0;this.hurtPlayer(15,cx-P.f,'env');P.spikeT=.3;this.stats.spikes=(this.stats.spikes||0)+1}
   if(P.spikeT>0){P.spikeT-=dt;if(P.spikeT<=0&&!P.dead){b.setPosition(P.safe.x,P.safe.y-8);b.setVelocity(0,0);this.fx.ember(P.safe.x,P.safe.y-6,10,1)}}
   if(on&&!['roll','hurt'].includes(P.state)&&L.kAt(cx-3,P.y-2)!==K_SPIKE&&L.kAt(cx+3,P.y-2)!==K_SPIKE&&L.kAt(cx,P.y+3)!==K_SPIKE)P.safe={x:cx,y:P.y};
   const chainHere=L.kAt(cx,cy)===K_CHAIN,chainBelow=L.kAt(cx,P.y+4)===K_CHAIN;
@@ -767,7 +767,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const B=this.boss;if(B&&(B.kind==='prioress'||B.kind==='heir')&&this.bossState==='fight'&&B.phase>=3&&x>ARENA_L){const s=Math.sin(this.t*1.2);if(Math.abs(s)>.3&&(s>0?x<(ARENA_L+ARENA_R)/2:x>=(ARENA_L+ARENA_R)/2))return 1}return 0}
  blightStep(dt){const P=this.player;if(P.dead||this.cine||this.victory)return;
   if(this.sporeAt(P.x,P.y-8)){P.blight=Math.min(1,(P.blight||0)+dt*.8);{const fl=P.hp>P.hpMax*.25?1:0;if(P.hp>fl)P.hp=Math.max(fl,P.hp-dt*(4+P.blight*6))}this.stats.poisoned=(this.stats.poisoned||0)+dt;if(Math.random()<.2)this.fx.spark(P.x+rnd(-5,5),P.y-12,1,0xb8e070,30)}else P.blight=Math.max(0,(P.blight||0)-dt*.5);
-  for(const th of this.def.thorns||[]){if(P.x>th[0]-7&&P.x<th[1]+7&&P.y>th[2]-15&&P.y<th[2]+4&&P.inv<=0){const away=P.x<(th[0]+th[1])/2?-1:1;if(this.hurtPlayer(12,P.x-away*8)){this.stats.thorned=(this.stats.thorned||0)+1;P.thornKb=.3;this.pb.setVelocity(away*160,-170)}}}
+  for(const th of this.def.thorns||[]){if(P.x>th[0]-7&&P.x<th[1]+7&&P.y>th[2]-15&&P.y<th[2]+4&&P.inv<=0){const away=P.x<(th[0]+th[1])/2?-1:1;if(this.hurtPlayer(12,P.x-away*8,'env')){this.stats.thorned=(this.stats.thorned||0)+1;P.thornKb=.3;this.pb.setVelocity(away*160,-170)}}}
   if(P.thornKb>0){P.thornKb-=dt;this.pb.setVelocityX(Math.sign(this.pb.body.velocity.x||1)*Math.max(Math.abs(this.pb.body.velocity.x),90))}}
  starOn(s){return((this.t+s[0]*.01)%s[3])<s[3]*.62}
  gravAt(x,y){for(const z of this.def.lowg||[]){const r=z.r;if(x>r[0]&&x<r[2]&&y>r[1]&&y<r[3]&&this.gustOn(z))return 1}
@@ -793,7 +793,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if((inp.jumpP||inp.jump)&&P.y-6-top<9&&P.y-6-top>-1&&!['atk','roll','hurt','cast','drink'].includes(P.state)){vy=-275;body.setAllowGravity(true);this.splash(P.x,top);this.sfx('jump',.25);this.stats.leaps=(this.stats.leaps||0)+1}
   b.setVelocityY(vy);if(!['roll','atk'].includes(P.state)){const vx=body.velocity.x;b.setVelocityX(vx+clamp(dir*72-vx,-420*dt,420*dt))}
   if(!head){P.air-=dt;if(Math.random()<dt*4)this.bubbles.push({x:P.x+P.f*3,y:P.y-14,t:0,top})}else P.air=Math.min(P.airMax,P.air+dt*6);
-  if(P.air<=0){P.air=0;P.airHurt=(P.airHurt||0)-dt;if(P.airHurt<=0){P.airHurt=1;P.inv=0;this.hurtPlayer(8,P.x);this.pop('DROWNING',P.x,P.y-26,0x9ff0e8)}}}
+  if(P.air<=0){P.air=0;P.airHurt=(P.airHurt||0)-dt;if(P.airHurt<=0){P.airHurt=1;P.inv=0;this.hurtPlayer(8,P.x,'env');this.pop('DROWNING',P.x,P.y-26,0x9ff0e8)}}}
  drawWaters(g,ga){const t=this.t,cX=this.cam.scrollX;
   for(const w of this.waters||[]){const r=w.r;if(r[2]<cX-10||r[0]>cX+W+10)continue;const top=Math.round(this.waterTop(w)),x0=Math.max(r[0],Math.floor(cX)-2),x1=Math.min(r[2],Math.ceil(cX)+W+2);
    if(w.dy>0){g.fillStyle(0x2a3a34,.5);g.fillRect(x0,r[3]-2,x1-x0,2);for(let x=x0;x<x1;x+=5)px(g,x,r[3]-3,0x4a6a60)}// wet silt where the water drained
@@ -838,7 +838,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(e.hp<=0&&!e.dead){e.dead=true;e.deadT=0;e.b.body.enable=false;this.fx.soul(e.b.x,e.b.y,8);this.gainSouls(e.souls);this.rollDrop(ETABLE[e.k]||'common',e.b.x,e.b.body.bottom);this.fx.dust(e.b.x,e.b.body.bottom,10);
    if(e.base==='imp')this.explode(e.b.x,e.b.y,false)}}
  explode(x,y,hurts){this.fx.fire(x,y,30,6,1.4);this.fx.spark(x,y,16,C.f1,150);this.fx.ember(x,y,10,2);this.novas.push({x,y,t:0,m:.25,fire:1});this.cam.shake(140,.01);
-  if(hurts&&Math.hypot(this.player.x-x,this.player.y-8-y)<22)this.hurtPlayer(18,x)}
+  if(hurts&&Math.hypot(this.player.x-x,this.player.y-8-y)<22)this.hurtPlayer(18,x,'env')}
  die(){const P=this.player;P.dead=true;P.deadT=0;this.fx.ember(P.x,P.y-8,30,2);this.sfx('death',.5);this.say('EMBER EXTINGUISHED',2.4);
   // DS rule: the old stain is lost; a new one holds what you carried
   this.stain=this.souls>0?{x:Math.round(clamp(P.x,20,WORLD-20)),y:this.lv.floorAt(P.x,P.y-10),souls:this.souls}:null;this.souls=0;
@@ -1262,7 +1262,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    else if(B.state==='slam'){if(B.t<.1&&Math.abs(P.x-(B.x+B.f*16))<16)this.hurtPlayer(24,B.x,'boss');if(B.state==='slam'&&B.t>.6){B.state='walk';B.cd=rnd(.8,1.6)*(B.phase2?.7:1)}}
    else if(B.state==='nova'){if(B.t>1){B.state='walk';B.cd=rnd(.8,1.4)}}
    else if(B.state==='charge'){B.x+=B.f*200*dt;if(Math.random()<.9)this.fx.dust(B.x-B.f*8,GY,1,-B.f);this.fx.add({k:'shard',x:B.x-B.f*6,y:GY-rnd(2,20),vx:-B.f*30,vy:0,l:0,m:.4});
-    if(Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<26)this.hurtPlayer(20,B.x);
+    if(Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<26)this.hurtPlayer(20,B.x,'boss');
     if(B.x<ARENA_L+20||B.x>ARENA_R-20||B.t>.9){B.x=clamp(B.x,ARENA_L+20,ARENA_R-20);B.state='walk';B.cd=rnd(.6,1.2);this.cam.shake(150,.015);this.fx.dust(B.x,GY,12)}}
    B.x=clamp(B.x,ARENA_L+16,ARENA_R-16);
    if(!B.phase2&&B.hp<B.hpMax*.5){B.phase2=true;this.say('THE WARDEN\'S RIME DEEPENS',1.8);this.novas.push({dome:1,owner:'b',harmless:1,x:B.x,y:GY,R:120,grow:.6,t:0,m:1.6});this.cam.shake(300,.02)}
@@ -1309,11 +1309,11 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    else if(B.state==='slam'){if(B.t<.1&&Math.abs(P.x-(B.x+B.f*16))<18&&P.y>GY-30)this.hurtPlayer(king?28:24,B.x,'boss');if(B.state==='slam'&&B.t>.6){B.state='walk';B.cd=rnd(.8,1.5)*quick}}
    else if(B.state==='charge'){B.x+=B.f*(king?210:180)*dt;
     if(hot){this.fx.fire(B.x-B.f*8,GY-2,2,3,1);if(Math.random()<.9)this.fx.dust(B.x-B.f*8,GY,1,-B.f)}else this.fx.add({k:'shard',x:B.x-B.f*6,y:B.y-rnd(8,36),vx:-B.f*30,vy:0,l:0,m:.4});
-    if(Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<30)this.hurtPlayer(20,B.x);
+    if(Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<30)this.hurtPlayer(20,B.x,'boss');
     if(B.x<ARENA_L+20||B.x>ARENA_R-20||B.t>.9){B.x=clamp(B.x,ARENA_L+20,ARENA_R-20);B.state='walk';B.cd=rnd(.6,1.2)*quick;this.cam.shake(150,.015);this.fx.dust(B.x,GY,12)}}
    else if(B.state==='cast'){if(B.t>(B.dur||1)){B.state='walk';B.cd=rnd(.7,1.3)*quick}}
    B.x=clamp(B.x,ARENA_L+16,ARENA_R-16);
-   if(king&&B.phase>=2&&this.def.lavaPits){this.lavaCd=(this.lavaCd||0)-dt;for(const[a,b]of this.def.lavaPits){if(Math.random()<.25)this.fx.fire(rnd(a,b),GY-1,1,3,1);if(P.x>a&&P.x<b&&this.pb.body.blocked.down&&P.y>=GY-1&&this.lavaCd<0&&!P.dead){this.lavaCd=.7;P.inv=0;this.hurtPlayer(14,P.x<(a+b)/2?b+10:a-10);this.fx.fire(P.x,GY-2,8,4,1.2);this.sfx('lava',.4)}}}
+   if(king&&B.phase>=2&&this.def.lavaPits){this.lavaCd=(this.lavaCd||0)-dt;for(const[a,b]of this.def.lavaPits){if(Math.random()<.25)this.fx.fire(rnd(a,b),GY-1,1,3,1);if(P.x>a&&P.x<b&&this.pb.body.blocked.down&&P.y>=GY-1&&this.lavaCd<0&&!P.dead){this.lavaCd=.7;P.inv=0;this.hurtPlayer(14,P.x<(a+b)/2?b+10:a-10,'env');this.fx.fire(P.x,GY-2,8,4,1.2);this.sfx('lava',.4)}}}
    if(B.hp<=0){this.bossState='dying';B.t=0;this.flames=[];this.shots.length=0;this.sfx('death',.6);this.say(this.def.boss.slain,3);this.cam.shake(600,.02)}}
   if(this.bossState==='dying'){if(hot){if(Math.random()<.9)this.fx.fire(B.x+rnd(-12,12),B.y-rnd(0,40),3,3,1.5);if(Math.random()<.08)this.explode(B.x+rnd(-14,14),B.y-rnd(4,36),false)}
    else{if(Math.random()<.9)this.fx.shard(B.x+rnd(-10,10),B.y-rnd(0,40),2,120);if(Math.random()<.3)this.fx.star(B.x+rnd(-12,12),B.y-rnd(0,50),0xb8a8ff)}

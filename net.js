@@ -131,7 +131,7 @@ const NET={role:null,code:null,peer:null,conn:null,status:'',remote:null,scene:n
    if(e.base==='imp'&&e.state==='fuse'&&e.t>.45&&adx<22&&!e.netHit){e.netHit=1;S.hurtPlayer(18,e.b.x)}}
   const B=S.boss;if(B&&S.bossState==='fight'&&!P.dead){B.flash=Math.max(0,(B.flash||0)-1);const near=Math.abs(P.x-(B.x+B.f*16))<18&&P.y>GY-30;
    if(B.state==='slam'&&B.t<.12&&near&&!B.netHit){B.netHit=1;S.hurtPlayer(B.kind==='king'?28:24,B.x,'boss')}
-   if(B.state==='charge'&&Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<30)S.hurtPlayer(20,B.x);if(B.state!=='slam')B.netHit=0}
+   if(B.state==='charge'&&Math.abs(P.x-B.x)<12&&Math.abs(P.y-GY)<30)S.hurtPlayer(20,B.x,'boss');if(B.state!=='slam')B.netHit=0}
   // milestone G: rime waves / flames and mimic bites from the host's state
   for(const f of S.flames){f.x+=f.dir*140*dt;if(f.ice){if(Math.random()<.6)S.fx.shard(f.x,GY-1,1,60)}else S.fx.fire(f.x,GY-1,2,4,1.6);if(!P.dead&&Math.abs(P.x-f.x)<9&&P.y>GY-14&&!f.hit){f.hit=1;S.hurtPlayer(18,f.x-f.dir*10)}}
   for(const c of S.chests||[]){if(c.st!=='awake')continue;if((c.jy||0)<-4&&Math.abs(P.x-c.hx)<12&&Math.abs(P.y-c.y)<20&&!c.gbit&&!P.dead){c.gbit=1;S.hurtPlayer(18,c.hx)}if(!c.jy)c.gbit=0}},

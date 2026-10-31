@@ -21,7 +21,7 @@ const ARS={
    light:{t:.44,h0:.14,h1:.22,reach:24,w:30,h:10,mul:1,cost:22,lunge:40,n:2,stab:1},
    heavy:{t:.74,h0:.3,h1:.44,reach:10,w:60,h:26,mul:2,cost:34,lunge:20,aoe:1,poise:3,arc:{r:26,th:4,sweep:220,trail:1}}},
   whip:{name:'BELLROPE WHIP',type:'sword',hand:'main',base:.7,req:{str:6,dex:12},sc:{str:'E',dex:'B'},w:2,swL:20,
-   light:{t:.4,h0:.18,h1:.24,reach:22,w:40,h:8,mul:1,cost:20,lunge:0,n:2,arc:{r:30,th:1,sweep:120,trail:1}},
+   light:{t:.4,h0:.18,h1:.24,reach:22,w:40,h:8,mul:.65,cost:20,lunge:0,n:2,arc:{r:30,th:1,sweep:120,trail:1}},
    heavy:{t:.6,h0:.26,h1:.4,reach:0,w:76,h:16,mul:1.5,cost:24,lunge:0,aoe:1,arc:{r:36,th:1,sweep:340,trail:1}}},
   scythe:{name:'GRAVE SCYTHE',type:'axe',hand:'main',base:1.15,req:{str:12,dex:12},sc:{str:'B',dex:'C'},w:5,swL:16,
    light:{t:.48,h0:.16,h1:.28,reach:16,w:36,h:22,mul:1,cost:22,lunge:20,n:2,aoe:1,arc:{r:22,th:3,sweep:260,trail:1}},
@@ -110,7 +110,7 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  // ---- throwables ----
  SP.throwItem=function(){const sv=sv0(this),P=this.player;let id=sv.eq.q2;if(!id||!(sv.thr[id]>0))id=Object.keys(ARS.THROWN).find(k=>sv.thr[k]>0);if(!id){this.pop('NOTHING TO THROW',P.x,P.y-24,0xa89880);return false}
   const T=ARS.THROWN[id];sv.thr[id]--;sv.eq.q2=id;const dex=(sv.stats&&sv.stats.dex)||10;
-  this.arsShot({k:id,x:P.x+P.f*8,y:P.y-14,vx:P.f*T.spd,vy:T.g>100?-150:-10,g:T.g,dmg:this.build.ar*T.mul,thr:1,life:1.6,blast:T.blast,elem:T.elem});Save.write(sv);this.sfx('roll',.3);this.stats.throws=(this.stats.throws||0)+1;return true};
+  this.arsShot({k:id,x:P.x+P.f*8,y:P.y-14,vx:P.f*T.spd,vy:T.g>100?-150:-10,g:T.g,dmg:this.arsThrowAR()*T.mul,thr:1,life:1.6,blast:T.blast,elem:T.elem});Save.write(sv);this.sfx('roll',.3);this.stats.throws=(this.stats.throws||0)+1;return true};
  SP.thrCycle=function(){const sv=sv0(this),L=Object.keys(ARS.THROWN).filter(k=>sv.thr[k]>0);if(!L.length)return;sv.eq.q2=L[(L.indexOf(sv.eq.q2)+1)%L.length];this.pop(ARS.THROWN[sv.eq.q2].name+' x'+sv.thr[sv.eq.q2],this.player.x,this.player.y-26,ARS.THROWN[sv.eq.q2].col)};
  // ---- projectiles (own list; mirrored to the partner as visual-only) ----
  SP.arsShot=function(p,fromNet){const L=this.arsP||(this.arsP=[]);p={t:0,hit:[],...p};if(fromNet)p.vis=1;L.push(p);if(!fromNet&&NET.linked&&NET.linked())NET.send({t:'ars',p:{k:p.k,x:Math.round(p.x),y:Math.round(p.y),vx:Math.round(p.vx),vy:Math.round(p.vy),g:p.g||0,life:p.life,blast:p.blast||0,elem:p.elem||null}});return p};
@@ -137,12 +137,13 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
    const S=WEAPONS[sv.eq.off];P.guard=!!(inp.guard&&S&&S.shield&&!['roll','rollrec','atk','cast','hurt','rest','drink'].includes(P.state)&&P.st>0);if(P.guard){this.pb.setVelocityX(this.pb.body.velocity.x*.5)}}
   this.arsStep(dt)};
  // ---- shields: guard absorbs hits from the front ----
- const hp=SP.hurtPlayer;SP.hurtPlayer=function(n,src,att){const P=this.player,S=WEAPONS[this.sv.eq&&this.sv.eq.off];
-  if(P&&P.guard&&S&&S.shield&&P.inv<=0&&!P.dead&&!this.arsEnvHit(src,att)&&(Math.sign(src-P.x)||P.f)===P.f&&!(this._inE&&this._eRemote)){const sh=S.shield,bh=this.arsBossHeavy(att),cost=(n*1.2*(1-sh.stab/100)+4)*(bh?3:1);
+ const hp0=SP.hurtPlayer,hp=function(n,src,att){return hp0.call(this,n,src,att==='env'?undefined:att)};// 'env' hazards: never parryable either
+ SP.hurtPlayer=function(n,src,att){const P=this.player,S=WEAPONS[this.sv.eq&&this.sv.eq.off];
+  if(P&&P.guard&&S&&S.shield&&P.inv<=0&&!P.dead&&!this.arsEnvHit(src,att)&&(Math.sign(src-P.x)||P.f)===P.f&&!(this._inE&&this._eRemote)){const sh=S.shield,bh=this.arsBossHeavy(att),cost=bh?Math.max((n*1.2*(1-sh.stab/100)+4)*3,P.stMax*.55):(n*1.2*(1-sh.stab/100)+4);// r9: a boss heavy costs >=55% stamina: two break any guard
    this.spend(cost);this.stats.blocks=(this.stats.blocks||0)+1;this.fx.spark(P.x+P.f*8,P.y-10,10,sh.magic?0xb8a8ff:0xffffff,110);this.sfx('parry',.25);this.pb.setVelocityX(-P.f*60);
    if(sh.magic)P.fp=Math.min(P.fpMax,P.fp+n*.3);
    if(P.st<=0){P.guard=false;P.guardLock=1;this.stats.guardBreaks=(this.stats.guardBreaks||0)+1;this.pop('GUARD BROKEN',P.x,P.y-24,0xd8402a);P.inv=0;const r=hp.call(this,n,src,att);if(!P.dead){P.state='hurt';P.t=0;P.gbStag=.7}return r}// r6: full hit + 0.7 s stagger; guard stays down until re-pressed
-   const left=Math.max(n*(1-sh.abs),bh?n*.15:0);if(left<1){P.inv=.25;this.pop('BLOCK',P.x,P.y-24,0x9fb8e8);return false}return hp.call(this,left,src,att)}
+   const left=Math.max(n*(1-sh.abs),bh?n*.25:0);if(left<1){P.inv=.25;this.pop('BLOCK',P.x,P.y-24,0x9fb8e8);return false}return hp.call(this,left,src,att)}
   return hp.call(this,n,src,att)};
  // ---- drawing (after the scene, before lights) ----
  const rl=SP.renderLights;SP.renderLights=function(...a){try{this.arsDraw(this.gn,this.ga)}catch(e){}return rl.apply(this,a)};
@@ -271,7 +272,7 @@ if(typeof WEAPART!=='undefined'){
 // ===================== r6: Tester r15 fixes (P1-1 throwable scale, P1-2 statuses, P2-3 rooms, P2-4 env, P2-5 guard break, P2-6 HUD, P3s) =====================
 if(typeof MIRACLES!=='undefined')for(const m of Object.values(MIRACLES))m.key='C (SELECT Q)';// P3-8: G/T/R now throw/cycle/flask
 if(typeof CONSUMABLES!=='undefined'){for(const id of Object.keys(ARS.THROWN))CONSUMABLES[id].fx='ars';CONSUMABLES.ammo.fx='ars'}
-ARS.MTXT={ammo:['12 PISTOL SHOT.','LOADED WITH HOLD X.'],tknife:['THROWN WITH G.','T PICKS THE NEXT ONE.'],firebomb:['THROWN WITH G. BURSTS','INTO FLAME.'],frostjar:['THROWN WITH G. BURSTS','INTO RIME. SLOWS.'],boltjar:['THROWN WITH G. BURSTS','INTO LIGHTNING.']};
+ARS.MTXT={ammo:['12 PISTOL SHOT.','LOAD: HOLD X.'],tknife:['THROWN WITH G.','T PICKS THE NEXT ONE.'],firebomb:['THROWN WITH G. BURSTS','INTO FLAME.'],frostjar:['THROWN WITH G. BURSTS','INTO RIME. SLOWS.'],boltjar:['THROWN WITH G. BURSTS','INTO LIGHTNING.']};
 if(typeof DESC!=='undefined'){DESC.ammo=['A POUCH OF 12 PISTOL SHOT AND POWDER.','LOADED WITH HOLD X (OR RLD).'];for(const id of Object.keys(ARS.THROWN))DESC[id]=[ARS.THROWN[id].name+'.','THROWN WITH G. T PICKS THE NEXT ONE.']}
 if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  // P1-2: one place for elemental statuses. Fire: burn only starts when not already burning (no full refresh). Lightning: 25% chance,
@@ -283,12 +284,8 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  // P2-3: shots live only in the current room; parked enemies are out of play
  SP.arsInRoom=function(x){const r=this.room;if(!r||this.bossState==='fight'||this.cine)return true;return x>=r.x0-2&&x<r.x1+2};
  // P2-4: environmental damage (drowning, lava, spikes, thorns, falling ice/chunks) is never guarded
- SP.arsEnvHit=function(src,att){if(att&&(typeof att==='object'||att==='boss'))return false;const P=this.player,d=this.def||{};
-  if(P.air!=null&&P.air<=0)return true;if(this.arsEnvT>0)return true;
-  for(const[a,b]of d.lavaPits||[])if(P.x>a&&P.x<b)return true;for(const th of d.thorns||[])if(P.x>th[0]-7&&P.x<th[1]+7&&P.y>th[2]-15&&P.y<th[2]+4)return true;
-  if(this.lv&&typeof K_SPIKE!=='undefined'&&(this.lv.kAt(P.x,P.y-2)===K_SPIKE||this.lv.kAt(P.x,P.y+2)===K_SPIKE))return true;
-  return Math.abs(src-P.x)<6};// overhead/at-feet sources (icicles, chunks, spikes) have no front to block
- SP.arsBossHeavy=function(att){const B=this.boss;return att==='boss'&&B&&/slam|roar|heavy/.test(B.state||'')};
+ SP.arsEnvHit=function(src,att){return att==='env'};// r9 (Tester r16 P1): hazards are tagged hurtPlayer(n,src,'env') at their call sites; nothing else skips the guard
+ SP.arsBossHeavy=function(att){const B=this.boss;return att==='boss'&&B&&/slam|roar|heavy|charge/.test(B.state||'')};
  const rI=SP.readInput;SP.readInput=function(){const o=rI.call(this)||{},P=this.player;if(P&&P.guardLock){if(!o.guard)P.guardLock=0;else o.guard=false}return o};
  const up6=SP.update;SP.update=function(t,dms){const P=this.player;if(P&&P.gbStag>0){P.gbStag-=(dms||16)/1000;if(P.state!=='dead'&&!P.dead&&P.gbStag>0&&P.state!=='hurt'){P.state='hurt'}}return up6.call(this,t,dms)};
  // P2-6: ammo line sits in the top-right under the souls counter, clear of the spell box and objective counters
@@ -311,4 +308,15 @@ if(typeof WEAPART!=='undefined'){
   if(E&&R.arsW&&R.arsW.visible){for(const q of E.ol)q.setTexture(B.texture.key,B.frame.name);E.lift.setTexture(B.texture.key,B.frame.name);s.stats&&(s.stats.arsEdgeSync=(s.stats.arsEdgeSync||0)+1)}
   const W=id&&WEAPONS[id],rim=R.arsRim;if(W&&W.gun&&R.arsW&&R.arsW.visible&&R.arsW.texture.key==='arsw_'+id){let q=rim;if(!q||q.texture.key!==R.arsW.texture.key){if(q)q.destroy();q=R.arsRim=s.add.sprite(0,0,R.arsW.texture.key,0).setOrigin(R.arsW.originX,R.arsW.originY)}
    q.setVisible(true).setFrame(R.arsW.frame.name).setFlipX(R.arsW.flipX).setPosition(R.arsW.x,R.arsW.y-1).setDepth(R.arsW.depth-.0005).setTintFill(0xe8c878).setAlpha(.8);s.stats&&(s.stats.arsRim=(s.stats.arsRim||0)+1)}else if(rim)rim.setVisible(false)}}
+
+// ===================== r9: Tester r16 =====================
+// P3-5: throwables use their own DEX-scaled attack rating (scaling B), independent of the weapon in hand
+ARS.throwAR=dex=>+(0.9+Math.max(0,(dex||10)-10)*0.045).toFixed(3);
+// P2-2: STR boss-weapon ladder - each region's STR signature weapon ~1.1x+ the last in sustained DPS (crownbreaker -> clapper ->
+// ashmaul -> halberd -> hollowbrand). Base tweaks only (loot.js data is Video Games'; adjusted here, at load).
+ARS.STR_LADDER=['crownbreaker','clapper','ashmaul','halberd','hollowbrand'];
+ARS.LADDER_BASE={clapper:2.6,ashmaul:2.7,halberd:2.8,hollowbrand:3.8};
+if(typeof WEAPONS!=='undefined'){for(const[id,b]of Object.entries(ARS.LADDER_BASE))if(WEAPONS[id])WEAPONS[id].base=b;if(WEAPONS.ashmaul)WEAPONS.ashmaul.light.t=.56}
+// ladder metric (used by test/arsenal.mjs): light-chain DPS = AR x light.mul / light.t at STR 40
+if(typeof Stage!=='undefined')Stage.prototype.arsThrowAR=function(){return ARS.throwAR(this.sv&&this.sv.stats&&this.sv.stats.dex)};
 if(typeof module!=='undefined')module.exports={ARS};
