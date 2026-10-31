@@ -1694,7 +1694,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  drawStory(g,ga){const t=this.t,D=this.def,P=this.player;this.sigStep(Math.min(this.dt||.016,.05));this.drawSigDrop(g);
   for(const l of this.lore){const x=Math.round(l.x),y=l.y,pl=Math.sin(t*3+x)*.5+.5;g.fillStyle(0x2a2436);g.fillRect(x-4,y-11,9,11);g.fillRect(x-3,y-12,7,1);g.fillStyle(0x3e3650);g.fillRect(x-4,y-11,1,11);
    const c=l.read?0x7a5a40:0xffb04a;for(let k=0;k<3;k++){px(g,x-1+(k%2)*2,y-9+k*3,c);px(g,x+(k%2?-1:1),y-8+k*3,c)}if(!l.read)glow(ga,x,y-6,6+pl*2,C.f2,.18);
-   if(Math.abs(P.x-x)<12&&Math.abs(P.y-y)<20&&!this.loreView)drawText(g,'^ READ',x-11,y-22,0xffe2a8)}
+   /* r15: the old '^ READ' label is gone; the E Read interact hint is the only prompt */}
   if(D.hub){const kx=D.keeper,bob=Math.round(Math.sin(t*1.6)),y=GY;// the Ash Keeper: hooded, kneeling beside a lantern
    g.fillStyle(0x1a1420);g.fillRect(kx-6,y-16+bob,12,16-bob);g.fillRect(kx-5,y-20+bob,10,4);g.fillRect(kx-4,y-23+bob,8,3);g.fillStyle(0x3a2e3e);g.fillRect(kx-6,y-16+bob,1,16-bob);g.fillRect(kx-5,y-20+bob,1,4);
    g.fillStyle(0x5a4a58);g.fillRect(kx-3,y-21+bob,6,1);g.fillStyle(0x07050f);g.fillRect(kx-2,y-20+bob,4,3);px(g,kx-1,y-19+bob,0xffb04a);px(g,kx+1,y-19+bob,0xffb04a);

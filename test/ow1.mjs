@@ -50,13 +50,18 @@ const mig=await S(()=>{const out={};const lordOrder=['warden','cantor','king','t
  out.ngplus={ng:n.ng,ab:n.abilities.length,visited:Object.keys(n.rooms.visited).length,bon:n.bonfires.length};
  // a second load reads v2 (no re-migration); the game's writes don't touch v1
  n.souls=777;Save.use(2);Save.write(n);out.reload=Save.load(2).souls===777&&JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).souls===5;
+ // r15: a v2 save that was never migrated is not replaced by a later v1 write either
+ localStorage.removeItem('ashenVigil.save.v1.s3');localStorage.removeItem('ashenVigil.save.v2.s3');Save.use(2);Save.write({cls:'knight',stage:'ramparts',souls:5555});Save.use(0);
+ localStorage.setItem('ashenVigil.save.v1.s3',JSON.stringify({cls:'knight',stage:'ramparts',souls:3}));out.v1fresh=Save.load(2).souls;
+ localStorage.removeItem('ashenVigil.save.v1.s3');localStorage.setItem('ashenVigil.save.v2.s3',JSON.stringify(n));
  // r14: an old tab rewriting v1 after the migration must not replace the v2 progress
  localStorage.setItem('ashenVigil.save.v1.s3',JSON.stringify({cls:'knight',stage:'ramparts',souls:7}));out.v1later=Save.load(2).souls;Save.use(0);return out});
-const bad=Object.entries(mig).filter(([k,d])=>k.length>6&&k!=='ngplus'&&k!=='reload'&&k!=='v1later'||['ramparts','keep','spire','throne'].includes(k)).filter(([k,d])=>!(d.v===2&&d.inRegion&&d.bon>=1&&d.souls&&d.lords&&d.v1kept&&d.v2&&d.stain));
-ok('migrate_each_of_10_stages',bad.length===0&&Object.keys(mig).filter(k=>k!=='v1later').length===12,bad);
+const bad=Object.entries(mig).filter(([k,d])=>k.length>6&&k!=='ngplus'&&k!=='reload'&&k!=='v1later'&&k!=='v1fresh'||['ramparts','keep','spire','throne'].includes(k)).filter(([k,d])=>!(d.v===2&&d.inRegion&&d.bon>=1&&d.souls&&d.lords&&d.v1kept&&d.v2&&d.stain));
+ok('migrate_each_of_10_stages',bad.length===0&&Object.keys(mig).filter(k=>k!=='v1later'&&k!=='v1fresh').length===12,bad);
 ok('migrate_lords_grant_abilities',mig.throne.ab.length===6&&mig.cathedral.ab.join()==='dash',{t:mig.throne.ab,c:mig.cathedral.ab});
 ok('migrate_ngplus',mig.ngplus.ng===1&&mig.ngplus.ab===6&&mig.ngplus.visited>40&&mig.ngplus.bon>=10,mig.ngplus);
 ok('v1_backup_untouched_v2_reloads',mig.reload,mig.reload);
+ok('v1_never_overwrites_unmigrated_v2',mig.v1fresh===5555,{v1fresh:mig.v1fresh});
 ok('v1_rewrite_after_migration_ignored',mig.v1later===777,{v1later:mig.v1later});
 // ---- clip: walk Ramparts room to room ----
 if(CLIP){await pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts');await ready();await S(()=>{s.player.inv=1e9;s.player.hp=s.player.hpMax=9999;s.pb.setPosition(300,140);let t=0;window.__inp=()=>(t++,{r:1,jump:t%70<10})});await W8(9000);await S(()=>{window.__inp=null})}

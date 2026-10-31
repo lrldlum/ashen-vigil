@@ -342,3 +342,8 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Room parking: only calm enemies more than a screen (W+40) away park; chasers and anything near the hero never park and follow through cuts; re-checked every 0.5 s (test).
 - Shaft: dark stone back wall (depth .5, under the ledges) and walls inside the 1660-2020 bounds; ledge 28 removed; no toll knock on the belfry floor; KNOCKED pops higher; BARRED - DROP BELOW hides while E Inspect is up (tests).
 - Save: once v2 has migratedFrom, later v1 writes are ignored (test).
+
+## r15 fixes
+- Save: v1 migrates only when no v2 exists; any v2 (migrated or fresh) is never replaced by a later v1 write (test/ow1 v1_never_overwrites_unmigrated_v2).
+- Lore stones: the old ^ READ label is removed; E Read is the only prompt (test/r15).
+- Legacy body armors (none, robe, leather, herald, apron, rime, iron) wear the closest set-piece chest with a palette tint plus extra set pieces in empty slots; knight stays the native look. All 8 distinct (test/r15, screenshots/r15/legacy_armor_sheet.png).

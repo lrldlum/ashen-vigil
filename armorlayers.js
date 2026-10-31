@@ -35,12 +35,17 @@ const ARMORL=(()=>{
   for(const p of P){const f=p.file?'assets/art/'+p.file:DIR+p.slot+'_'+p.pieceId+'.png';L.spritesheet('arm_'+p.slot+'_'+p.pieceId,f,{frameWidth:MAN.frameWidth||46,frameHeight:MAN.frameHeight||46})}})}
  // base look: no overlay (the hero art already is the default kit); 'knight' (Ember Plate) is the hero's native armour
  const isBase=(slot,id)=>!id||(slot==='chest'&&id==='knight');
- function texFor(s,slot,id){const k='arm_'+slot+'_'+id;return s.textures.exists(k)?k:null}
+ // r15: the legacy body armors (no sheet of their own) wear the closest set-piece chest, tinted with their old palette, so each looks distinct
+ const LEGACY={none:['rags_chest',null],robe:['choir_chest',0xb8a0ff],leather:['leather_chest',null],herald:['lamp_chest',0xa8c4f0],apron:['kiln_chest',null],rime:['rags_chest',0xbfe0ff],iron:['plate_chest',0xb8b8c8]};
+ function texFor(s,slot,id){if(slot==='chest'&&LEGACY[id]&&!s.textures.exists('arm_chest_'+id))id=LEGACY[id][0];const k='arm_'+slot+'_'+id;return s.textures.exists(k)?k:null}
+ const legTint=(slot,id)=>slot==='chest'&&LEGACY[id]?LEGACY[id][1]:null;
+ // extra set pieces a legacy armor wears in slots the player left empty (so each reads differently at a glance)
+ const LEGACY_X={none:{legs:'cloth_trousers'},robe:{head:'choir_head'},leather:{legs:'leather_legs',hands:'hunter_gloves'},herald:{legs:'lamp_legs',head:'iron_helm'},apron:{legs:'kiln_legs'},rime:{head:'rime_hood'},iron:{legs:'iron_greaves',hands:'iron_gauntlets',head:'iron_helm'}};
  // rig: {base, ov:{slot:sprite}}; eq: {head, armor, hands, legs}
  function rig(s,base){return{base,ov:{}}}
- function dress(s,R,eq,flash,tint){const B=R.base;SLOTS.forEach((slot,i)=>{const id=eq&&eq[EQK[slot]];let sp=R.ov[slot];
+ function dress(s,R,eq,flash,tint){const B=R.base;const X=eq&&LEGACY_X[eq.armor]||{};SLOTS.forEach((slot,i)=>{const id=(eq&&eq[EQK[slot]])||(slot!=='chest'?X[slot]:null);let sp=R.ov[slot];
   const key=isBase(slot,id)?null:texFor(s,slot,id);if(!key||!B.visible){if(sp)sp.setVisible(false);return}
   if(!sp||sp.texture.key!==key){if(sp)sp.destroy();sp=R.ov[slot]=s.add.sprite(0,0,key,0).setOrigin(B.originX,B.originY)}
-  sp.setVisible(true).setFrame(B.frame.name).setPosition(B.x,B.y).setFlipX(B.flipX).setDepth(B.depth+.001*(i+1));if(flash)sp.setTintFill(0xffffff);else if(tint!=null)sp.setTint(tint);else sp.clearTint()})}
+  sp.setVisible(true).setFrame(B.frame.name).setPosition(B.x,B.y).setFlipX(B.flipX).setDepth(B.depth+.001*(i+1));if(flash)sp.setTintFill(0xffffff);else if(tint!=null)sp.setTint(tint);else{const lt=legTint(slot,id);if(lt!=null)sp.setTint(lt);else sp.clearTint()}})}
  function hide(R){for(const k in R.ov)R.ov[k].setVisible(false)}
- return {preload,dress,rig,hide,texFor,SLOTS}})();
+ return {preload,dress,rig,hide,texFor,SLOTS,LEGACY}})();

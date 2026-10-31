@@ -29,7 +29,8 @@ Object.assign(Save,{
  key(){return slotKey2(this.slot)},
  load(i=this.slot){try{const s1=localStorage.getItem(slotKey(i)),s2=localStorage.getItem(slotKey2(i));let d=s2?JSON.parse(s2):null;
    // v1 present and not yet migrated (or replaced since): migrate it; the v1 key itself is never touched
-   if(s1&&!(d&&d.migratedFrom)&&(!d||d.fromV1!==hashS(s1))){// r14: once v2 exists from a migration, later v1 writes (an old tab) are ignored
+   if(s1&&!d){// r15: v1 migrates only when there is no v2 at all; once any v2 exists, v1 (an old tab) is ignored
+   // r14: once v2 exists from a migration, later v1 writes (an old tab) are ignored
    d=migrateV1(JSON.parse(s1));d.fromV1=hashS(s1);localStorage.setItem(slotKey2(i),JSON.stringify(d));return d}
    return d?saveV2(d):null}catch(e){return null}},
  write(d){try{localStorage.setItem(this.key(),JSON.stringify(saveV2(d)))}catch(e){}},
