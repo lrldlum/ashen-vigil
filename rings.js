@@ -46,7 +46,7 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  const mk=SP.menuKey;SP.menuKey=function(k){const M=this.menu;if(!M||M.mode!=='lmerch')return mk.call(this,k);const R=this.merchRows(),n=R.length+1,sv=this.sv;this.sfx('menu',.2);
   if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='back'||(k==='ok'&&M.sel===R.length))this.menu=null;
   else if(k==='ok'){const[id,price]=R[M.sel];if(this.souls<price){M.say='YOU LACK THE SOULS.';this.sfx('clang',.2);return}this.souls-=price;sv.souls=this.souls;
-   if(id==='shard'){sv.shards=(sv.shards||0)+1;sv.embers=(sv.embers||0)+1;M.say='AN EMBER SHARD. FOR THE SMITH.'}else if(GEAR[id]){sv.inv.push(id);M.say=GEAR[id].name+' - WEAR IT FROM THE INVENTORY.'}
+   if(id==='shard'){sv.embers=(sv.embers||0)+1;/* one currency: sv.embers (the smith's) */M.say='AN EMBER SHARD. FOR THE SMITH.'}else if(GEAR[id]){sv.inv.push(id);M.say=GEAR[id].name+' - WEAR IT FROM THE INVENTORY.'}
    else{this.takeDrop({kind:id,x:this.player.x,y:this.player.y});M.say=CONSUMABLES[id].name+' - USED.'}Save.write(sv);this.sfx('pickup',.4);this.stats.merchBuys=(this.stats.merchBuys||0)+1;M.sel=Math.min(M.sel,this.merchRows().length)}};
  const dm=SP.drawMenu0;SP.drawMenu0=function(g,ga){const M=this.menu;if(M.mode!=='lmerch')return dm.call(this,g,ga);const R=this.merchRows();
   g.fillStyle(0x07050f,1);g.fillRect(6,10,308,164);g.fillStyle(0x7a5a24);g.fillRect(6,10,308,1);g.fillRect(6,173,308,1);g.fillRect(6,10,1,164);g.fillRect(313,10,1,164);

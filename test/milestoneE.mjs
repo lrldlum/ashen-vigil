@@ -79,8 +79,9 @@ R.lava=await ev(()=>new Promise(async res=>{const s=S();s.enemies.forEach(e=>{e.
  B.cd=99;B.state='cast';B.dur=99;const pit=s.def.lavaPits[0];s.player.inv=0;s.player.hp=s.player.hpMax;tp((pit[0]+pit[1])/2);const hp0=s.player.hp;await until(()=>s.player.hp<hp0,2500);res({pits:s.def.lavaPits.length,phase:B.phase,hurt:hp0-s.player.hp})}));await wait(300);await shot('e16_vulcrest_lava_pits');
 ok('distinct_lord_arenas',R.loft.perch&&R.loft.y<100&&R.loft.plats.includes(80)&&R.lava.pits===3&&R.lava.phase>=2&&R.lava.hurt>0,{loft:R.loft,lava:R.lava});
 // 9. endings: final lord -> FIRST FLAME choice -> fade cinematic -> card; rekindle via the other option
-await go('?play&mute&slot=3&stage=cinderdeep');await ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(3020,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000});await ev(()=>{S().boss.hp=0});
-await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});R.final=await ev(()=>S().victoryOpts());await pg.keyboard.press('Enter');await wait(700);await shot('e17_first_flame_choice');
+// the First Flame (and NG+) is offered only after the final lord, the Hollow Heir (throne); Cinderdeep no longer triggers it
+await go('?play&mute&slot=3&stage=throne&novideo');await ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(ARENA_L+40,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:20000});await ev(()=>{S().boss.hp=0});
+await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});R.final=(await ev(()=>S().victoryOpts())).slice(1);await ev(()=>{S().victory.sel=1});await pg.keyboard.press('Enter');await wait(700);await shot('e17_first_flame_choice');
 R.choice=await ev(()=>({phase:S().victory.phase,opts:S().victoryOpts()}));await pg.keyboard.press('ArrowDown');await wait(200);await shot('e18_choice_let_it_fade');await pg.keyboard.press('Enter');
 await pg.waitForFunction(()=>__G.scene.isActive('ending'),null,{timeout:8000});await wait(4500);await shot('e19_fade_cinematic');await wait(4000);await shot('e20_fade_cinematic_late');
 await pg.waitForFunction(()=>__G.scene.getScene('ending').card&&__G.scene.getScene('ending').card.t>.8,null,{timeout:8000});await shot('e21_fade_end_card');

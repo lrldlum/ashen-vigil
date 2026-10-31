@@ -92,14 +92,14 @@ async function stage(sid){const T=ST[sid],p=T.pre,sh=(n)=>pg.screenshot({path:`$
  r.card=await ev(()=>({clear:S().victory.clear,embers:S().cages.filter(c=>c.freed).length,next:S().def.next,best:+localStorage.getItem('ashenVigil.best.'+S().sid)}));await sh('13_victory_card');
  ok(sid+'_lord_slain_card',r.card.best>0&&(sid==='cathedral'?r.card.clear:!r.card.clear),r.card);
  R[sid]=r;await pg.keyboard.press('Enter');
- // milestone E: the final card leads to the First Flame choice -> ending cinematic -> end card -> JOURNEY ON (NG+)
- if(sid==='cinderdeep'){await wait(400);await pg.keyboard.press('Enter');await pg.waitForFunction(()=>__G.scene.isActive('ending'),null,{timeout:8000});await wait(1200);await pg.keyboard.press('Enter');await wait(600);await pg.keyboard.press('Enter')}
+ // Cinderdeep has no onward road: its card returns home (the First Flame / NG+ only follows the final lord, see milestoneE)
+ if(sid==='cinderdeep')r.opts=await ev(()=>S().victoryOpts());
  await wait(1500);await ready()}
 await stage('cathedral');
 R.link23=await ev(()=>({sid:S().sid,freed:JSON.parse(localStorage.getItem('ashenVigil.save.v1')).freed.filter(i=>i.startsWith('s2_')).length}));
 ok('link_stage2_to_stage3_keeps_progress',R.link23.sid==='cinderdeep'&&R.link23.freed>=5,R.link23);
 await stage('cinderdeep');
-R.ng=await ev(()=>({sid:S().sid,ng:S().ng}));ok('final_lord_then_ngplus_returns_to_stage1',R.ng.sid==='ramparts'&&R.ng.ng===1,R.ng);
+R.ng=await ev(()=>({sid:S().sid,ng:S().ng,opts:R.cinderdeep.opts}));ok('cinderdeep_returns_home_no_early_first_flame',R.ng.sid==='shrine'&&!R.ng.ng&&!R.ng.opts.some(o=>/FLAME/.test(o)),R.ng);
 await pg.close();
 // demo AI fights each lord (all attacks live, nothing crashes)
 for(const sid of ['cathedral','cinderdeep']){const p2=await ctx.newPage();p2.on('pageerror',e=>errs.push(e.message));p2.on('request',r=>{const u=r.url();if(!u.startsWith(B)&&!/^(data|blob):/.test(u))ext.push(u)});

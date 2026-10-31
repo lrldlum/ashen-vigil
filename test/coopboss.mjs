@@ -58,11 +58,26 @@ ok('same_position',Math.abs(hn2.x-gn2.x)<48&&Math.abs(hn2.y-gn2.y)<48,{h:[hn2.x,
 // still in sync: the guest sees the host's enemies and remote position
 const sync=await G.ev(()=>({r:!!NET.remote,rx:NET.remote&&Math.round(NET.remote.x),n:S().enemies.length}));const hx=await H.ev(()=>({x:Math.round(S().player.x),n:S().enemies.length}));
 ok('not_desynced',sync.r&&Math.abs(sync.rx-hx.x)<24&&sync.n===hx.n,{sync,hx});
-// r11: the host drops while the guest is on the read-only card -> the card unlocks and the guest can choose
-await H.ev(()=>{tp(ARENA_L+40)});await G.ev(()=>{tp(ARENA_L+30)});await until(H,r=>r.cine,5000);await wait(900);await H.pg.keyboard.press('Enter');await until(H,r=>r.bs==='fight',3000);
-await H.ev(()=>{S().boss.hp=1;S().damageBoss(10)});const gr=await until(G,r=>r.vg,12000);ok('guest_readonly_card_boss2',gr.vg,gr);
-await H.pg.close();const gl=await until(G,r=>!r.vg&&r.role==='lost',8000);await G.shot('c7_guest_card_unlocked');ok('host_drop_unlocks_guest_card',gl.vic&&!gl.vg,gl);
-await wait(900);await G.ev(()=>{S().victory.sel=0});await G.pg.keyboard.press('Enter');const gm=await until(G,r=>r.sid!==gl.sid&&!r.vic,10000);ok('guest_chooses_after_host_drop',gm.sid!==gl.sid,{from:gl.sid,to:gm.sid});
+// a lord falls while one partner is down: the downed one is raised, shares the kill, souls, drop and victory, and both move on together
+const fight=async()=>{await H.ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(ARENA_L+40)});await G.ev(()=>{tp(ARENA_L+30)});await until(H,r=>r.cine,6000);await wait(900);await H.pg.keyboard.press('Enter');await until(H,r=>r.bs==='fight',3000);await until(G,r=>r.bs==='fight',3000)};
+const souls=p=>p.ev(()=>S().souls);
+const down=p=>p.ev(()=>{const s=S(),P=s.player;P.inv=0;P.state='idle';P.hp=1;s.hurtPlayer(9999,P.x+10);if(!P.dead)s.die();return P.dead});
+const slay=async(by)=>{for(let i=0;i<40;i++){if((await H.ev(()=>S().bossState))!=='fight')return;await H.ev(()=>{const B=S().boss;if(B){B.hp=1;if(B.state==='roar')B.state='walk'}});await by.ev(()=>S().damageBoss(10));await wait(150)}};
+// (a) guest dead, host kills (Cathedral, Pale Cantor)
+await fight();const gd0=await down(G);const gs0=await souls(G);
+await slay(H);const ga1=await until(G,r=>r.vg,12000);const ga2=await G.ev(()=>({dead:S().player.dead,hp:S().player.hp,lords:S().sv.lords||[]}));const gs1=await souls(G);await G.shot('c7_guest_raised_after_host_kill');
+ok('guest_dead_at_kill_raised_with_victory',gd0&&!ga2.dead&&ga2.hp>0&&ga1.vg&&ga1.sid==='cathedral',{gd0,ga2,ga1:ga1.sid});
+ok('guest_dead_at_kill_gets_souls_drop_and_lord',gs1>=gs0+3000&&ga1.inv.includes('requiemspear')&&ga2.lords.includes('cantor'),{gs0,gs1,inv:ga1.inv,lords:ga2.lords});
+await until(H,r=>r.vic,9000);await wait(900);await H.ev(()=>{S().victory.sel=0});await H.pg.keyboard.press('Enter');const hca=await until(H,r=>r.sid==='cinderdeep'&&!r.vic,10000);await wait(2500);await gh();const gaa=await until(G,r=>r.sid==='cinderdeep',10000);await wait(1200);
+const pa=[await st(H),await st(G)];ok('guest_follows_onward_after_dead_kill',pa[0].sid==='cinderdeep'&&pa[1].sid==='cinderdeep'&&Math.abs(pa[0].x-pa[1].x)<48&&pa[1].linked,{h:[pa[0].sid,pa[0].x],g:[pa[1].sid,pa[1].x]});
+// (b) host dead, guest kills (Cinderdeep, Cinder King)
+await fight();const hd0=await down(H);const hs0=await souls(H);
+await slay(G);const hb=await until(H,r=>r.vic,12000);const hb2=await H.ev(()=>({dead:S().player.dead,lords:S().sv.lords||[]}));const hs1=await souls(H);const gbb=await until(G,r=>r.vg,4000);await H.shot('c8_host_raised_after_guest_kill');
+ok('host_dead_at_kill_raised_with_victory',hd0&&!hb2.dead&&hb.vic&&gbb.vg&&hb.sid==='cinderdeep',{hd0,hb2,hb:hb.sid});
+const kw=await H.ev(()=>SIGNATURE.king);ok('host_dead_at_kill_both_get_souls_drop_and_lord',hs1>=hs0+3000&&hb.inv.includes(kw)&&gbb.inv.includes(kw)&&hb2.lords.includes('king'),{hs0,hs1,kw,h:hb.inv,g:gbb.inv});
+// (c) the host drops while the guest is on the read-only card -> the card unlocks and the guest can choose (Cinderdeep returns home)
+await H.pg.close();const gl=await until(G,r=>!r.vg&&r.role==='lost',8000);await G.shot('c9_guest_card_unlocked');ok('host_drop_unlocks_guest_card',gl.vic&&!gl.vg,gl);
+await wait(900);await G.ev(()=>{S().victory.sel=0});await G.pg.keyboard.press('Enter');const gm=await until(G,r=>r.sid!==gl.sid&&!r.vic,10000);ok('guest_chooses_after_host_drop',gm.sid==='shrine',{from:gl.sid,to:gm.sid});
 ok('no_page_errors',errs.length===0,errs.slice(0,3));
 if(process.env.CLIP&&FRS.host){for(const n of['host','guest']){const FR=FRS[n],d=VD+'/'+n;fs.writeFileSync(d+'/l.txt',FR.map((t,i)=>`file '${d}/${String(i).padStart(5,'0')}.jpg'\nduration ${(((FR[i+1]||t+50)-t)/1000).toFixed(3)}`).join('\n'));
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${d}/l.txt -vf "scale=640:360,fps=30,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${n==='host'?'P1 HOST':'P2 GUEST'}':x=8:y=8:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.5" -c:v libx264 -pix_fmt yuv420p -crf 26 ${d}.mp4`)}

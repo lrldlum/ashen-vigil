@@ -426,7 +426,7 @@ const TBTN=[{k:'l',x:22,y:144,r:13,lab:'<'},{k:'r',x:56,y:144,r:13,lab:'>'},{k:'
 class Stage extends Phaser.Scene{constructor(){super('stage')}
  init(d){this.fresh=d.fresh}
  create(){
-  const sv=(!this.fresh&&Save.load())||{bonfire:false,souls:0,bossDown:false};sv.stage=STAGE_DEFS[sv.stage]?sv.stage:(STAGE_DEFS[Q.get('stage')]?Q.get('stage'):'ramparts');sv.deaths=sv.deaths||0;sv.time=sv.time||0;sv.ng=sv.ng||0;this.sv=sv;
+  const sv=(!this.fresh&&Save.load())||{bonfire:false,souls:0,bossDown:false};sv.stage=STAGE_DEFS[sv.stage]?sv.stage:(STAGE_DEFS[Q.get('stage')]?Q.get('stage'):'ramparts');sv.deaths=sv.deaths||0;sv.time=sv.time||0;sv.ng=sv.ng||0;delete sv.shards;/* legacy: merchants credited sv.shards and sv.embers together; sv.embers is the one count */this.sv=sv;
   this.ng=sv.ng;this.ngMul=1+.5*this.ng;this.playT=sv.time;
   const sid=sv.stage,D=STAGE_DEFS[sid];this.sid=sid;this.def=D;Object.assign(C,BASEPAL,D.pal||{});WORLD=D.world;ARENA_L=D.arena?D.arena[0]:2980;ARENA_R=D.arena?D.arena[1]:3340;
   const tx=sid==='ramparts'?'':'_'+sid;genTextures(this,tx,D.pal,sid);this.lv=LEVELS[sid]||(LEVELS[sid]=Object.assign(new Level(D),{sid}));this.physics.world.setBounds(0,D.top,WORLD,D.bottom-D.top);
@@ -708,7 +708,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  canAct(){const P=this.player;if(P.st>0)return true;P.stFlash=.5;return false}
  spend(n){const P=this.player;P.st-=n;if(P.st<=0){P.st=0;P.stDelay=TUNE.exhaustDelay;P.stFlash=.6}else P.stDelay=TUNE.regenDelay}
  updatePlayer(dt,inp){const P=this.player,b=this.pb,body=b.body,on=body.blocked.down;P.t+=dt;P.inv-=dt;P.flash-=dt;P.stDelay-=dt;P.stFlash-=dt;P.land-=dt;
-  if(P.dead){b.setVelocityX(0);P.deadT+=dt;if(P.deadT>2.6)this.respawn();return}
+  if(P.dead){b.setVelocityX(0);P.deadT+=dt;if(P.deadT>2.6){if(NET.linked()&&(this.bossState==='dying'||this.bossState==='dead'&&this.sv.bossDown&&this.def.boss&&this.bossT0))this.revive();else this.respawn()}return}// co-op: a lord falling while you're down never respawns you away from your partner
   P.poiseT=(P.poiseT||0)-dt;if(P.poiseT<=0)P.poiseHP=this.build.poise;if(P.bless>0){P.bless-=dt;if(Math.random()<.5)this.fx.spark(P.x+P.f*rnd(4,12),P.y-rnd(6,16),1,0xffe8a0,30);if(P.bless<=0)this.pop('BLESSING FADES',P.x,P.y-24,0xb8b4d8)}
   if(P.stDelay<=0)P.st=Math.min(P.stMax,P.st+TUNE.regen*dt*(this.buffs&&this.buffs.stam>0?2:1));P.fp=Math.min(P.fpMax,P.fp+2*dt);
   P.coy=on?.1:P.coy-dt;P.buf=inp.jumpP?.12:P.buf-dt;P.atkBuf=inp.atkP?.2:P.atkBuf-dt;
@@ -843,6 +843,9 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   this.stain=this.souls>0?{x:Math.round(clamp(P.x,20,WORLD-20)),y:this.lv.floorAt(P.x,P.y-10),souls:this.souls}:null;this.souls=0;
   this.sv.deaths++;this.sv.stain=this.stain;this.sv.souls=0;this.sv.time=this.playT;Save.write(this.sv)}
  respawn(){this.scene.restart({fresh:false})}
+ // co-op: a partner who is down when the lord falls is raised on the spot (full HP, their dropped souls back) and shares the kill, the reward and the victory
+ revive(){const P=this.player;if(!P.dead)return;P.dead=false;P.deadT=0;P.hp=P.hpMax;P.inv=1.5;P.state='idle';if(this.stain){this.souls+=this.stain.souls;this.stain=null;this.sv.stain=null}
+  const R=NET.remote;if(R&&R.x!=null)this.pb.setPosition(R.x,R.y-8);this.pb.setVelocity(0,0);this.fx.ember(P.x,P.y-8,20,1.6);this.say('RAISED BY YOUR COMPANION',2);Save.write({...this.sv,souls:this.souls})}
  rest(){const P=this.player;P.hp=P.hpMax;P.fp=P.fpMax;P.st=P.stMax;P.flasks=TUNE.flaskN+(this.sv.flaskBonus||0);const first=!this.bonfire.lit;this.bonfire.lit=true;this.fx.ember(this.bonfire.x,GY-8,40,2.2);this.fx.spark(this.bonfire.x,GY-6,16,C.f1,90,40);
   this.sfx('bonfire',.5);this.say(first?'BONFIRE LIT - '+this.def.bonfireName:'RESTED. FLASKS REFILLED',2.4);
   this.enemies.forEach(e=>{if(e.dead&&!e.temp&&Math.abs(e.x0-P.x)>200){e.dead=false;e.hp=EHP[e.k]*this.ngMul;e.state='idle';e.guard=3;e.b.body.enable=true;e.b.setPosition(e.x0,e.base==='wraith'?e.gy-40:e.gy-20)}});
@@ -1265,7 +1268,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    if(B.hp<=0){this.bossState='dying';B.t=0;this.sfx('death',.6);this.say(this.def.boss.slain,3);this.cam.shake(600,.02)}}
   if(this.bossState==='dying'){if(Math.random()<.9)this.fx.shard(B.x+rnd(-10,10),B.y-rnd(0,34),2,120);if(Math.random()<.3)this.fx.spark(B.x+rnd(-8,8),B.y-rnd(0,30),4,C.ice2);
    if(B.t>2.2)this.finishBoss(B)}}
- finishBoss(B){this.bossState='dead';if(NET.host())NET.send({t:'bossdead',slain:this.def.boss.slain,kind:B.kind});this.fx.soul(B.x,B.y-16,60);this.gainSouls((B.kind==='warden'?2000:3000)*(1+this.ng));this.gateL.body.enable=false;this.shots.length=0;this.flames=[];
+ finishBoss(B){this.bossState='dead';this.bossT0=1;if(NET.linked())this.revive();if(NET.host())NET.send({t:'bossdead',slain:this.def.boss.slain,kind:B.kind});this.fx.soul(B.x,B.y-16,60);this.gainSouls((B.kind==='warden'?2000:3000)*(1+this.ng));this.gateL.body.enable=false;this.shots.length=0;this.flames=[];
   const bk='ashenVigil.best.'+this.sid;// r3 P3: one naming scheme for every stage (legacy ramparts key migrated below)
   {const old=localStorage.getItem('ashenVigil.best');if(old&&!localStorage.getItem('ashenVigil.best.ramparts'))try{localStorage.setItem('ashenVigil.best.ramparts',old)}catch(e){}}
   if(!this.sv.lords.includes(B.kind))this.sv.lords.push(B.kind);this.awardSignature(B.kind,B.x);
@@ -1441,11 +1444,12 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(c.t>4.2){this.cine=null;this.skipBtn(0);{const r=document.getElementById('skipRing');if(r)r.remove()}this.bars=0;this.bossState='fight';B.state='walk';B.rise=1;this.cam.startFollow(this.pb,true,.12,0,Math.round(this.camOff),0)}}
  // ---------------- victory card (Tester r1 P1 #6) ----------------
  victoryInput(){}// keys handled by the keydown listener in create() so quick taps are never missed
- victoryOpts(){const V=this.victory;if(V.guest)return['YOUR HOST CHOOSES THE PATH'];if(this.def.finale&&V.phase!=='choose')return['CLAIM THE HOLLOW THRONE','RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(this.def.side&&V.phase!=='choose')return['RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(V.phase==='choose')return['REKINDLE THE FIRST FLAME','LET THE FLAME FADE'];return V.clear?['ONWARD: '+STAGE_DEFS[this.def.next].name,'REST AT THE ASH SHRINE','RETURN TO TITLE']:['APPROACH THE FIRST FLAME','RETURN TO TITLE']}
+ victoryOpts(){const V=this.victory;if(V.guest)return['YOUR HOST CHOOSES THE PATH'];if(this.def.finale&&V.phase!=='choose')return['CLAIM THE HOLLOW THRONE','APPROACH THE FIRST FLAME','RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if((this.def.side||!this.def.next)&&V.phase!=='choose')return['RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(V.phase==='choose')return['REKINDLE THE FIRST FLAME','LET THE FLAME FADE'];return V.clear?['ONWARD: '+STAGE_DEFS[this.def.next].name,'REST AT THE ASH SHRINE','RETURN TO TITLE']:['APPROACH THE FIRST FLAME','RETURN TO TITLE']}
  victoryTap(p){const V=this.victory;if(V.t<.8||V.guest)return;const y0=V.phase==='choose'?112:121,i=Math.floor((p.y-y0)/11),n=V.phase==='choose'?2:this.victoryOpts().length;if(i<0||i>=n)return;V.sel=i;this.victoryGo()}
  victoryGo(){const V=this.victory;if(V.gone||V.guest)return;// co-op guest: read-only card, follows the host's choice
   if(this.def.finale&&V.sel===0){V.gone=1;const kind='usurp';this.cam.fadeOut(900,30,24,16);if(NET.host())NET.send({t:'ending',kind});this.time.delayedCall(920,()=>this.scene.start('ending',{kind}));return}
-  if(this.def.side){V.gone=1;const sel=this.def.finale?V.sel-1:V.sel;this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{if(sel===0){Save.write({...this.sv,stage:'shrine',retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}else this.scene.start('title')});return}
+  if(this.def.finale&&V.sel===1&&V.phase!=='choose'){V.phase='choose';V.sel=0;V.t=.8;this.sfx('chime',.4);return}// the First Flame (and NG+) only once the whole game is beaten
+  if((this.def.side||!this.def.next)&&V.phase!=='choose'){V.gone=1;const sel=this.def.finale?V.sel-2:V.sel;/* a stage with no onward road (Cinderdeep) returns home; it no longer triggers the First Flame early */this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{if(sel===0){Save.write({...this.sv,stage:'shrine',retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}else this.scene.start('title')});return}
   if(!V.clear&&V.phase!=='choose'&&V.sel===0){V.phase='choose';V.sel=0;V.t=.8;this.sfx('chime',.4);return}
   if(V.phase==='choose'){V.gone=1;const kind=V.sel?'fade':'rekindle';this.cam.fadeOut(800,kind==='fade'?2:40,kind==='fade'?2:20,kind==='fade'?6:5);if(NET.host())NET.send({t:'ending',kind});this.time.delayedCall(820,()=>this.scene.start('ending',{kind}));return}
   if(V.clear&&V.sel===1){V.gone=1;this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{Save.write({...this.sv,stage:'shrine',hubNext:this.def.next,retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})});return}
@@ -1776,10 +1780,11 @@ class Ending extends Phaser.Scene{constructor(){super('ending')}
   this.fx=new FX(this);this.gn=this.add.graphics().setDepth(4);this.ga=this.add.graphics().setDepth(5).setBlendMode(Phaser.BlendModes.ADD);this.gt=this.add.graphics().setDepth(6);
   this.t=0;this.card=null;this.sel=0;heroStyle(WEAPONS[(sv.eq||{}).main],false,ARMORS[(sv.eq||{}).armor]);this.stars=[...Array(70)].map((_,i)=>[(i*73)%W,(i*41)%110,(i%5)/5]);
   this.cameras.main.fadeIn(900,this.kind==='fade'?2:40,this.kind==='fade'?2:20,this.kind==='fade'?6:5);try{this.sound.play(this.kind==='fade'?'chime':'fanfare',{volume:.4})}catch(e){}
-  this.input.keyboard.on('keydown',e=>this.key(e.key));this.input.on('pointerdown',p=>{if(!this.card)return this.key('Enter');const i=Math.floor((p.y-136)/11);if(i===0||i===1){this.sel=i;this.key('Enter')}})}
+  this.input.keyboard.on('keydown',e=>this.key(e.key));this.input.on('pointerdown',p=>{if(!this.card)return this.key('Enter');const i=Math.floor((p.y-136)/11);if(i===0||i===1){this.sel=this.ngOk()?i:1;this.key('Enter')}})}
+ ngOk(){const s=this.sv||Save.load()||{};return(s.lords||[]).includes('heir')}/* NG+ (journey on) only after the final lord, the Hollow Heir, is beaten */
  key(k){if(this.gone)return;const ok=k==='Enter'||k===' '||k==='z'||k==='Z';
   if(!this.card){if(ok){if(this.t>.15)this.showCard();else this.skipQ=1}return}
-  if(this.card.t<.3)return;if(k==='ArrowUp'||k==='ArrowDown')this.sel^=1;
+  if(this.card.t<.3)return;const ng=this.ngOk();if(!ng)this.sel=1;else if(k==='ArrowUp'||k==='ArrowDown')this.sel^=1;
   if(ok){this.gone=1;this.cameras.main.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{if(this.sel===0){const s=this.sv;
     Save.write({stage:'ramparts',bonfire:false,souls:s.souls||0,bossDown:false,deaths:s.deaths||0,time:s.time||0,ng:(s.ng||0)+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings,flaskBonus:s.flaskBonus,lords:[]});this.scene.start('stage',{fresh:false})}
    else this.scene.start('title')})}}
@@ -1826,7 +1831,7 @@ class Ending extends Phaser.Scene{constructor(){super('ending')}
    drawText(gt,'ENDING',Math.round(W/2-textW('ENDING')/2),48,0x8a86c0,1,null,a);drawText(gt,E.title,Math.round(W/2-textW(E.title,2)/2),60,E.col,2,0x1a0d22,a);
    const fmt=v=>{v=Math.floor(v||0);return`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`};const cls=CLASSES[s.cls]?CLASSES[s.cls].name:'ASHEN ONE';
    [[cls+'  LEVEL '+(CLASSES[s.cls]&&s.stats?RPG.level(s.cls,s.stats):'-')+(s.ng?'  NG+'+s.ng:''),84],['TIME '+fmt(s.time)+'   DEATHS '+(s.deaths||0),94],['LORE FOUND '+(s.lore||[]).length+'/'+Object.keys(LORE).length+'   ENDINGS SEEN '+s.endings.length+'/'+Object.keys(ENDINGS).length,104],[R?'THE FIRE BURNS. THE WHEEL TURNS.':'THE DARK IS NOT EMPTY.',118]].forEach(([q,y])=>drawText(gt,q,Math.round(W/2-textW(q)/2),y,0xd8d0ee,1,null,a));
-   if(this.card.t>.3)['JOURNEY ON (NG+'+((s.ng||0)+1)+')','RETURN TO TITLE'].forEach((q,i)=>{const on=this.sel===i,str=(on?'> ':'  ')+q;drawText(gt,str,Math.round(W/2-textW(str)/2),138+i*11,on?0xffe2a8:0x6b67a0,1,null,a)})}}}
+   if(this.card.t>.3)(this.ngOk()?['JOURNEY ON (NG+'+((s.ng||0)+1)+')','RETURN TO TITLE']:['RETURN TO TITLE']).forEach((q,i)=>{const on=this.ngOk()?this.sel===i:true,str=(on?'> ':'  ')+q;drawText(gt,str,Math.round(W/2-textW(str)/2),138+i*11,on?0xffe2a8:0x6b67a0,1,null,a)})}}}
 // ===================================================================
 window.__G=new Phaser.Game({type:Phaser.AUTO,width:W,height:H,pixelArt:true,roundPixels:true,backgroundColor:'#0b081d',parent:document.body,
  scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},physics:{default:'arcade',arcade:{gravity:{y:800}}},
