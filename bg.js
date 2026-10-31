@@ -124,7 +124,7 @@ const BGART=(()=>{
  // SPIRE — open space: nebulae, a ringed planet, drifting rock islands
  O('spire',{sky:['#04020e','#0a0620','#120a30','#0a0620','#04020e'],
   skyX(x,w){glow(x,80,60,110,'rgba(220,60,200,.45)');glow(x,250,120,110,'rgba(60,120,255,.45)');glow(x,170,80,60,'rgba(255,140,220,.25)');stars(x,w,180,9,H_,['#ffffff','#ffd0f8','#a0c0ff']);
-   disc(x,'#d88a4a',250,54,30);for(let y=-30;y<=30;y+=4)rect(x,'#b0602a',250-Math.round(Math.sqrt(900-y*y)),54+y,Math.round(2*Math.sqrt(900-y*y)),2);x.strokeStyle='#f0d0a0';x.lineWidth=2;x.beginPath();x.ellipse(250,54,50,9,-.25,0,Math.PI*2);x.stroke();disc(x,'#c8b8ff',60,30,6)},
+   x.strokeStyle='#f0d0a0';x.lineWidth=2;x.beginPath();x.ellipse(250,54,50,9,-.25,Math.PI,Math.PI*2);x.stroke();disc(x,'#d88a4a',250,54,30);for(let y=-30;y<=30;y+=4)rect(x,'#b0602a',250-Math.round(Math.sqrt(900-y*y)),54+y,Math.round(2*Math.sqrt(900-y*y)),2);x.strokeStyle='#f0d0a0';x.lineWidth=2;x.beginPath();x.ellipse(250,54,50,9,-.25,0,Math.PI);x.stroke();disc(x,'#c8b8ff',60,30,6)},
   far(x,w){const R=rnd(61);for(let xx=0;xx<w;xx+=110)wrap(w,o=>{const cy=40+R()*70,s=10+R()*14;rect(x,'#3a2e6a',o+xx+20-s,cy,s*2,4);spike(x,'#2a2050',o+xx+20,cy+4,s*1.6,s)})},
   near(x,w){const R=rnd(63);for(let xx=0;xx<w;xx+=200)wrap(w,o=>{const cy=60+R()*60,s=20+R()*10;rect(x,'#4a3a8a',o+xx+40-s,cy-2,s*2,3);rect(x,'#160f30',o+xx+40-s,cy,s*2,5);spike(x,'#160f30',o+xx+40,cy+5,s*1.8,s)})}});
  // CLOISTER — a rotting garden under towering stained glass
