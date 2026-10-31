@@ -25,10 +25,12 @@ const MERCH_STOCK=[['ember',150],['bluesap',150],['rimesalt',250],['cinderleaf',
 if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  const give=function(id,why){const sv=this.sv;if(!id||sv.inv.includes(id))return false;sv.inv.push(id);Save.write(sv);this.sigBanner={w:id,t:0,title:why||'RING FOUND'};this.sfx('fanfare',.3);this.stats.ringsGot=(this.stats.ringsGot||0)+1;return true};
  SP.ringGive=give;
- const oc=SP.openChest;SP.openChest=function(c,fromNet){const was=c.st;const r=oc.call(this,c,fromNet);if(was==='shut'&&c.st==='open'&&!NET.guest())this.ringGive((RING_CHEST[this.sid]||{})[c.id]);return r};
+ const oc=SP.openChest;SP.openChest=function(c,fromNet){const was=c.st;const r=oc.call(this,c,fromNet);if(was==='shut'&&c.st==='open'&&(!NET.guest()||fromNet))this.ringGive((RING_CHEST[this.sid]||{})[c.id]);return r};
  const hm=SP.hitMimic;SP.hitMimic=function(c,ar,fromNet){const was=c.st;const r=hm.call(this,c,ar,fromNet);if(was==='awake'&&c.st==='dead'&&!NET.guest())this.ringGive((RING_CHEST[this.sid]||{})[c.id]);return r};
  // lord rings arrive after the weapon banner
  const fb=SP.finishBoss;SP.finishBoss=function(B){const r=fb.call(this,B);const id=RING_BOSS[B&&B.kind];if(id&&!NET.guest()){this.sv.inv.includes(id)||(this.sv.inv.push(id),Save.write(this.sv));this.time.delayedCall(2900,()=>{if(!this.sigBanner)this.sigBanner={w:id,t:0,title:'LORD\'S RING'}})}return r};
+ // co-op fix: the guest's lord kill arrives as {t:'bossdead'} -> awardSignature only (finishBoss runs on the host), so the guest never got the lord's ring
+ const aw=SP.awardSignature;SP.awardSignature=function(kind,x){const r=aw.call(this,kind,x);const id=RING_BOSS[kind];if(id&&NET.guest()&&!this.sv.inv.includes(id)){this.sv.inv.push(id);Save.write(this.sv);this.time.delayedCall(2900,()=>{if(!this.sigBanner)this.sigBanner={w:id,t:0,title:'LORD\'S RING'}})}return r};
  // ---- textures (loaded once by Boot) ----
  const bp=Boot.prototype.preload;Boot.prototype.preload=function(){bp.call(this);for(const k of Object.keys(RING_ART))this.load.image('ring_'+k,'assets/rings/ring_'+k+'@2x.png');this.load.spritesheet('merchant','assets/merchant/merchant_strip.png',{frameWidth:48,frameHeight:40})};
  // ---- ring icons in menus: a small image pool on top of the HUD graphics, reset every frame ----
