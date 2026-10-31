@@ -914,7 +914,24 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    this.burst={x:d.x,y:d.y-6,t:0,col,k:L.fx}}
   sv.looted=(sv.looted||0)+1;Save.write(sv);this.pop(nm,d.x,d.y-24,col)}
  awardSignature(kind,x){const w=SIGNATURE[kind];if(!w)return;const sv=this.sv,had=sv.inv.includes(w);if(!had)sv.inv.push(w);Save.write(sv);
-  this.time.delayedCall(700,()=>{this.pop((had?'':'GOT ')+WEAPONS[w].name,x,GY-50,0xffe2a8);this.burst={x,y:GY-20,t:0,col:0xffe2a8,k:'sig'};this.sfx('fanfare',.4);this.fx.spark(x,GY-20,24,C.f1,130)})}
+  // the weapon is in the inventory + save right away (never lost); the world shows it dropping from the boss, flying to the
+  // player, and a big HUD banner names it before the victory card (it used to be a small world-space pop hidden by the card)
+  this.sigDrop={w,x:this.player?clamp(x,this.player.x-90,this.player.x+90):x,y:GY-40,vy:-150,t:0,got:false,had};this.stats.sigDrops=(this.stats.sigDrops||0)+1}
+ sigStep(dt){if(this.sigBanner&&!this.sigDrop){this.sigBanner.t+=dt;if(this.sigBanner.t>2.6)this.sigBanner=null}const d=this.sigDrop;if(!d)return;d.t+=dt;const P=this.player;
+  if(!d.got){if(d.t<1.1){d.vy+=420*dt;d.y=Math.min(GY-10,d.y+d.vy*dt)}else{const k=Math.min(1,(d.t-1.1)/.45);d.x+=(P.x-d.x)*k;d.y+=(P.y-14-d.y)*k}
+   if(d.t>1.1&&(Math.abs(d.x-P.x)<10&&Math.abs(d.y-P.y+14)<14||d.t>1.7)){d.got=true;d.gt=d.t;this.sigBanner={w:d.w,t:0,had:d.had};this.sfx('fanfare',.45);this.fx.spark(P.x,P.y-14,26,0xffe2a8,140);this.cam.flash(120,255,226,168)}}
+  if(this.sigBanner){this.sigBanner.t+=dt;if(this.sigBanner.t>2.6)this.sigBanner=null}if(d.got&&d.t-d.gt>.2)this.sigDrop=null}
+ drawSigDrop(g){const d=this.sigDrop;if(!d||d.got)return;const x=Math.round(d.x),y=Math.round(d.y),W0=WEAPONS[d.w]||{},t=this.t;
+  // flat pillar of light + a bold weapon silhouette, gold rim (no glow)
+  g.fillStyle(0xffe2a8,.35);g.fillRect(x-3,y-120,6,120);g.fillStyle(0xffffff,.6);g.fillRect(x-1,y-120,2,120);
+  const L=W0.type==='spear'||W0.type==='halberd'?30:W0.type==='hammer'||W0.type==='axe'?20:24,r=Math.sin(t*6)*.3-.6;
+  g.save&&0;const cx=Math.cos(r),sy=Math.sin(r);for(let i=-6;i<L;i++){const px0=Math.round(x+cx*i),py0=Math.round(y+sy*i);g.fillStyle(0x0a0612);g.fillRect(px0-2,py0-2,4,4);}
+  for(let i=-6;i<L;i++){const px0=Math.round(x+cx*i),py0=Math.round(y+sy*i);g.fillStyle(i<0?0x8a5a24:i>L-6&&(W0.type==='hammer'||W0.type==='axe')?0xd8d0ee:0xe8ecff);g.fillRect(px0-1,py0-1,i>L-6&&(W0.type==='hammer'||W0.type==='axe')?4:2,i>L-6&&(W0.type==='hammer'||W0.type==='axe')?4:2)}
+  g.fillStyle(0xffd04a);g.fillRect(Math.round(x-sy*3)-1,Math.round(y+cx*3)-1,3,3);g.fillRect(Math.round(x+sy*3)-1,Math.round(y-cx*3)-1,3,3)}
+ drawSigBanner(g){const b=this.sigBanner;if(!b)return;const a=Math.min(1,b.t*4,(2.6-b.t)*3),W0=WEAPONS[b.w]||{name:b.w};if(a<=0)return;
+  const t1=(b.had?'BOSS WEAPON (ALREADY OWNED)':'BOSS WEAPON ACQUIRED'),t2=W0.name,w=Math.max(textW(t1),textW(t2))+40,x=Math.round(W/2-w/2),y=48;
+  g.fillStyle(0x07050f,.9*a);g.fillRect(x,y,w,30);g.fillStyle(0xffd04a,a);g.fillRect(x,y,w,2);g.fillRect(x,y+28,w,2);g.fillRect(x,y,2,30);g.fillRect(x+w-2,y,2,30);
+  drawText(g,t1,Math.round(W/2-textW(t1)/2),y+6,0xffd04a,1,0x07050f,a);drawText(g,t2,Math.round(W/2-textW(t2)/2),y+17,0xffffff,1,0x07050f,a)}
  // lord weapons: the heavy attack triggers the weapon's special (costs FP)
  // milestone H: every signature special shares one power budget, independent of catalysts and of the wielded weapon's stat requirements:
  // pw = half the attack rating FROSTBRAND would have for this build; each special strikes every target it reaches ONCE for ~4*pw (toll 3.5*pw + stun)
@@ -1242,7 +1259,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   {const old=localStorage.getItem('ashenVigil.best');if(old&&!localStorage.getItem('ashenVigil.best.ramparts'))try{localStorage.setItem('ashenVigil.best.ramparts',old)}catch(e){}}
   if(!this.sv.lords.includes(B.kind))this.sv.lords.push(B.kind);this.awardSignature(B.kind,B.x);
   Object.assign(this.sv,{bonfire:this.bonfire.lit,souls:this.souls,bossDown:true,time:this.playT});{const b=+localStorage.getItem(bk)||0;this.bestNew=!b||this.playT<b;if(this.bestNew)try{localStorage.setItem(bk,String(Math.round(this.playT)))}catch(e){}this.best=this.bestNew?this.playT:b}Save.write(this.sv);this.boss=null;
-  this.time.delayedCall(1600,()=>{this.victory={t:0,sel:0,clear:!!this.def.next};this.physics.pause()})}
+  this.time.delayedCall(this.sigDrop?4400:1600,()=>{this.victory={t:0,sel:0,clear:!!this.def.next};this.physics.pause()})}
  // ---------------- lords (milestone C): the Pale Cantor (cathedral) and Vulcrest the Cinder King (cinderdeep), 3 phases each ----------------
  pickLord(B,adx){const r=Math.random(),p=B.phase;
   if(B.kind==='heir'){const o=p>=3?['comet','rot','rubble','bramble','pull','volley']:p>=2?['pull','wave','gust','bramble','lash']:['volley','lash','charge'];return o[Math.floor(r*o.length)%o.length]}
@@ -1536,7 +1553,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   const hx=X(9),hy=y-24+crouch;const ex=hx+Math.cos(ang)*24*f,ey=hy+Math.sin(ang)*24;line(g,hx,hy,ex,ey,C.ice2);line(g,hx+0,hy+1,ex,ey+1,C.ice4);px(ga,ex,ey,0xffffff);glow(ga,(hx+ex)/2,(hy+ey)/2,6,C.ice3,.15);
   if(B.state==='slam'&&B.t<.12)drawSlash(ga,X(9),y-24,f,B.t/.12,{r:22,th:4,sweep:150,trail:1});
   if(rise<1){g.fillStyle(0x352c5e);g.fillRect(x-14,GY,28,40);g.fillStyle(0x4b4078);g.fillRect(x-14,GY,28,1)}}
- drawHUD(){const g=this.gu,ga=this.gua,P=this.player,t=this.t;g.clear();ga.clear();NET.hud(this,g);
+ drawHUD(){const g=this.gu,ga=this.gua,P=this.player,t=this.t;g.clear();ga.clear();NET.hud(this,g);this.drawSigBanner(g);
   if(this.bars>0){const bh=Math.round(22*this.bars);g.fillStyle(0x05040b);g.fillRect(0,0,W,bh);g.fillRect(0,H-bh,W,bh)}
   if(this.flashA>0){ga.fillStyle(0xd8d0ff,this.flashA);ga.fillRect(0,0,W,H);this.flashA-=this.dt*2.2}
   if(this.flashF>0){ga.fillStyle(0xd8d0ff,.15);ga.fillRect(0,0,W,H);if(!this.paused)this.flashF--}
@@ -1652,7 +1669,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   if(k==='lspear'){this.arrows.push({x:P.x+P.f*8,y:P.y-11,vx:P.f*340,vy:0,t:0,dmg:2.2*mm,pierce:1,hit:[],ls:1});this.sfx('thunder',.45);this.cam.shake(90,.006);this.fx.spark(P.x+P.f*8,P.y-11,10,0xffe08a,90);this.flashF=1}
   if(k==='blessed'){P.bless=MIRACLES.blessed.dur;P.blessMul=1+.3*mm;this.sfx('buff',.45);this.say('WEAPON BLESSED',1.6);for(let i=0;i<20;i++)this.fx.spark(P.x+P.f*rnd(2,14),P.y-rnd(4,18),1,0xffe8a0,40)}}
  // world-space story props: lore stones, the keeper, the shrine exit arch
- drawStory(g,ga){const t=this.t,D=this.def,P=this.player;
+ drawStory(g,ga){const t=this.t,D=this.def,P=this.player;this.sigStep(Math.min(this.dt||.016,.05));this.drawSigDrop(g);
   for(const l of this.lore){const x=Math.round(l.x),y=l.y,pl=Math.sin(t*3+x)*.5+.5;g.fillStyle(0x2a2436);g.fillRect(x-4,y-11,9,11);g.fillRect(x-3,y-12,7,1);g.fillStyle(0x3e3650);g.fillRect(x-4,y-11,1,11);
    const c=l.read?0x7a5a40:0xffb04a;for(let k=0;k<3;k++){px(g,x-1+(k%2)*2,y-9+k*3,c);px(g,x+(k%2?-1:1),y-8+k*3,c)}if(!l.read)glow(ga,x,y-6,6+pl*2,C.f2,.18);
    if(Math.abs(P.x-x)<12&&Math.abs(P.y-y)<20&&!this.loreView)drawText(g,'^ READ',x-11,y-22,0xffe2a8)}
