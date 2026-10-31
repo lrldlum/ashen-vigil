@@ -1,0 +1,13 @@
+{
+ "stage": "throne",
+ "tile": 8,
+ "cell": 16,
+ "pad": 4,
+ "mode": "overlay",
+ "variants": 4,
+ "tiles": "tiles.png",
+ "oneway": "oneway.png",
+ "decor": "decor.png",
+ "decorCount": 4,
+ "decorDensity": 0.125
+}

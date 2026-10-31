@@ -30,7 +30,7 @@ const AUTOTILE=(()=>{
   shrine:{cap:['#b8a888','#8a7a6a','#4a3e34'],sideL:'#a8987a',sideR:'#1a1410',under:'#1a1410',tuft:['#6a7a4a'],tuftH:1,hang:null,inner:'#1a1410',crack:'#4a3e34',props:['candle','rock'],dens:.05}};
  const toI=c=>{c=parseInt(c.slice(1),16);return((0xff<<24)|((c&0xff)<<16)|(c&0xff00)|((c>>16)&0xff))>>>0};
  // ---- code-drawn atlases (same layout an Artist PNG uses) ----
- function mk(w,h){const d=new Uint32Array(w*h);return{w,h,d,px(x,y,c){if(x>=0&&y>=0&&x<w&&y<h)d[y*w+x]=typeof c==='string'?toI(c):c}}}
+ function mk(w,h){const d=new Uint32Array(w*h);return{w,h,d,cell:CELL,pad:PAD,px(x,y,c){if(x>=0&&y>=0&&x<w&&y<h)d[y*w+x]=typeof c==='string'?toI(c):c}}}
  function genTiles(sid,s){const A=mk(BLOB.length*CELL,VAR*CELL),k=sseed(sid);
   BLOB.forEach((m,f)=>{for(let v=0;v<VAR;v++){const ox=f*CELL+PAD,oy=v*CELL+PAD,P=(x,y,c)=>A.px(ox+x,oy+y,c),r=(a,b)=>hs(f*13+a,v*7+b,k);
    const n=!(m&N),e=!(m&E),so=!(m&S),w=!(m&W);
@@ -90,32 +90,35 @@ const AUTOTILE=(()=>{
   thorn:(P,s)=>{for(let y=0;y<6;y++)P(7+(y%2),15-y,'#5a4a2a');P(6,12,'#5a4a2a');P(9,13,'#5a4a2a');P(9,11,'#e05a8a')}};
  function genDecor(sid,s){const L=s.props||[],A=mk(Math.max(1,L.length)*CELL,CELL);L.forEach((k,i)=>PROP[k]&&PROP[k]((x,y,c)=>A.px(i*CELL+x,y,c),s));A.n=L.length;return A}
  const SET={};let TM=null;const ART={};// ART[sid] = {man, imgs} from the PNG loader
- function fromImg(img){if(!img||!img.width)return null;const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.drawImage(img,0,0);return{w:c.width,h:c.height,d:new Uint32Array(x.getImageData(0,0,c.width,c.height).data.buffer)}}
+ function fromImg(img,cell,pad){if(!img||!img.width)return null;const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.drawImage(img,0,0);return{w:c.width,h:c.height,cell,pad,d:new Uint32Array(x.getImageData(0,0,c.width,c.height).data.buffer)}}
  function set(sid){if(SET[sid]!==undefined)return SET[sid];
   const s=ST[sid];let out=null;
-  const a=ART[sid];if(a&&TM){const m=a.man,tex=k=>TM.exists(k)?fromImg(TM.get(k).getSourceImage()):null;
+  const a=ART[sid];if(a&&TM){const m=a.man,ce=m.cell|0||CELL,pa=m.pad!=null?m.pad|0:(ce-T)/2,tex=k=>TM.exists(k)?fromImg(TM.get(k).getSourceImage(),ce,pa):null;
    const ti=tex('at_'+sid+'_tiles');if(ti){out={src:'png',mode:m.mode==='replace'?'replace':'overlay',var:m.variants||1,tiles:ti,one:tex('at_'+sid+'_oneway'),decor:tex('at_'+sid+'_decor'),dn:m.decorCount|0,dens:m.decorDensity!=null?+m.decorDensity:(s?s.dens:0),props:m.decorAllow||null}}}
   if(!out&&s)out={src:'code',mode:'overlay',var:VAR,tiles:genTiles(sid,s),one:genOne(sid,s),decor:genDecor(sid,s),dens:s.dens};
-  if(out&&out.decor&&out.dn==null)out.dn=out.decor.n;if(out&&out.decor&&!out.dn)out.dn=Math.floor(out.decor.w/CELL);
-  if(out)out.empty=new Uint8Array(BLOB.length*out.var).map((_,q)=>{const f=q%BLOB.length,v=(q/BLOB.length)|0,A=out.tiles;for(let y=0;y<CELL;y++)for(let x=0;x<CELL;x++){const X=f*CELL+x,Y=v*CELL+y;if(X<A.w&&Y<A.h&&A.d[Y*A.w+X]>>>24)return 0}return 1});
+  if(out&&out.decor&&out.dn==null)out.dn=out.decor.n;if(out&&out.decor&&!out.dn)out.dn=Math.floor(out.decor.w/out.decor.cell);
+  if(out)out.empty=new Uint8Array(BLOB.length*out.var).map((_,q)=>{const f=q%BLOB.length,v=(q/BLOB.length)|0,A=out.tiles,C=A.cell;for(let y=0;y<C;y++)for(let x=0;x<C;x++){const X=f*C+x,Y=v*C+y;if(X<A.w&&Y<A.h&&A.d[Y*A.w+X]>>>24)return 0}return 1});
   return SET[sid]=out}
  // blit one atlas cell; in-tile CUT pixels erase, pixels outside the tile only land on empty (alpha 0) or non-solid pixels of the canvas
- function blit(A,fx,fy,d,w,h,dx,dy,canErase,mode){if(!A)return;for(let y=0;y<CELL;y++){const sy=fy+y,ty=dy+y;if(ty<0||ty>=h||sy>=A.h)continue;for(let x=0;x<CELL;x++){const sx=fx+x,tx=dx+x;if(tx<0||tx>=w||sx>=A.w)continue;const c=A.d[sy*A.w+sx];if(!(c>>>24))continue;
-   const inT=x>=PAD&&x<PAD+T&&y>=PAD&&y<PAD+T;if(c===CUT){if(inT&&canErase)d[ty*w+tx]=0;continue}if(!inT&&!canErase(tx,ty))continue;
-   const a=c>>>24;if(a>=250||mode==='replace')d[ty*w+tx]=c|0xff000000;else{const b=d[ty*w+tx],m=(p,s)=>((((c>>>s)&255)*a+((b>>>s)&255)*(255-a))/255)&255;d[ty*w+tx]=(0xff000000|(m(0,16)<<16)|(m(0,8)<<8)|m(0,0))>>>0}}}}
+ // blit one atlas cell (frame fx,fy in cells). phase 0: pixels inside the 8x8 tile (CUT erases); phase 1: overhang margin pixels,
+ // drawn after every tile and only onto non-solid tiles; phase 2: decor, every pixel, non-solid tiles only
+ function blit(A,fx,fy,d,w,h,dx,dy,free,mode,phase){if(!A)return;const C=A.cell,P=A.pad;fx*=C;fy*=C;dx-=P;dy-=P;for(let y=0;y<C;y++){const sy=fy+y,ty=dy+y;if(ty<0||ty>=h||sy>=A.h)continue;for(let x=0;x<C;x++){const sx=fx+x,tx=dx+x;if(tx<0||tx>=w||sx>=A.w)continue;const c=A.d[sy*A.w+sx];if(!(c>>>24))continue;
+   const inT=phase!==2&&x>=P&&x<P+T&&y>=P&&y<P+T;if(phase===0?!inT:inT)continue;if(c===CUT){if(inT)d[ty*w+tx]=0;continue}if(!inT&&!free(tx,ty))continue;
+   const a=c>>>24;if(a>=250||(mode==='replace'&&inT))d[ty*w+tx]=c|0xff000000;else{const b=d[ty*w+tx],m=s=>((((c>>>s)&255)*a+((b>>>s)&255)*(255-a))/255)&255;d[ty*w+tx]=(0xff000000|(m(16)<<16)|(m(8)<<8)|m(0))>>>0}}}}
  const stats={};
  // called by Level.paint with the canvas pixel buffer; lv.k/collision is only read
  function apply(lv,d,w,h,i0,j0,i1,j1,force){if(!ON)return;const sid=lv.sid,S=set(sid);if(!S)return;const K=lv.k,cols=lv.cols,rows=lv.rows,seed=sseed(sid);
   const inR=(i,j)=>force&&i>=i0&&i<i1&&j>=j0&&j<j1,kk=(i,j)=>{if(inR(i,j))return 1;if(i<0||i>=cols)return 1;if(j<0)return 0;if(j>=rows)return 1;return K[j*cols+i]};
   const sol=(i,j)=>kk(i,j)===1;
   const free=(tx,ty)=>{const i=i0+Math.floor(tx/T),j=j0+Math.floor(ty/T);return!sol(i,j)};
-  let nT=0,nP=0;
-  for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++){const v=force?1:(lv.idx(i,j)<0?0:K[j*cols+i]);const dx=(i-i0)*T-PAD,dy=(j-j0)*T-PAD;
+  let nT=0,nP=0;const Qb=[],Qd=[];
+  for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++){const v=force?1:(lv.idx(i,j)<0?0:K[j*cols+i]);const dx=(i-i0)*T,dy=(j-j0)*T;
    if(v===1){const m=(sol(i,j-1)?N:0)|(sol(i+1,j-1)?NE:0)|(sol(i+1,j)?E:0)|(sol(i+1,j+1)?SE:0)|(sol(i,j+1)?S:0)|(sol(i-1,j+1)?SW:0)|(sol(i-1,j)?W:0)|(sol(i-1,j-1)?NW:0);
-    const f=FRAME[m],vr=Math.floor(hs(i,j,seed)*S.var);if(!S.empty[vr*BLOB.length+f]){blit(S.tiles,f*CELL,vr*CELL,d,w,h,dx,dy,free,S.mode);nT++}
+    const f=FRAME[m],vr=Math.floor(hs(i,j,seed)*S.var);if(!S.empty[vr*BLOB.length+f]){Qb.push([S.tiles,f,vr,dx,dy]);nT++}
     // decor on open floor: two clear tiles above, not on a 1-wide pillar top
-    if(!force&&S.decor&&S.dn&&!(m&N)&&kk(i,j-1)===0&&kk(i,j-2)===0&&((m&E)||(m&W))&&hs(i,j,seed+99)<S.dens){const p=Math.floor(hs(i,j,seed+7)*S.dn);blit(S.decor,p*CELL,0,d,w,h,(i-i0)*T-PAD,(j-j0)*T-CELL,free,'overlay');nP++}}
-   else if(v===2&&S.one){const l=kk(i-1,j)===2||sol(i-1,j),r=kk(i+1,j)===2||sol(i+1,j),f=l&&r?2:l?3:r?1:0,vr=Math.floor(hs(i,j,seed+3)*Math.max(1,Math.floor(S.one.h/CELL)));blit(S.one,f*CELL,vr*CELL,d,w,h,dx,dy,free,S.mode);nT++}}
+    if(!force&&S.decor&&S.dn&&!(m&N)&&kk(i,j-1)===0&&kk(i,j-2)===0&&((m&E)||(m&W))&&hs(i,j,seed+99)<S.dens){const p=Math.floor(hs(i,j,seed+7)*S.dn),C=S.decor.cell,P=S.decor.pad;Qd.push([S.decor,p,0,(i-i0)*T+P-(C-T)/2,(j-j0)*T+P-C]);nP++}}
+   else if(v===2&&S.one){const l=kk(i-1,j)===2||sol(i-1,j),r=kk(i+1,j)===2||sol(i+1,j),f=l&&r?2:l?3:r?1:0,vr=Math.floor(hs(i,j,seed+3)*Math.max(1,Math.floor(S.one.h/S.one.cell)));Qb.push([S.one,f,vr,dx,dy]);nT++}}
+  for(const ph of[0,1])for(const[A,f,v,x,y]of Qb)blit(A,f,v,d,w,h,x,y,free,S.mode,ph);for(const[A,f,v,x,y]of Qd)blit(A,f,v,d,w,h,x,y,free,'overlay',2);
   stats[sid+(force?'_cov':'')]={tiles:nT,props:nP,src:S.src}}
  // Boot preload hook: reads assets/art/tiles/index.json, then queues each listed stage's manifest + PNG atlases
  function preload(load){if(!ON)return;TM=load.textureManager||TM;load.json('tiles_index','assets/art/tiles/index.json');

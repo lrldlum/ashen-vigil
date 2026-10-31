@@ -28,6 +28,7 @@ for(const st of stages){
   const u=await Bq.pg.evaluate(sid=>{const S=AUTOTILE.atlas(sid);const png=A=>{if(!A)return null;const c=document.createElement('canvas');c.width=A.w;c.height=A.h;const x=c.getContext('2d'),im=x.createImageData(A.w,A.h);new Uint32Array(im.data.buffer).set(A.d);x.putImageData(im,0,0);return c.toDataURL()};return{t:png(S.tiles),o:png(S.one),d:png(S.decor)}},st);
   for(const[k,v] of Object.entries(u))if(v)fs.writeFileSync(EV+`atlas_${st}_${k}.png`,Buffer.from(v.split(',')[1],'base64'))}
  const a=A.r,b=Bq.r;
+ if(fs.existsSync(`assets/art/tiles/${st}/manifest.json`))ok(b.stats&&b.stats.src==='png',`${st}: Artist art in assets/art/tiles/${st}/ is the default (src ${b.stats&&b.stats.src})`);
  ok(!a.on&&b.on,`${st}: ?tiles=0 off switch works (off=${!a.on}, on=${b.on})`);
  ok(a.k===b.k&&a.back===b.back,`${st}: tile grid identical (k ${H(a.k)} = ${H(b.k)}, back ${H(a.back)})`);
  ok(a.rects===b.rects,`${st}: collision rects identical for solid/oneway/chain/spike (${H(a.rects)})`);
@@ -41,8 +42,10 @@ for(const st of stages){
  const route=async pg=>{await pg.route('**/assets/art/tiles/index.json',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({stages:[st]})}));
   await pg.route(`**/assets/art/tiles/${st}/manifest.json`,r=>r.fulfill({contentType:'application/json',body:JSON.stringify({stage:st,tile:8,cell:16,pad:4,mode:'overlay',variants:4,tiles:'tiles.png',oneway:'oneway.png',decor:'decor.png',decorCount:5,decorDensity:.2})}));
   for(const[n,k] of [['tiles','t'],['oneway','o'],['decor','d']])await pg.route(`**/assets/art/tiles/${st}/${n}.png`,r=>r.fulfill({contentType:'image/png',body:f(k)}))};
- const P=await run(st,'',route),Q=await run(st,'');
- ok(P.r.stats&&P.r.stats.src==='png',`png loader: ${st} uses PNG atlas from assets/art/tiles/${st}/ (src ${P.r.stats&&P.r.stats.src})`);
+ const none=async pg=>pg.route('**/assets/art/tiles/index.json',r=>r.fulfill({contentType:'application/json',body:'{"stages":[]}'}));
+ const P=await run(st,'',route),Q=await run(st,'',none);
+ ok(Q.r.stats&&Q.r.stats.src==='code',`fallback: with no art listed, ${st} uses code-drawn placeholders (src ${Q.r.stats&&Q.r.stats.src})`);
+ ok(P.r.stats&&P.r.stats.src==='png'&&P.r.t1!==Q.r.t1,`png loader: ${st} uses PNG atlas from assets/art/tiles/${st}/ (src ${P.r.stats&&P.r.stats.src})`);
  ok(P.r.k===Q.r.k&&P.r.bodies===Q.r.bodies,`png loader: collision unchanged with PNG atlas`);
  ok(P.r.stats.props>Q.r.stats.props,`png loader: manifest decorDensity honoured (${P.r.stats.props} > ${Q.r.stats.props} props)`);
  ok(P.errs.length===0,'png loader: no page errors '+P.errs.join('|'));await P.pg.close();await Q.pg.close()}
