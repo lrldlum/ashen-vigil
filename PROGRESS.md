@@ -303,3 +303,8 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - Visual inventory (inventory.js): model with labelled slots (R/L hand, head, chest, hands, legs, 2 rings, 4 spells, 3 items),
   icon grid with stats on icons, before/after comparison, live equip; new GEAR pieces (head/hands/legs/rings) feed RPG.derive.
   Data: sv.eq.{head,hands,legs,ring1,ring2,q1..q3}, sv.att.slots (4 spells), sv.wup {id:{lv,inf}} for upgrades/infusions.
+
+## Rings + in-level merchants (rings.js)
+- 8 new rings using Artist's icons (assets/rings): Ember Signet +15% HP, Rime Band +8% absorb, Choir Ring +30 FP/+12% spells, Tide Loop +25 stamina, Thorn Ring +12% attack/-4% absorb, Ashen Band +15% souls, Star Seal longer roll i-frames, Bell Ring +8 poise. Two ring slots, all via RPG.derive.
+- Sources: lords (Cantor choir, Toller bell, Abbess tide, Astronomer star, Prioress thorn), 5th chests in catacomb/drowned/keep/spire/cloister/throne, merchants.
+- Wandering merchant (Artist strip, assets/merchant) 56px past each non-hub bonfire: consumables used on the spot, Ember Shards, rings. test/rings.mjs 15/15.

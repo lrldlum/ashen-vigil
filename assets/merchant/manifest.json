@@ -1,0 +1,30 @@
+{
+ "merchant": {
+  "combined": "merchant_pixel/merchant_strip.png",
+  "frameWidth": 48,
+  "frameHeight": 40,
+  "totalFrames": 8,
+  "origin": [
+   0.5,
+   0.925
+  ],
+  "facing": "left",
+  "scale": 1,
+  "filter": "NEAREST",
+  "anims": {
+   "idle": {
+    "start": 0,
+    "count": 8
+   }
+  },
+  "fps": {
+   "idle": 5
+  },
+  "interactBox": [
+   16,
+   30
+  ],
+  "keyframes": "src/keys/merchant_keys.jpg",
+  "note": "Hooded wandering trader NPC, ~30px tall (hero ~26px). Idle loop: rest, breathe, shift pack, nod. Lantern is the yellow accent; eyes stamped as 1px glints."
+ }
+}

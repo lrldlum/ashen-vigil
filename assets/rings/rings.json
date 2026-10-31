@@ -1,0 +1,61 @@
+{
+ "iconSize": [
+  12,
+  12
+ ],
+ "icon2xSize": [
+  24,
+  24
+ ],
+ "note": "Inventory ring icons, transparent, 1px dark outline; matches assets/ui 12x12 icon size. Names are suggestions; map to ring item ids when they exist.",
+ "rings": [
+  {
+   "id": "ember_signet",
+   "name": "Ember Signet",
+   "icon": "rings_pixel/ring_ember_signet.png",
+   "icon2x": "rings_pixel/ring_ember_signet@2x.png"
+  },
+  {
+   "id": "rime_band",
+   "name": "Rime Band",
+   "icon": "rings_pixel/ring_rime_band.png",
+   "icon2x": "rings_pixel/ring_rime_band@2x.png"
+  },
+  {
+   "id": "choir_ring",
+   "name": "Choir Ring",
+   "icon": "rings_pixel/ring_choir_ring.png",
+   "icon2x": "rings_pixel/ring_choir_ring@2x.png"
+  },
+  {
+   "id": "tide_loop",
+   "name": "Tide Loop",
+   "icon": "rings_pixel/ring_tide_loop.png",
+   "icon2x": "rings_pixel/ring_tide_loop@2x.png"
+  },
+  {
+   "id": "thorn_ring",
+   "name": "Thorn Ring",
+   "icon": "rings_pixel/ring_thorn_ring.png",
+   "icon2x": "rings_pixel/ring_thorn_ring@2x.png"
+  },
+  {
+   "id": "ashen_band",
+   "name": "Ashen Band",
+   "icon": "rings_pixel/ring_ashen_band.png",
+   "icon2x": "rings_pixel/ring_ashen_band@2x.png"
+  },
+  {
+   "id": "star_seal",
+   "name": "Star Seal",
+   "icon": "rings_pixel/ring_star_seal.png",
+   "icon2x": "rings_pixel/ring_star_seal@2x.png"
+  },
+  {
+   "id": "bell_ring",
+   "name": "Bell Ring",
+   "icon": "rings_pixel/ring_bell_ring.png",
+   "icon2x": "rings_pixel/ring_bell_ring@2x.png"
+  }
+ ]
+}
