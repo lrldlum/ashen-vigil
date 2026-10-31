@@ -14,7 +14,9 @@ You can play with the keyboard or an **Xbox controller**. Other pads that use th
 | Magic: cast the selected spell | RB (storm), LT frost, RT dome | C or K |
 | Next spell | (coming with the spell system) | Q |
 | Dodge roll / back | B | Shift or L |
-| Parry / block | LB | V or U |
+| Parry (tap) / shield guard (hold, needs a shield in the left hand) | LB | V or U |
+| Throw the selected throwable / next throwable | (not mapped yet) | G / T |
+| Gun: tap fire, hold reload (rune pistol: hold switches element) | X (Y = reload) | X or J |
 | Drink flask | View | F or R |
 | Interact (rest, talk, open, pull, read, enter) | A when a prompt shows, or Up | E (or Up arrow) |
 | Inventory / equipment | (bonfire menu) | Tab or I |
