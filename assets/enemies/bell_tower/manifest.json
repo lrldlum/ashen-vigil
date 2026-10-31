@@ -1,0 +1,190 @@
+{
+ "rime_bat_swarm": {
+  "combined": "enemies_pixel/bell_tower/rime_bat_swarm_strip.png",
+  "frameWidth": 64,
+  "frameHeight": 60,
+  "totalFrames": 44,
+  "origin": [
+   0.5,
+   0.5
+  ],
+  "facing": "right",
+  "scale": 1,
+  "filter": "NEAREST",
+  "anims": {
+   "idle": {
+    "start": 0,
+    "count": 8
+   },
+   "move": {
+    "start": 8,
+    "count": 8
+   },
+   "attack": {
+    "start": 16,
+    "count": 8
+   },
+   "split": {
+    "start": 24,
+    "count": 8
+   },
+   "hit": {
+    "start": 32,
+    "count": 6
+   },
+   "death": {
+    "start": 38,
+    "count": 6
+   }
+  },
+  "fps": {
+   "idle": 10,
+   "move": 12,
+   "attack": 14,
+   "split": 10,
+   "hit": 14,
+   "death": 10
+  },
+  "hitbox": {
+   "size": [
+    40,
+    30
+   ],
+   "anchor": "centre",
+   "ref": "imp [7,6] per bat; group box for the whole swarm"
+  },
+  "note": "Group sprite of 5 bats. \"split\" is the signature: the swarm opens a ~12px vertical gap at frames 3-4 (the dodge-through window).",
+  "hitboxPerBat": [
+   7,
+   6
+  ],
+  "batCentres": [
+   [
+    16,
+    22
+   ],
+   [
+    30,
+    16
+   ],
+   [
+    44,
+    24
+   ],
+   [
+    22,
+    38
+   ],
+   [
+    40,
+    40
+   ]
+  ]
+ },
+ "clapper_knight": {
+  "combined": "enemies_pixel/bell_tower/clapper_knight_strip.png",
+  "frameWidth": 56,
+  "frameHeight": 54,
+  "totalFrames": 36,
+  "origin": [
+   0.5,
+   0.9259259259259259
+  ],
+  "facing": "right",
+  "scale": 1,
+  "filter": "NEAREST",
+  "anims": {
+   "idle": {
+    "start": 0,
+    "count": 8
+   },
+   "move": {
+    "start": 8,
+    "count": 8
+   },
+   "attack": {
+    "start": 16,
+    "count": 8
+   },
+   "hit": {
+    "start": 24,
+    "count": 6
+   },
+   "death": {
+    "start": 30,
+    "count": 6
+   }
+  },
+  "fps": {
+   "idle": 6,
+   "move": 8,
+   "attack": 14,
+   "hit": 14,
+   "death": 10
+  },
+  "hitbox": {
+   "size": [
+    12,
+    22
+   ],
+   "anchor": "bottom-centre at origin",
+   "ref": "knight [9,15] scaled for the larger body"
+  }
+ },
+ "frost_ringer": {
+  "combined": "enemies_pixel/bell_tower/frost_ringer_strip.png",
+  "frameWidth": 80,
+  "frameHeight": 80,
+  "totalFrames": 44,
+  "origin": [
+   0.5,
+   0.95
+  ],
+  "facing": "left",
+  "scale": 1,
+  "filter": "NEAREST",
+  "anims": {
+   "idle": {
+    "start": 0,
+    "count": 8
+   },
+   "move": {
+    "start": 8,
+    "count": 8
+   },
+   "attack": {
+    "start": 16,
+    "count": 8
+   },
+   "swing_drop": {
+    "start": 24,
+    "count": 8
+   },
+   "hit": {
+    "start": 32,
+    "count": 6
+   },
+   "death": {
+    "start": 38,
+    "count": 6
+   }
+  },
+  "fps": {
+   "idle": 6,
+   "move": 8,
+   "attack": 12,
+   "swing_drop": 10,
+   "hit": 14,
+   "death": 8
+  },
+  "hitbox": {
+   "size": [
+    16,
+    44
+   ],
+   "anchor": "bottom-centre at origin",
+   "ref": "no mini-boss in ESIZE; ~1.7x knight width, body height of the sprite"
+  },
+  "note": "move = rope-swing loop (rope stub drawn; game should draw the rope up to the beam). swing_drop: icicles fall frames 3-7 at x=14,30,46,62 (spawn real icicle hazards there)."
+ }
+}

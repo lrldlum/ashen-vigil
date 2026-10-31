@@ -308,3 +308,8 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 - 8 new rings using Artist's icons (assets/rings): Ember Signet +15% HP, Rime Band +8% absorb, Choir Ring +30 FP/+12% spells, Tide Loop +25 stamina, Thorn Ring +12% attack/-4% absorb, Ashen Band +15% souls, Star Seal longer roll i-frames, Bell Ring +8 poise. Two ring slots, all via RPG.derive.
 - Sources: lords (Cantor choir, Toller bell, Abbess tide, Astronomer star, Prioress thorn), 5th chests in catacomb/drowned/keep/spire/cloister/throne, merchants.
 - Wandering merchant (Artist strip, assets/merchant) 56px past each non-hub bonfire: consumables used on the spot, Ember Shards, rings. test/rings.mjs 15/15.
+
+## Bell Tower enemies on Artist's strips (btenemies.js)
+- Current Bell Tower stage: choristers -> Rime Bat Swarm (flier, 40x30 group box, "split" plays when you roll into it), sentinels -> Clapper Knight, + 2 Frost Ringers (x=1960, 2650; 22 HP elite) whose swing_drop spawns real icicles at manifest x 14/30/46/62 on frames 3-7 (14 dmg); rope drawn up to the beam in code.
+- Assets copied to assets/enemies/bell_tower (rebuilt outline version). test/btenemies.mjs 10/10.
+- Pre-existing on 4d543b8 (same with btenemies removed): G toller_attacks_toll_icicles_peal, every_lord_drops_signature_weapon (cantor), coop_bell_and_chest; milestoneF r6_role_colours.
