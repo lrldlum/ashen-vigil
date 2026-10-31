@@ -4,13 +4,14 @@
 // Quitting saves first (souls, bonfire, unlocks, play time), then returns to the title.
 // Co-op: a quitting host sends 'bye' so the guest sees "Host left" and goes to the title; a quitting guest just disconnects.
 'use strict';
-const QUIT_ROW={x:206,y:6,w:110,h:10};
+const QUIT_GUARD_MS=600;const QUIT_ROW={x:206,y:6,w:110,h:10};
 const dropJoin=()=>{try{Q.delete('join');Q.delete('host');const u=new URL(location.href);u.searchParams.delete('join');u.searchParams.delete('host');history.replaceState(null,'',u)}catch(e){}};
 const quitToast=m=>{try{let el=document.getElementById('quitToast');if(!el){el=document.createElement('div');el.id='quitToast';el.style.cssText='position:fixed;left:50%;top:40%;transform:translateX(-50%);font:16px monospace;color:#f0e6c8;background:rgba(10,8,20,.9);border:1px solid #8a6a3a;padding:6px 14px;pointer-events:none;z-index:60';document.body.appendChild(el)}el.textContent=m;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',3500)}catch(e){}};
 (()=>{const SP=Stage.prototype;
  const tp=SP.togglePause;SP.togglePause=function(){if(this.quitQ){this.quitQ=null;this.sfx('menu',.2);return}return tp.call(this)};
- SP.quitOpen=function(){if(!this.paused||this.quitQ)return;this.quitQ={sel:1,t:0};this.sfx('menu',.2)};
- SP.quitPick=function(yes){if(!this.quitQ)return;if(!yes){this.quitQ=null;this.sfx('menu',.2);return}this.quitNow()};
+ SP.quitOpen=function(){if(!this.paused||this.quitQ)return;this.quitQ={sel:1,t:0,at:performance.now()};this.sfx('menu',.2)};
+ SP.quitPick=function(yes){if(!this.quitQ)return;if(yes&&performance.now()-this.quitQ.at<QUIT_GUARD_MS){this.quitQ.sel=1;this.quitQ.at=performance.now();this.sfx('menu',.1);return}// r12: YES only counts after a 0.6 s calm on the dialog, so mashed keys can't quit
+ if(!yes){this.quitQ=null;this.sfx('menu',.2);return}this.quitNow()};
  SP.quitNow=function(){const sv=this.sv;this.quitQ=null;this.quitting=1;
   try{Save.write({...sv,souls:this.souls,time:this.playT,stain:sv.stain||null})}catch(e){}
   try{if(NET.host()&&NET.linked()){NET.send({t:'bye'});setTimeout(()=>NET.leave(),250)}else if(!NET.host()&&(NET.peer||NET.conn))NET.leave()}catch(e){}
@@ -18,7 +19,7 @@ const quitToast=m=>{try{let el=document.getElementById('quitToast');if(!el){el=d
  const cr=SP.create;SP.create=function(...a){this.quitQ=null;this.quitting=0;const r=cr.apply(this,a);
   this.input.keyboard.on('keydown',e=>{if(!this.paused||e.repeat)return;const Q=this.quitQ;
    if(!Q){if(e.key==='Enter'||e.key==='q'||e.key==='Q')this.quitOpen();return}
-   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){Q.sel^=1;this.sfx('menu',.15)}
+   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){Q.sel^=1;Q.at=performance.now();this.sfx('menu',.15)}
    else if(e.key==='Enter'||e.key==='z'||e.key==='Z'||e.key===' ')this.quitPick(Q.sel===0);else if(e.key==='y'||e.key==='Y')this.quitPick(true);else if(e.key==='n'||e.key==='N')this.quitPick(false)});
   this.input.on('pointerdown',p=>{if(!this.paused)return;const Q=this.quitQ,x=p.x,y=p.y;
    if(!Q){if(x>=QUIT_ROW.x&&x<QUIT_ROW.x+QUIT_ROW.w&&y>=QUIT_ROW.y-2&&y<QUIT_ROW.y+QUIT_ROW.h)this.quitOpen();return}

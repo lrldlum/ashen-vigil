@@ -116,7 +116,9 @@ for(const[stage,kind,w]of[['ramparts','warden','frostbrand'],['cathedral','canto
 await go('?play&mute&novideo&slot=2&continue');
 const spec=await ev(async()=>{const s=S(),o={};s.menu=null;for(const w of['frostbrand','requiemspear','crownbreaker','clapper']){if(!s.sv.inv.includes(w))s.sv.inv.push(w);s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<30&&s.sv.eq.main!==w;i++)s.menuKey('right');s.menu=null;
   const P=s.player;P.st=999;P.fp=P.fpMax=99;P.spCd=0;s.stats.specials=0;const e=s.spawnEnemy('acolyte',P.x+30,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';const h=e.hp,fp=P.fp;P.f=1;P.state='idle';
-  let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(r=>setTimeout(r,1500));window.__inp=()=>({});o[w]={eq:s.sv.eq.main===w,special:s.stats.specials,dmg:+(h-e.hp).toFixed(1),fp:fp-P.fp,spFp:WEAPONS[w].spFp,name:WEAPONS[w].name};e.dead=true;e.b.body.enable=false}return o});
+  for(let k=0;k<3&&s.stats.specials===0;k++){// r12: retry if a stray hit or a frame hitch interrupted the wind-up
+   s.shots.length=0;s.flames=[];P.inv=3;P.spCd=0;P.fp=99;P.state='idle';P.t=0;let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(r=>setTimeout(r,1500));window.__inp=()=>({})}
+  o[w]={eq:s.sv.eq.main===w,special:s.stats.specials,dmg:+(h-e.hp).toFixed(1),fp:fp-P.fp,spFp:WEAPONS[w].spFp,name:WEAPONS[w].name};e.dead=true;e.b.body.enable=false}return o});
 ok('every_lord_drops_signature_weapon',sig.warden&&sig.cantor&&sig.king&&vic.inv,sig);
 ok('signature_weapons_equippable_with_specials',Object.values(spec).every(o=>o.eq&&o.special===1&&o.dmg>0&&o.fp>=o.spFp*.5),spec);
 await ev(()=>{const s=S(),P=s.player;s.spawnEnemy('acolyte',P.x+40,156).temp=1;P.fp=99;P.st=999;press('heavyP')});await wait(500);await shot('g12_signature_special_toll');

@@ -323,7 +323,7 @@ class Level{constructor(def){this.def=def;this.W=def.world;this.oy=def.top;this.
 // ===================================================================
 class Boot extends Phaser.Scene{constructor(){super('boot')}
  preload(){if(typeof PIXCH!=='undefined')PIXCH.preload(this.load);['jump','roll','slash','hit','death','bonfire','souls','charge','shot','parry','menu','pickup','chime','crumble','clang','slam','lava','heal','thunder','buff','talk','fanfare','bell'].forEach(k=>this.load.audio(k,`assets/audio/sfx_${k}.wav`))}
- create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(Q.get('ending'))return this.scene.start('ending',{kind:Q.get('ending')});if(Q.get('join'))return this.scene.start('title');if(Q.has('host')){NET.startHost(Q.get('room')||undefined);return this.scene.start('stage',{fresh:!Q.has('continue')})}if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
+ create(){genTextures(this);if(Q.has('lab'))return this.scene.start('lab');if(Q.get('ending'))return this.scene.start('ending',{kind:Q.get('ending'),final:Q.has('final')});if(Q.get('join'))return this.scene.start('title');if(Q.has('host')){NET.startHost(Q.get('room')||undefined);return this.scene.start('stage',{fresh:!Q.has('continue')})}if(DEMO||Q.has('play'))return this.scene.start('stage',{fresh:!Q.has('continue')});this.scene.start('title')}}
 // shared parallax
 function makeBG(scene,sx=''){const L=[['sky',0],['far',.15],['near',.4]].map(([k,f])=>[scene.add.tileSprite(0,0,W,H,k+sx).setOrigin(0).setScrollFactor(0).setDepth(-10+f),f]);
  const fn=(cx,cy=0)=>L.forEach(([s,f])=>{s.tilePositionX=cx*f;s.y=f?clamp(Math.round(-cy*f*.6),-50,60):0});fn.L=L;return fn}
@@ -1448,16 +1448,18 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
  victoryInput(){}// keys handled by the keydown listener in create() so quick taps are never missed
  victoryOpts(){const V=this.victory;if(V.guest)return['YOUR HOST CHOOSES THE PATH'];if(this.def.finale&&V.phase!=='choose')return['CLAIM THE HOLLOW THRONE','APPROACH THE FIRST FLAME','RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if((this.def.side||!this.def.next)&&V.phase!=='choose')return['RETURN TO THE ASH SHRINE','RETURN TO TITLE'];if(V.phase==='choose')return['REKINDLE THE FIRST FLAME','LET THE FLAME FADE'];return V.clear?['ONWARD: '+STAGE_DEFS[this.def.next].name,'REST AT THE ASH SHRINE','RETURN TO TITLE']:['APPROACH THE FIRST FLAME','RETURN TO TITLE']}
  victoryTap(p){const V=this.victory;if(V.t<.8||V.guest)return;const y0=V.phase==='choose'?112:121,i=Math.floor((p.y-y0)/11),n=V.phase==='choose'?2:this.victoryOpts().length;if(i<0||i>=n)return;V.sel=i;this.victoryGo()}
+ ngFinal(){return!!(this.def.finale&&(this.sv.lords||[]).includes('heir'))}/* r12: NG+ only at the finale after the Hollow Heir falls, never mid-game (old saves with lords/ng set included) */
  victoryGo(){const V=this.victory;if(V.gone||V.guest)return;// co-op guest: read-only card, follows the host's choice
-  if(this.def.finale&&V.sel===0){V.gone=1;const kind='usurp';this.cam.fadeOut(900,30,24,16);if(NET.host())NET.send({t:'ending',kind});this.time.delayedCall(920,()=>this.scene.start('ending',{kind}));return}
+  if(this.def.finale&&V.sel===0){V.gone=1;const kind='usurp';this.cam.fadeOut(900,30,24,16);const final=this.ngFinal();if(NET.host())NET.send({t:'ending',kind,final});this.time.delayedCall(920,()=>this.scene.start('ending',{kind,final}));return}
   if(this.def.finale&&V.sel===1&&V.phase!=='choose'){V.phase='choose';V.sel=0;V.t=.8;this.sfx('chime',.4);return}// the First Flame (and NG+) only once the whole game is beaten
   if((this.def.side||!this.def.next)&&V.phase!=='choose'){V.gone=1;const sel=this.def.finale?V.sel-2:V.sel;/* a stage with no onward road (Cinderdeep) returns home; it no longer triggers the First Flame early */this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{if(sel===0){Save.write({...this.sv,stage:'shrine',retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}else this.scene.start('title')});return}
   if(!V.clear&&V.phase!=='choose'&&V.sel===0){V.phase='choose';V.sel=0;V.t=.8;this.sfx('chime',.4);return}
-  if(V.phase==='choose'){V.gone=1;const kind=V.sel?'fade':'rekindle';this.cam.fadeOut(800,kind==='fade'?2:40,kind==='fade'?2:20,kind==='fade'?6:5);if(NET.host())NET.send({t:'ending',kind});this.time.delayedCall(820,()=>this.scene.start('ending',{kind}));return}
+  if(V.phase==='choose'){V.gone=1;const kind=V.sel?'fade':'rekindle';this.cam.fadeOut(800,kind==='fade'?2:40,kind==='fade'?2:20,kind==='fade'?6:5);const final=this.ngFinal();if(NET.host())NET.send({t:'ending',kind,final});this.time.delayedCall(820,()=>this.scene.start('ending',{kind,final}));return}
   if(V.clear&&V.sel===1){V.gone=1;this.cam.fadeOut(500,7,5,15);this.time.delayedCall(520,()=>{Save.write({...this.sv,stage:'shrine',hubNext:this.def.next,retBonfire:false,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})});return}
   if(V.clear&&V.sel===2)V.sel=1;
   V.gone=1;this.cam.fadeOut(500,7,5,15);
   this.time.delayedCall(520,()=>{if(V.sel===0&&V.clear){Save.write({...this.sv,stage:this.def.next,bonfire:false,bossDown:false,stain:null,souls:this.souls,time:this.playT});this.scene.restart({fresh:false})}
+   else if(V.sel===0&&!this.ngFinal())this.scene.start('title');
    else if(V.sel===0){const s=this.sv;Save.write({stage:'ramparts',bonfire:false,souls:this.souls,bossDown:false,deaths:s.deaths,time:this.playT,ng:this.ng+1,cls:s.cls,stats:s.stats,eq:s.eq,inv:s.inv,picked:s.picked,freed:[],found:[],chDone:[],broken:[],lore:s.lore,endings:s.endings,flaskBonus:s.flaskBonus});this.scene.restart({fresh:false})}else this.scene.start('title')})}
  // ---------------- render ----------------
  render(dt){const g=this.gn,ga=this.ga,cam=this.cam,P=this.player;g.clear();ga.clear();this.lights.length=0;this.bgf(cam.scrollX,cam.scrollY);if(this.gamb){this.gamb.clear();this.bgArt.amb(this.gamb,this.t,cam.scrollX)}this.mist.forEach((m,i)=>{m.tilePositionX=cam.scrollX*(.2+i*.05)+this.t*(4+i*3);m.y=Math.round(GY-34-i*36-cam.scrollY*(i?.4:1))});const t=this.t;
@@ -1777,13 +1779,13 @@ const ENDINGS={rekindle:{title:'TO LINK THE FIRST FLAME',lines:['THE ASHEN ONE K
  usurp:{title:'THE HOLLOW THRONE',lines:['THE ASHEN ONE SAT UPON THE HOLLOW THRONE,','AND SIX LORDS KNELT IN THE ASH BEFORE THEM.','NEITHER FLAME NOR DARK. AN AGE OF ASH.'],col:0xe8d0a8},
  fade:{title:'THE AGE OF DARK',lines:['THE ASHEN ONE TURNED FROM THE FIRST FLAME','AND LET IT GUTTER INTO NOTHING.','IN THE DARK, SMALL LIGHTS BEGAN TO STIR.'],col:0x9fb8ff}};
 class Ending extends Phaser.Scene{constructor(){super('ending')}
- init(d){this.kind=d&&ENDINGS[d.kind]?d.kind:'rekindle'}
+ init(d){this.kind=d&&ENDINGS[d.kind]?d.kind:'rekindle';this.final=!!(d&&d.final)}
  create(){Object.assign(C,BASEPAL);const sv=Save.load()||{};this.sv=sv;sv.endings=sv.endings||[];if(!sv.endings.includes(this.kind))sv.endings.push(this.kind);sv.lastEnding=this.kind;Save.write(sv);this.lines=[...ENDINGS[this.kind].lines,...((sv.lords||[]).includes('toller')?[BELL_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('smith')?[FORGE_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('abbess')?[CRYPT_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('marshal')?[KEEP_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('astronomer')?[SPIRE_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('prioress')?[CLOISTER_ENDING[this.kind]]:[]),...((sv.lords||[]).includes('heir')?[THRONE_ENDING[this.kind]]:[])].filter(Boolean);
   this.fx=new FX(this);this.gn=this.add.graphics().setDepth(4);this.ga=this.add.graphics().setDepth(5).setBlendMode(Phaser.BlendModes.ADD);this.gt=this.add.graphics().setDepth(6);
   this.t=0;this.card=null;this.sel=0;heroStyle(WEAPONS[(sv.eq||{}).main],false,ARMORS[(sv.eq||{}).armor]);this.stars=[...Array(70)].map((_,i)=>[(i*73)%W,(i*41)%110,(i%5)/5]);
   this.cameras.main.fadeIn(900,this.kind==='fade'?2:40,this.kind==='fade'?2:20,this.kind==='fade'?6:5);try{this.sound.play(this.kind==='fade'?'chime':'fanfare',{volume:.4})}catch(e){}
   this.input.keyboard.on('keydown',e=>this.key(e.key));this.input.on('pointerdown',p=>{if(!this.card)return this.key('Enter');const i=Math.floor((p.y-136)/11);if(i===0||i===1){this.sel=this.ngOk()?i:1;this.key('Enter')}})}
- ngOk(){const s=this.sv||Save.load()||{};return(s.lords||[]).includes('heir')}/* NG+ (journey on) only after the final lord, the Hollow Heir, is beaten */
+ ngOk(){const s=this.sv||Save.load()||{};return this.final&&(s.lords||[]).includes('heir')}/* NG+ (journey on) only after the final lord, the Hollow Heir, is beaten */
  key(k){if(this.gone)return;const ok=k==='Enter'||k===' '||k==='z'||k==='Z';
   if(!this.card){if(ok){if(this.t>.15)this.showCard();else this.skipQ=1}return}
   if(this.card.t<.3)return;const ng=this.ngOk();if(!ng)this.sel=1;else if(k==='ArrowUp'||k==='ArrowDown')this.sel^=1;

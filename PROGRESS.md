@@ -317,3 +317,8 @@ Note: core.js, data.js and level.js are untracked files from an earlier, unfinis
 ## Spells shipped (spells.js, from stash spells-wip)
 - 16 spells, 4 attunement slots shared with the inventory, sorcerer-only lock (class or INT 24), equip from bonfire/pause, RB/LT/RT cast, D-pad/Q/C cycle. Native code-drawn effects, bolder +0 (bigger/thicker, no glow). Frost Nova + Grasping Dark slow enemies (game.js slowEnemies, 50% for 2.5 s). test/spells.mjs 27/27.
 - Full suite on this tree: green except pre-existing/flaky: milestoneC + G cantor drop (4d543b8 cinematics), G toller peal / M heir comet (phase-3 timing flake under CPU load; passed on rerun), coop bell sync in G/K/L/M (also fails on base 4d543b8), r4fix gives no summary with or without spells. M hollowbrand test moved to the climb rule like I-L.
+
+## r12 hotfix (on 8519d29)
+- NG+ / JOURNEY ON only at the finale after the Hollow Heir: Stage.ngFinal() gates both NG+ save writes; Ending gets {final} from the finale (also sent to the co-op guest); old saves with lords/ng set cannot trigger it mid-game. test/ngguard.mjs + clips/ngguard.mp4.
+- Quit to title: YES only counts after 0.6 s calm on the confirm dialog (QUIT_GUARD_MS), so mashed Esc/Enter/arrows cannot quit.
+- test/G Crownbreaker special: retries if a stray hit or frame hitch interrupts the 0.4 s wind-up (shots cleared, i-frames).
