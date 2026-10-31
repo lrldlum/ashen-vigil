@@ -1,8 +1,11 @@
 // r4 hotfix checks: title erase never on X (Delete+Delete only, any key cancels), real-keyboard chain climbs (roof A + ledge x3), economy/balance numbers, touch layout. usage: node test/r4fix.mjs
 import { chromium } from 'playwright';
-const B='http://127.0.0.1:8171/';let pass=0,fail=0;const ok=(n,c,v)=>{c?pass++:fail++;console.error((c?'PASS ':'FAIL ')+n+' '+JSON.stringify(v))};
+const B='http://127.0.0.1:8171/';let pass=0,fail=0;const ok=(n,c,v)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+n+' '+JSON.stringify(v))};// stdout, so `node test/r4fix.mjs > r4fix_results.txt` captures every check
+process.on('unhandledRejection',e=>{fail++;console.log('FAIL aborted '+JSON.stringify(String(e&&e.message||e).slice(0,300)));console.log(`PASS ${pass} / ${pass+fail}`);process.exit(1)});
+setTimeout(()=>{fail++;console.log('FAIL timeout_180s');console.log(`PASS ${pass} / ${pass+fail}`);process.exit(1)},180000).unref();
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});const pg=await (await br.newContext({viewport:{width:960,height:540}})).newPage();
 const errs=[];pg.on('pageerror',e=>errs.push(e.message));const wait=ms=>pg.waitForTimeout(ms);
+import fs from 'fs';fs.mkdirSync('screenshots/r4fix',{recursive:true});
 await pg.goto(B+'assets/README.md');await pg.evaluate(()=>{localStorage.clear();localStorage.setItem('ashenVigil.save.v1',JSON.stringify({cls:'knight',stage:'ramparts',souls:111}))});
 // 1. title erase
 await pg.goto(B+'?mute');await wait(1600);const has=()=>pg.evaluate(()=>!!localStorage.getItem('ashenVigil.save.v1'));
@@ -12,7 +15,7 @@ await pg.keyboard.press('x');await wait(150);const cancelled=await pg.evaluate((
 await pg.keyboard.press('Delete');await wait(120);await pg.keyboard.press('Backspace');await wait(150);const erased=!(await has());
 ok('title_erase_only_delete_confirmed',afterX&&prompt===0&&cancelled&&erased,{afterX,prompt,cancelled,erased});
 // 2. chain climbs with the real keyboard (no input hook): hold UP, then UP+RIGHT
-const load=async q=>{await pg.goto(B+q);await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive());await wait(600);
+const load=async q=>{await pg.goto(B+q);await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:20000});await wait(600);
  await pg.evaluate(()=>{window.S=()=>__G.scene.getScene('stage');S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});S().player.inv=999})};
 const climb=async(x,variant)=>{await pg.evaluate(x=>{const s=S();s.pb.setPosition(x+4,148);s.pb.setVelocity(0,0);s.camY=s.camTY=0},x);await wait(200);
  await pg.evaluate(()=>{window.__landed=null;const s=S(),f=()=>{if(!window.__landed&&s.pb.body.blocked.down&&s.player.y<=21)window.__landed={x:Math.round(s.player.x),y:Math.round(s.player.y)};if(!window.__landed)requestAnimationFrame(f)};f()});
@@ -31,4 +34,4 @@ ok('greatsword_not_dominant',N.gs<N.dag&&N.gsWeak<N.lsKnight,N);
 ok('light_roll_farther_than_medium',N.light.v*N.light.t>N.medium.v*N.medium.t*1.1,{light:N.light,medium:N.medium});
 ok('staff_spell_buff_int40_ge_2_5',N.staff40>=2.5,N.staff40);
 ok('touch_down_button_on_screen',N.dn.y+N.dn.r<=176,N.dn);
-ok('no_page_errors',errs.length===0,errs);console.log(`PASS ${pass} / ${pass+fail}`);await br.close();
+ok('no_page_errors',errs.length===0,errs);console.log(`PASS ${pass} / ${pass+fail}`);await br.close();process.exit(fail?1:0);
