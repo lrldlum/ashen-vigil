@@ -221,14 +221,14 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
 };
 }
 
-// ===================== r3: Artist's arsenal art (assets/art/arsenal_pixel/arsenal.json) — behind an art flag, default OFF =====================
-// ON with ?arsart=1 (or localStorage ashenVigil.arsArt='1'; ?arsart=0 forces off) and the pixel hero (PIXCH) on. Missing textures -> placeholders.
+// ===================== r3: Artist's arsenal art (assets/art/arsenal_pixel/arsenal.json) — approved: ON by default, off switch ?arsart=0 / localStorage ashenVigil.arsArt='0' =====================
+// Needs the pixel hero (PIXCH) on. Missing textures -> placeholders.
 // Pass 2 adds existing dagger/spear/axe/staff/bow (existing:true) and fx muzzle_rune for the rune pistol.
 // In hand: hero_strip_noblade base + weapon_<id> 46x46x30 overlay frame-for-frame; guns/bows/crossbows never show attack frames 16-23
 // (sword baked in): the base holds idle frame 0 and recoil/flash/smoke sell the shot. Shields: shield_<id> (30f) / shield_<id>_guard (2f, 4fps)
 // after the hero. Reload: hero_reload_powder (6f, 8fps) over frame 0 with the gun hidden; crossbows reload_<id> (3f, 6fps).
 ARS.ART_DIR='assets/art/arsenal_pixel/';ARS.ART=null;
-ARS.artOn=()=>{try{const q=new URLSearchParams(location.search).get('arsart');if(q!=null)return q==='1';return localStorage.getItem('ashenVigil.arsArt')==='1'}catch(e){return false}};
+ARS.artOn=()=>{try{const q=new URLSearchParams(location.search).get('arsart');if(q!=null)return q!=='0';return localStorage.getItem('ashenVigil.arsArt')!=='0'}catch(e){return true}};
 if(typeof Boot!=='undefined'){const bp=Boot.prototype.preload;Boot.prototype.preload=function(){bp.call(this);if(!ARS.artOn()||typeof PIXCH==='undefined'||!PIXCH.ON())return;const L=this.load,D=ARS.ART_DIR,fn=f=>D+String(f).split('/').pop();
  L.json('ars_art',D+'arsenal.json');L.on('filecomplete-json-ars_art',(k,t,M)=>{ARS.ART=M;const ss=(key,f,w,h)=>L.spritesheet(key,fn(f),{frameWidth:w,frameHeight:h}),ic=it=>{L.image('arsi_'+it.id,fn(it.icon));L.image('arsi2_'+it.id,fn(it.icon2x))};
   for(const it of[...(M.melee||[]),...(M.guns||[]),...(M.ranged||[])]){if(!WEAPONS[it.id])continue;ss('arsw_'+it.id,it.file,M.frameWidth||46,M.frameHeight||46);ic(it);if(it.reload)ss('arsr_'+it.id,it.reload,46,46)}

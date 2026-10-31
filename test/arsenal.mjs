@@ -1,7 +1,7 @@
 // Arsenal checks (arsenal.js): every melee moveset, shields (guard/absorb/parry window/guard break/magic FP), bows + crossbows,
 // throwables (knife, fire/frost/storm jars), guns (mag, ammo, reload, recoil, spread, pierce, blast, rune FP + element, DEX scaling,
 // smith upgrade, infusion), drops/merchant/save, co-op mirrored shots; r2: gamepad throw/cycle/guard, touch THR/GRD/RLD, smith infusion menu,
-// distinct swing arcs, co-op partner guard; r3: Artist art behind ?arsart=1 (default OFF). usage: node test/arsenal.mjs (server :8171; TMPV=frame dir).
+// distinct swing arcs, co-op partner guard; r3: Artist art, ON by default (?arsart=0 = off). usage: node test/arsenal.mjs (server :8171; TMPV=frame dir).
 // Writes screenshots/arsenal/*.png, clips/arsenal.mp4 and one clip per category clips/arsenal_<cat>.mp4
 import { chromium } from 'playwright';import {execSync} from 'child_process';import fs from 'fs';
 const B='http://127.0.0.1:8171/',SH='screenshots/arsenal/';
@@ -142,11 +142,11 @@ await G.ev(()=>{window.__inp=()=>({})});
 ok('coop_partner_sees_shield_guard',RG[1]&&RG[0].n>0&&RG[0].off==='kite',RG);
 await H.ctx.close();await G.ctx.close();
 
-// ---------- 13. Artist art: default OFF loads nothing; ?arsart=1 loads the manifest, wields overlays, guns never on attack frames
-const AO=await mk(false);await AO.pg.goto(B+'assets/README.md');await AO.ev(()=>localStorage.clear());await AO.go('?play&mute&novideo&slot=1&class=knight&stage=ramparts');
+// ---------- 13. Artist art: ?arsart=0 loads nothing; default (ON) loads the manifest, wields overlays, guns never on attack frames
+const AO=await mk(false);await AO.pg.goto(B+'assets/README.md');await AO.ev(()=>localStorage.clear());await AO.go('?play&mute&novideo&slot=1&class=knight&stage=ramparts&arsart=0');
 const OFF=await AO.ev(()=>({m:!!ARS.ART,t:S().textures.exists('arsw_katana')}));await AO.ctx.close();
-ok('art_flag_default_off',!OFF.m&&!OFF.t,OFF);
-const AR=await mk(true);FR.length&&0;mark('art');await AR.pg.goto(B+'assets/README.md');await AR.ev(()=>localStorage.clear());await AR.go('?play&mute&novideo&slot=1&class=knight&stage=ramparts&arsart=1');
+ok('art_flag_off_switch_arsart0',!OFF.m&&!OFF.t,OFF);
+const AR=await mk(true);FR.length&&0;mark('art');await AR.pg.goto(B+'assets/README.md');await AR.ev(()=>localStorage.clear());await AR.go('?play&mute&novideo&slot=1&class=knight&stage=ramparts');// art ON by default
 const ART=await AR.ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={};clear();for(const k of Object.keys(sv.stats))sv.stats[k]=Math.max(sv.stats[k],30);s.applyBuild(true);
  window.dummy=(dx=40)=>{const e=s.spawnEnemy('acolyte',P.x+dx,150);e.hp=999;e.temp=1;e.cd=99;e.state='idle';e.b.setPosition(P.x+dx,149);e.b.setVelocity(0,0);e.b.body.moves=false;return e};
  window.equip=(id,slot='main')=>{if(!sv.inv.includes(id))sv.inv.push(id);sv.eq[slot]=id;s.applyBuild(false);P.st=P.stMax;P.fp=P.fpMax};const sl=ms=>new Promise(r=>setTimeout(r,ms));
@@ -161,7 +161,7 @@ const ART=await AR.ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={};clear();for(
  sv.thr={firebomb:3};sv.eq.q2='firebomb';P.f=1;dummy(95);await act({throwP:1},250);o.spin=(s.arsSpr&&s.arsSpr.size)||0;await sl(1200);
  const g=s.add.graphics();o.icon=WEAPART.icon(s,g,'blunderbuss',0,0,24);g.destroy();return o});
 await AR.shot('ars11_art_on');mark('art',1);await AR.ctx.close();
-ok('art_flag_on_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.runeMuzzle==='muzzle_rune'&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
+ok('art_on_by_default_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.runeMuzzle==='muzzle_rune'&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
 ok('no_errors',errs.length===0,errs);
 const clip=(out,a,b)=>{let s='';for(let i=a;i<b;i++)s+=`file '${VD}/${String(i).padStart(5,'0')}.jpg'\nduration ${Math.min(.5,((FR[i+1]||FR[i]+100)-FR[i])/1000).toFixed(3)}\n`;fs.writeFileSync(VD+'/l.txt',s);
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${VD}/l.txt -vf "scale=640:360,fps=30" -c:v libx264 -pix_fmt yuv420p -crf 27 ${out}`)};

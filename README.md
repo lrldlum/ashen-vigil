@@ -24,6 +24,8 @@ You can play with the keyboard or an **Xbox controller**. Other pads that use th
 
 **Touch:** the on-screen pad adds **THR** (throw), **GRD** (hold to guard with a shield) and **RLD** (reload the gun) beside the attack buttons.
 
+**Arsenal art:** pixel art for the arsenal weapons, shields, throwables and gun effects is on by default; add `?arsart=0` to the URL (or set localStorage `ashenVigil.arsArt` to `0`) to fall back to the placeholder drawings.
+
 **Smith infusions:** at the smith, select a weapon and press Right (D-pad Right) to infuse it (heavy/sharp: 1 Ember Shard + 1000 souls; fire/frost/lightning: 2 + 2000; dark/holy: 3 + 3000).
 
 **Context A:** when you stand on the ground next to something usable (bonfire, the Ash Keeper, a chest, a lever, a lore stone, a door/gate/lift/stair), an on-screen prompt shows the button (`A Rest`, `A Talk`, `A Open`; a boxed E key glyph without a pad) and A uses it instead of jumping. Step away to jump; D-pad Up always interacts and never jumps. Loot is picked up by walking over it.
