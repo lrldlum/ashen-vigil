@@ -1,4 +1,4 @@
-// OW1: room engine (Ramparts in rooms, 150 ms slides, parked enemies + roomState), v2 save + v1 migration, lazy PeerJS, perf marks.
+// OW1: room engine (Ramparts in rooms, smooth-follow camera (no slides), parked enemies + roomState), v2 save + v1 migration, lazy PeerJS, perf marks.
 import { chromium } from './node_modules/playwright/index.mjs';import fs from 'fs';import vm from 'vm';
 const B=`http://127.0.0.1:${process.env.PORT||8171}/`;let pass=0,fail=0;const ok=(n,c,d)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+n+(c?'':' '+JSON.stringify(d)))};
 const CLIP=process.env.CLIP;
@@ -16,13 +16,13 @@ ok('peerjs_loads_on_demand',await S(async()=>{await loadPeer();return typeof Pee
 // ---- Ramparts in rooms ----
 await pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts');await ready();
 const R=await S(()=>({n:s.rooms.length,ids:s.rooms.map(r=>r.id),room:s.room.id,b:s.cam.getBounds?{x:s.cam._bounds.x,w:s.cam._bounds.width}:null,region:performance.getEntriesByName('region-ready').length}));
-ok('ramparts_split_into_rooms',R.n>=6&&R.ids[0]==='ramparts.r1',R);ok('camera_bounded_to_room',R.b&&R.b.w<=740,R);ok('region_ready_mark',R.region>0);
+ok('ramparts_split_into_rooms',R.n>=6&&R.ids[0]==='ramparts.r1',R);ok('camera_spans_region_no_room_lock',R.b&&R.b.x===0&&R.b.w>=3000,R);ok('region_ready_mark',R.region>0);
 await pg.screenshot({path:'screenshots/ow1/room_start.png'});
 // walk right across a room edge: one 150 ms slide, no restart
 const sw=await S(async()=>{const r=s.room;s.enemies.forEach(e=>{if(e.b.x<r.x1+200){e.dead=true;e.b.body.enable=false}});s.pb.setPosition(r.x1-30,s.pb.y);s.player.inv=999;const sc=s.scene.isActive(),n0=s.roomSwaps,t0=performance.now();
  window.__inp=()=>({r:1});let tSwap=0,tDone=0,mid=null;for(let i=0;i<80;i++){await new Promise(r=>setTimeout(r,16));if(!tSwap&&s.roomSwaps>n0)tSwap=performance.now();if(tSwap&&s.roomSlide&&!mid)mid=s.cam.scrollX;if(tSwap&&!s.roomSlide&&!tDone)tDone=performance.now()}window.__inp=null;
  return{swaps:s.roomSwaps-n0,room:s.room.id,dur:Math.round(tDone-tSwap),mid,same:sc&&s.scene.isActive(),bx:s.cam._bounds.x,r1:s.room.x0}});
-ok('room_slide_150ms',sw.swaps===1&&sw.dur>=100&&sw.dur<=450&&sw.mid!=null,sw);ok('slide_locks_to_next_room',sw.bx===sw.r1&&sw.same,sw);
+ok('room_swap_no_slide',sw.swaps===1&&sw.mid==null,sw);ok('camera_stays_unlocked_after_cut',sw.bx===0&&sw.same,sw);
 await pg.screenshot({path:'screenshots/ow1/room_after_slide.png'});
 // parked enemies keep their state (roomState) and wake when you come back
 const pk=await S(async()=>{const e=s.enemies.find(e=>!e.dead&&e.b.x>s.room.x1+100);const hp=e.hp=e.hp-1;const rr=s.rooms.find(r=>e.b.x>=r.x0&&e.b.x<r.x1);

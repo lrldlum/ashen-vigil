@@ -1509,7 +1509,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    const dy=GY-L.y;if(dy<L.r&&dy>-2&&this.lv.kAt(L.x,GY+2)===K_SOLID){const gr=Math.sqrt(L.r*L.r-dy*dy);for(let i=3;i>=1;i--){const w=Math.round(gr*i/3);g.fillStyle(L.c,L.a*.32*(4-i)/3);g.fillRect(x-w,GY,2*w,1);g.fillStyle(L.c,L.a*.12*(4-i)/3);g.fillRect(x-w,GY+1,2*w,1+i*2)}
     for(const[p,w]of this.puddles){const pc=p+w/2;if(Math.abs(pc-x)<gr){const k=1-Math.abs(pc-x)/gr;g.fillStyle(L.c,L.a*.7*k);g.fillRect(p+2,GY,w-6,1);g.fillStyle(L.c,L.a*.4*k);const rx=Math.round(pc-(x-pc)*.15);g.fillRect(rx-1,GY+1,3,1);g.fillRect(rx,GY+2,1,1)}}}}}
  drawPlayer(g,ga){const P=this.player,x=Math.round(P.x),y=Math.round(P.y),f=P.f,t=this.t;
-  if(P.dead){const fr=Math.min(5,Math.floor(P.deadT/.22));if(P.deadT<2)drawHero(g,x,y,f,'death',fr,t,{alpha:fr>=5?Math.max(0,1-(P.deadT-1.1)):1});if(fr>=4&&Math.random()<.3)this.fx.ember(x+rnd(-5,5),y-2,1,.5);return}
+  if(P.dead){const fr=Math.min(5,Math.floor(P.deadT/.22)),al=fr>=5?Math.max(0,1-(P.deadT-1.1)):1;if(P.deadT<2){const px=this.pxc&&PIXCH.death(this,x,y,f,P.deadT,al);this._heroKey=px?this.pxc.hero.texture.key:'legacy';if(!px)drawHero(g,x,y,f,'death',fr,t,{alpha:al})}if(fr>=4&&Math.random()<.3)this.fx.ember(x+rnd(-5,5),y-2,1,.5);return}
   if(P.inv>0&&P.state!=='roll'&&Math.floor(t*30)%2)return;
   glow(ga,x,y-8,14,C.f2,.05);this.light(x,y-8,26,C.f2,.22);heroStyle(this.wp,P.heavy&&P.state==='atk',ARMORS[this.sv.eq.armor]);
   let st=P.state,fr=0;
@@ -1521,7 +1521,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
   else if(st==='parry')fr=P.t<TUNE.parryWin?0:1;
   else if(st==='climb')fr=Math.floor(P.run)%2;
   if(P.land>0&&st==='idle')st='rollrec';
-  const pf=P.pflash>0;if(pf)P.pflash--;NET.localStyle(this);const pxh=this.pxc&&PIXCH.hero(this,x,y,f,st,P);if(!pxh)drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo,outline:this.def.theme==='cinderdeep'?.22:.4});this._hero={st,fr,hv:P.heavy&&P.state==='atk'};if(!pxh)HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.55);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);// pixel hero draws its own outline (pixelchars.js)
+  const pf=P.pflash>0;if(pf)P.pflash--;NET.localStyle(this);const pxh=this.pxc&&PIXCH.hero(this,x,y,f,st,P);this._heroKey=pxh?this.pxc.hero.texture.key:'legacy';if(!pxh)drawHero(g,x,y,f,st,fr,t,{flash:P.flash>0||pf,combo:P.combo,outline:this.def.theme==='cinderdeep'?.22:.4});this._hero={st,fr,hv:P.heavy&&P.state==='atk'};if(!pxh)HERO.rim(ga,x,y,f,pf?0xffe2a8:this.def.theme==='cinderdeep'?0x9fe8ff:C.f2,pf?.9:this.def.theme==='cinderdeep'?.7:.55);if(this.def.theme==='cinderdeep'&&!pf)glow(ga,x,y-8,10,0x5fb8ff,.07);if(pf)glow(ga,x,y-8,16,C.f1,.3);NET.draw(this,g,ga);// pixel hero draws its own outline (pixelchars.js)
   if(P.state==='atk'){const m=this.move();if(P.t>=m.h0-.02&&P.t<m.h1+.08){const k=(P.t-m.h0+.02)/(m.h1-m.h0+.1);
     if(m.arc)drawSlash(ga,x+f*2,y-10-(m.spin?0:0),f,k,this.wp===WEAPONS.longsword&&!P.heavy?SLASH:m.arc,P.combo===1);
     else if(m.stab){const L=(m.reach||12)+6,yy=y-9+(P.combo===1?-2:P.combo===2?1:0);for(let i=0;i<L;i++){const a=(1-Math.abs(i/L-k))*.8;if(a>0)px(ga,x+f*(4+i),yy,i>L-4?0xffffff:C.f1,a)}glow(ga,x+f*(4+L*k),yy,4,C.f2,.3)}

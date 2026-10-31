@@ -31,15 +31,22 @@ const PIXCH=(()=>{
   const a=st==='hurt'?'hit':st==='atk'?'attack':(st==='run'||st==='roll'||st==='jump'||st==='fall')?'run':'idle';let fr;
   if(a==='attack'){const m=s.move(),h0=m.h0||.1,h1=m.h1||h0+.08,T=m.t||h1+.15,t=P.t;fr=t<h0?16+Math.min(3,Math.floor(t/h0*4)):t<h1?20:21+Math.min(2,Math.floor((t-h1)/Math.max(.01,T-h1)*3));c.hs.a=null}
   else fr=pick(c,c.hs,a);
-  const sp=c.hero;sp.setFrame(fr).setPosition(Math.round(x),Math.round(y)).setFlipX(f<0);
+  const sp=c.hero;upright(c,sp,c.he,'dead');sp.setFrame(fr).setPosition(Math.round(x),Math.round(y)).setFlipX(f<0);
   c.fl=P.flash>0&&Math.floor(c.t*30)%2;c.tint=typeof NET!=='undefined'&&NET.guest()&&NET.linked()?NET.TINT.b:null;
   if(c.fl)sp.setTintFill(0xffffff);else if(c.tint!=null)sp.setTint(c.tint);else sp.clearTint();edgeSync(c.he,sp,c.tint??OLC);
   // boss weapon heavy look: one burst per heavy swing, at the start of the damage window
   if(P.state==='atk'&&P.heavy&&typeof WEAPART!=='undefined'){if(!c.hvF&&P.t>=s.move().h0){c.hvF=1;c.hvLast=WEAPART.heavy(s,s.sv.eq.main,x+f*6,y,f)}}else c.hvF=0;return true}
+ // death: current hand-drawn hero (hit strip 24-29, then held and laid down, fading) instead of the legacy procedural man
+ function death(s,x,y,f,dT,alpha,rem){const c=s.pxc;if(!c)return false;const sp=rem?c.rem:c.hero,E=rem?c.re:c.he;if(rem)c.rdrawn=1;else c.drawn=1;
+  const fr=24+Math.min(5,Math.floor(dT/.12)),lay=Math.min(1,Math.max(0,(dT-.5)/.4));
+  sp.setFrame(fr).setPosition(Math.round(x),Math.round(y)).setFlipX(f<0).setAngle((f<0?1:-1)*90*lay).setAlpha(alpha);
+  const tc=typeof NET!=='undefined'&&NET.guest()&&NET.linked()?NET.TINT.b:null;if(rem){c.rtint=rem.rh?null:NET.TINT.b;c.req=c.req||{};if(c.rtint!=null)sp.setTint(c.rtint);else sp.clearTint()}else{c.tint=tc;c.fl=0;if(tc!=null)sp.setTint(tc);else sp.clearTint()}
+  edgeSync(E,sp,(rem?c.rtint:tc)??OLC);for(const q of E.ol)q.setAngle(sp.angle).setAlpha(.9*alpha);E.lift.setAngle(sp.angle).setAlpha(.28*alpha);c[rem?'rdead':'dead']=1;return true}
+ function upright(c,sp,E,k){if(!c[k])return;c[k]=0;sp.setAngle(0).setAlpha(1);for(const q of E.ol)q.setAngle(0).setAlpha(.9);E.lift.setAngle(0).setAlpha(.28)}
  // co-op partner: pixel hero + their armor (equip ids come over NET.me(): ar/hd/hn/lg). Role colour: the guest is teal on both screens
  function remote(s,R,x,y,rh){const c=s.pxc;if(!c)return false;c.rdrawn=1;c.rs=c.rs||{};const st=R.st;
   const a=st==='hurt'?'hit':st==='atk'?'attack':(st==='run'||st==='roll'||st==='jump'||st==='fall')?'run':'idle';
-  const fr=a==='attack'?16+Math.min(7,(R.fr|0)*2):pick(c,c.rs,a);c.rem.setFrame(fr).setPosition(x,y).setFlipX(R.f<0);
+  upright(c,c.rem,c.re,'rdead');const fr=a==='attack'?16+Math.min(7,(R.fr|0)*2):pick(c,c.rs,a);c.rem.setFrame(fr).setPosition(x,y).setFlipX(R.f<0);
   c.req={armor:R.ar,head:R.hd,hands:R.hn,legs:R.lg};c.rmain=R.main;c.rfl=!!R.fl&&Math.floor(c.t*30)%2;c.rtint=rh?null:NET.TINT.b;
   if(c.rfl)c.rem.setTintFill(0xffffff);else if(c.rtint!=null)c.rem.setTint(c.rtint);else c.rem.clearTint();edgeSync(c.re,c.rem,c.rtint??OLC);return true}// r6: P2 guest is teal
  // returns true when the enemy was drawn as a Bell Acolyte
@@ -50,4 +57,4 @@ const PIXCH=(()=>{
   if(a==='attack'){const t=e.t||0;if(e.state==='wind'){const wd=e.combo?.22:.45;fr=16+Math.min(2,Math.floor(t/wd*3))}else if(e.state==='swing')fr=t<.06?19:t<.12?20:21+Math.min(2,Math.floor((t-.12)/.23*3))}
   e._pxa=e._pxa||{};sp.setVisible(true).setFrame(fr??pick(c,e._pxa,a)).setPosition(Math.round(b.x),Math.round(b.body.bottom)).setFlipX(e.f>0);
   if(e.flash>0&&Math.floor(c.t*30)%2)sp.setTintFill(0xffffff);else sp.clearTint();return true}
- return {preload,setup,hero,foe,remote,ON}})();
+ return {preload,setup,hero,death,foe,remote,ON}})();

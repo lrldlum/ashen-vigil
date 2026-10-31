@@ -1,6 +1,6 @@
 // ASHEN VIGIL — OW1: room engine, v2 save with v1 migration, lazy PeerJS, perf marks (openworld_plan.md §3-5).
-// Rooms: every region (stage strip) is cut into rooms of 1-4 screens. The camera is bounded to the current room and slides
-// 150 ms to the next one (no fade, no restart); enemies outside the current room are parked (no body, no AI) and their
+// Rooms: every region (stage strip) is cut into rooms of 1-4 screens. The camera smooth-follows across the whole region (no room
+// snaps or slides); enemies outside the current room are parked (no body, no AI) and their
 // state lives in roomState, so a room you leave is exactly as you left it. Vertical scrolling inside a room is kept.
 'use strict';
 const ROOM_SLIDE=.15;
@@ -46,8 +46,9 @@ if(typeof NET!=='undefined'){const sh=NET.startHost.bind(NET),sj=NET.startJoin.b
 // ---------- the room engine ----------
 (()=>{const SP=Stage.prototype;
  const cr=SP.create;SP.create=function(...a){const r=cr.apply(this,a);try{this.roomsInit()}catch(e){console.warn('rooms',e)}performance.mark('region-ready');{const el=document.getElementById('boot');if(el)el.remove()}return r};
- SP.roomsInit=function(){this.rooms=roomList(this.sid);this.roomState=this.roomState||{};this.roomSwaps=0;this.roomSlide=null;const r=roomAt(this.sid,this.player.x);this.room=null;this.enterRoom(r,true)};
- SP.roomBounds=function(r){this.cam.setBounds(r.x0,r.top,r.x1-r.x0,r.bottom-r.top)};
+ SP.roomsInit=function(){const cam=this.cam;if(cam&&!cam.__glide){cam.__glide=1;const sf=cam.startFollow;cam.startFollow=function(...a){const x=this.scrollX,y=this.scrollY,r=sf.apply(this,a);this.scrollX=x;this.scrollY=y;return r}}/* Phaser's startFollow jumps to the target; keep the scroll so the .12 lerp glides there (intro end/skip, no snap) */this.rooms=roomList(this.sid);this.roomState=this.roomState||{};this.roomSwaps=0;this.roomSlide=null;const r=roomAt(this.sid,this.player.x);this.room=null;this.enterRoom(r,true)};
+ // camera: continuous smooth follow over the whole region (pre-OW1 behaviour, Justin); rooms only drive parking/state, never the camera
+ SP.roomBounds=function(r){const D=this.def||{};this.cam.setBounds(0,D.top!=null?D.top:r.top,WORLD,(D.bottom!=null?D.bottom:r.bottom)-(D.top!=null?D.top:r.top))};
  // enemies belong to the room they stand in when you leave it; parked ones keep hp/dead/pos in roomState
  SP.parkEnemies=function(r){if(NET.guest()||(NET.linked&&NET.linked())){for(const e of this.enemies)if(e.parked){e.parked=0;e.b.body.enable=!e.dead}return}// co-op: partners may be in different rooms until OW7's room following
  const P=this.player,AGG=['idle','patrol','sleep','walk',undefined];
@@ -60,20 +61,16 @@ if(typeof NET!=='undefined'){const sh=NET.startHost.bind(NET),sj=NET.startJoin.b
   for(const e of this.enemies)if(e.dead){const id=roomAt(this.sid,e.x0).id;const RS=this.roomState[id]=this.roomState[id]||{};(RS.dead=RS.dead||{})[this.enemies.indexOf(e)]=1}};
  SP.enterRoom=function(r,instant){const prev=this.room;this.room=r;this.parkEnemies(r);const sv=this.sv;if(sv){saveV2(sv);sv.region=this.sid;sv.room=r.id;sv.rooms.visited[r.id]=1}
   if(instant||!prev){this.roomBounds(r);return}
-  this.roomSwaps++;performance.mark('room-swap');
-  // 150 ms slide: free the camera over both rooms, ease scrollX to where the follow will sit, then lock to the new room
-  const cam=this.cam,from=cam.scrollX,lo=Math.min(prev.x0,r.x0),hi=Math.max(prev.x1,r.x1);cam.setBounds(lo,r.top,hi-lo,r.bottom-r.top);cam.stopFollow();
-  const to=clamp(this.player.x-W/2+Math.round(this.camOff||0),r.x0,r.x1-W);this.roomSlide={t:0,from,to,r};
+  this.roomSwaps++;performance.mark('room-swap');this.roomBounds(r);
   if(NET.host())NET.send({t:'room',id:r.id})};
  SP.roomStep=function(dt){if(!this.rooms||this.cine||this.bossState==='fight')return;const S=this.roomSlide;
-  if(S){S.t+=dt;const k=Math.min(1,S.t/ROOM_SLIDE),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;this.cam.scrollX=Math.round(S.from+(S.to-S.from)*e);
-   if(k>=1){this.roomSlide=null;this.roomBounds(S.r);this.cam.startFollow(this.pb,true,.12,0,Math.round(this.camOff||0),0)}return}
+  if(S)this.roomSlide=null;
   const P=this.player,r=this.room;if(r&&!(NET.linked&&NET.linked())){this.parkT=(this.parkT||0)-dt;if(this.parkT<=0){this.parkT=.5;this.parkEnemies(r)}}if(!r||P.x>=r.x0&&P.x<r.x1)return;this.enterRoom(roomAt(this.sid,P.x))};
- const up=SP.update;SP.update=function(t,dms){const r=up.call(this,t,dms);if(this.player&&this.rooms&&NET.linked&&NET.linked()&&this.enemies.some(e=>e.parked))this.parkEnemies(this.room);if(this.player&&this.rooms)this.roomStep(Math.min(.05,(dms||16)/1000));return r};
+ const up=SP.update;SP.update=function(t,dms){const r=up.call(this,t,dms);if(this.player&&this.rooms&&NET.linked&&NET.linked()&&this.enemies.some(e=>e.parked))this.parkEnemies(this.room);if(this.arenaX0!=null&&this.cam){const b=this.cam._bounds;if(b.x<this.arenaX0){const nx=Math.min(this.arenaX0,Math.floor(this.cam.scrollX));if(nx>b.x)this.cam.setBounds(nx,b.y,WORLD-nx,b.height)}}/* arena lock tightens only behind the camera: never a snap */if(this.player&&this.rooms)this.roomStep(Math.min(.05,(dms||16)/1000));return r};
  // parked enemies sit out the AI and the draw
  const ue=SP.updateEnemies;SP.updateEnemies=function(dt){if(!this.enemies.some(e=>e.parked))return ue.call(this,dt);const all=this.enemies;this.enemies=all.filter(e=>!e.parked);try{return ue.call(this,dt)}finally{const act=this.enemies;this.enemies=all;for(const e of act)if(!all.includes(e))all.push(e)}};
  const de=SP.drawEnemy;SP.drawEnemy=function(g,ga,e){if(e.parked)return;return de.call(this,g,ga,e)};
  // the boss fight / cine pan needs the arena room: unlock to it when the intro starts
- const sc=SP.startCine;SP.startCine=function(...a){const L=this.rooms&&this.rooms[this.rooms.length-1];if(L){this.roomSlide=null;this.room=L;this.cam.setBounds(L.x0,L.top,WORLD-L.x0,L.bottom-L.top)}return sc.apply(this,a)};
+ const sc=SP.startCine;SP.startCine=function(...a){const L=this.rooms&&this.rooms[this.rooms.length-1];if(L){this.roomSlide=null;this.room=L;this.arenaX0=L.x0;const x0=Math.max(0,Math.min(L.x0,Math.floor(this.cam.scrollX)));this.cam.setBounds(x0,L.top,WORLD-x0,L.bottom-L.top)}return sc.apply(this,a)};
 })();
 if(typeof module!=='undefined')module.exports={roomList,roomAt,migrateV1,saveV2,LORD_ABILITY};
