@@ -15,7 +15,7 @@ const ready=async()=>{await pg.waitForFunction(()=>window.__G&&__G.scene.getScen
 await pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 // 1. all ten DS3 classes: level, 8 stats, derived values, starting gear
 R.classes={};for(const c of ['knight','mercenary','warrior','herald','thief','assassin','sorcerer','pyromancer','cleric','deprived']){
- await pg.goto(B+`?play&mute&slot=3&class=${c}`);await ready();R.classes[c]=await ev(()=>{const s=S();return{lvl:s.lvl,stats:Object.values(s.sv.stats).join(','),hp:s.player.hpMax,st:s.player.stMax,fp:s.player.fpMax,main:s.wp.name,off:s.sv.eq.off,armor:s.sv.eq.armor,roll:s.build.roll.kind,weak:s.build.weak}})}
+ await pg.goto(B+`?play&mute&novideo&slot=3&class=${c}`);await ready();R.classes[c]=await ev(()=>{const s=S();return{lvl:s.lvl,stats:Object.values(s.sv.stats).join(','),hp:s.player.hpMax,st:s.player.stMax,fp:s.player.fpMax,main:s.wp.name,off:s.sv.eq.off,armor:s.sv.eq.armor,roll:s.build.roll.kind,weak:s.build.weak}})}
 const ds3={knight:[9,'12,11,15,13,12,9,9,7'],mercenary:[8,'11,12,10,10,16,10,8,9'],warrior:[7,'14,6,12,16,9,8,9,11'],herald:[9,'12,10,9,12,11,8,13,11'],thief:[5,'10,11,10,9,13,10,8,14'],assassin:[10,'10,14,11,10,14,11,9,10'],sorcerer:[6,'9,9,7,7,12,16,7,12'],pyromancer:[8,'11,12,11,12,9,14,14,7'],cleric:[7,'10,9,7,12,8,7,16,13'],deprived:[1,'10,10,10,10,10,10,10,10']};
 ok('ten_classes_ds3_levels_and_stats',Object.entries(ds3).every(([c,[l,s]])=>R.classes[c].lvl===l&&R.classes[c].stats===s&&!R.classes[c].weak),R.classes);
 // 2. title: 3 slots, class select via keyboard, independent saves, erase
@@ -31,7 +31,7 @@ await pg.goto(B+'?mute');await wait(1600);await pg.keyboard.press('ArrowDown');a
 R.erase=await ev(()=>({title:__G.scene.getScene('title').saves.map(s=>s&&s.cls),s2:localStorage.getItem('ashenVigil.save.v1.s2'),s1:!!localStorage.getItem('ashenVigil.save.v1')}));
 ok('three_save_slots_class_select_continue_erase',R.s1.cls==='warrior'&&R.s1.key&&R.s2.cls==='sorcerer'&&R.s2.key&&R.slots[0]==='warrior'&&R.slots[1]==='sorcerer'&&R.slots[2]===null&&R.lastSlot===1&&R.cont1==='warrior'&&R.erase.s2===null&&R.erase.s1,{s1:R.s1,s2:R.s2,slots:R.slots,cont1:R.cont1,erase:R.erase});
 // 3. leveling at the bonfire, rising soul costs
-await pg.goto(B+'?play&mute&slot=3&class=knight');await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await pg.goto(B+'?play&mute&slot=3&class=knight');await ready();
+await pg.goto(B+'?play&mute&novideo&slot=3&class=knight');await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await pg.goto(B+'?play&mute&novideo&slot=3&class=knight');await ready();
 await ev(()=>{const s=S();s.souls=3000;s.pb.setPosition(1600,148);s.camY=s.camTY=0;window.__inp=()=>S().menu?{}:{restP:1}});await pg.waitForFunction(()=>!!S().menu,null,{timeout:5000});await wait(300);
 R.menuOpen=await ev(()=>!!S().menu);await ev(()=>{const s=S();s.menuKey('ok')});
 R.lv0=await ev(()=>({lvl:S().lvl,hp:S().player.hpMax,souls:S().souls}));
@@ -80,13 +80,13 @@ R.cat={staff:await cast({main:'staff',off:null},16),staffHiInt:await cast({main:
 await ev(()=>{arena();S().sv.stats.int=16;equip({main:'axe',off:'wand'});S().player.fp=99;press('iceP')});await wait(180);await shot('d10_wand_offhand_cast');await wait(400);
 ok('staffs_and_offhand_wand_cast_int_spells',R.cat.staff.state==='cast'&&R.cat.wandOff.state==='cast'&&R.cat.wandOff.cat==='VIGIL WAND'&&R.cat.none.state!=='cast'&&R.cat.lowInt.state!=='cast'&&R.cat.staffHiInt.mul>R.cat.staff.mul&&R.cat.staff.mul>R.cat.wandOff.mul,R.cat);
 // 8. pickups along the stage
-await pg.goto(B+'?play&mute&slot=3&class=deprived');await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await pg.goto(B+'?play&mute&slot=3&class=deprived');await ready();
+await pg.goto(B+'?play&mute&novideo&slot=3&class=deprived');await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await pg.goto(B+'?play&mute&novideo&slot=3&class=deprived');await ready();
 await ev(()=>{const s=S();s.pb.setPosition(480,148);s.player.inv=99;window.__inp=()=>({r:1})});await wait(900);await ev(()=>idle());
 R.pick=await ev(()=>({inv:S().sv.inv,saved:JSON.parse(localStorage.getItem('ashenVigil.save.v1.s3')).inv}));await shot('d11_pickup_bow');
 ok('item_pickups_persist',R.pick.inv.includes('bow')&&R.pick.saved.includes('bow'),R.pick);
 // 9. armor look per set + distinct lord arenas
 await ev(()=>{arena();S().pb.setPosition(1580,148);equip({main:'greatsword',armor:'iron'})});await wait(500);await shot('d12_iron_greatsword_look');
-R.arenas={};for(const st of ['cathedral','cinderdeep']){await pg.goto(B+`?play&mute&slot=3&stage=${st}`);await ready();
+R.arenas={};for(const st of ['cathedral','cinderdeep']){await pg.goto(B+`?play&mute&novideo&slot=3&stage=${st}`);await ready();
  await ev(()=>{const s=S();s.pb.setPosition(3020,140);s.player.inv=999});await pg.waitForFunction(()=>{const c=S().cine;if(c&&c.video)S().skipCine();return S().bossState==='fight'},null,{timeout:15000});await wait(1500);
  R.arenas[st]=await ev(()=>S().oneways.filter(o=>o.body.x>2980).length);await shot('d13_arena_'+st)}
 ok('distinct_lord_arenas',R.arenas.cathedral>=2&&R.arenas.cinderdeep>=2,R.arenas);

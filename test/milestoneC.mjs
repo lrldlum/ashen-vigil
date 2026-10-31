@@ -21,7 +21,7 @@ const helpers=()=>ev(()=>{window.S=()=>__G.scene.getScene('stage');
 const ready=async()=>{await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive());await wait(900);await helpers()};
 await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());
 // 0. stage 1 -> stage 2 link: beat the Frost Warden, choose ONWARD
-await pg.goto(B+'?play&mute');await ready();
+await pg.goto(B+'?play&mute&novideo');await ready();
 await ev(()=>{S().pb.setPosition(3020,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000});
 await ev(()=>{S().boss.hp=0});await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});
 R.card1=await ev(()=>({clear:S().victory.clear,next:S().def.next}));await pg.screenshot({path:S+'c01_stage1_clear_card.png'});

@@ -96,7 +96,7 @@ await G2.pg.screenshot({path:S+'guest_after_host_left.png'});ok('host_disconnect
 await G2.ctx.close();
 ok('no_errors',errs.length===0,errs);const hosts=[...ext];ok('only_peer_broker_traffic',hosts.every(h=>/peerjs|^127\.0\.0\.1/.test(h)),hosts);
 // ---- solo play makes no outside requests at all
-const P=await mk(false);await P.pg.goto(B+'?play&mute');await inStage(P);await wait(1500);const ext2=new Set(ext);ok('solo_no_network',[...ext2].length===hosts.length,{});await P.ctx.close();
+const P=await mk(false);await P.pg.goto(B+'?play&mute&novideo');await inStage(P);await wait(1500);const ext2=new Set(ext);ok('solo_no_network',[...ext2].length===hosts.length,{});await P.ctx.close();
 await br.close();
 // clip: host | guest side by side
 try{const T0=Math.min(...FR.host.slice(0,1),...FR.guest.slice(0,1));

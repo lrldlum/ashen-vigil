@@ -30,7 +30,7 @@ const mk=async(rec)=>{const ctx=await br.newContext({viewport:{width:1280,height
 const A=await mk(true);const{ev,go,shot}=A;
 await A.pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 // ---------- 1. stage data: routes, secrets, collectibles, story
-await go('?play&mute&slot=1&class=knight&stage=belltower');
+await go('?play&mute&novideo&slot=1&class=knight&stage=belltower');
 const D=await ev(()=>{const d=STAGE_DEFS.belltower;return{name:d.name,side:d.side,bells:d.bells.length,ch:CHESTS.belltower.length,hidden:CHESTS.belltower.filter(c=>c.hidden).length,mimic:CHESTS.belltower.filter(c=>c.mimic).length,
  lock:d.cages.filter(c=>c.lock==='bt_bells').length,covers:d.covers.length,lore:d.lore.map(l=>l.id),high:d.oneway.filter(r=>r[1]===-60).length,low:d.carve.filter(r=>r[1]>=180).length,boss:d.boss.kind,lords:(d.boss.phases||[]).length+1,
  desc:['clapper','rime','frostbrand','requiemspear','crownbreaker','ember','bluesap','soulshard','rimesalt','cinderleaf'].every(i=>DESC[i]&&DESC[i].length>=2),lorex:['b1','b2','b3'].every(i=>LORE[i])}});
@@ -108,10 +108,10 @@ ok('ending_mentions_the_bell',endL.some(s=>/ONE BELL TOLLED/.test(s)),endL);
 // ---------- 9. signature weapons from ALL lords (real kills), equippable, heavy special attacks
 const sig={};
 for(const[stage,kind,w]of[['ramparts','warden','frostbrand'],['cathedral','cantor','requiemspear'],['cinderdeep','king','crownbreaker']]){
- await go(`?play&mute&slot=2&class=knight&stage=${stage}`);await ev(()=>{clear();const s=S();s.player.hp=s.player.hpMax=9999;s.pb.setPosition(3020,140);s.player.inv=999});
+ await go(`?play&mute&novideo&slot=2&class=knight&stage=${stage}`);await ev(()=>{clear();const s=S();s.player.hp=s.player.hpMax=9999;s.pb.setPosition(3020,140);s.player.inv=999});
  await A.pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:15000}).catch(()=>{});await ev(()=>{const s=S();s.boss.hp=1;s.damageBoss(5)});await A.pg.waitForFunction(()=>S().victory,null,{timeout:40000}).catch(()=>{});
  sig[kind]=await ev(w=>S().sv.inv.includes(w),w)}
-await go('?play&mute&slot=2&continue');
+await go('?play&mute&novideo&slot=2&continue');
 const spec=await ev(async()=>{const s=S(),o={};s.menu=null;for(const w of['frostbrand','requiemspear','crownbreaker','clapper']){if(!s.sv.inv.includes(w))s.sv.inv.push(w);s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<30&&s.sv.eq.main!==w;i++)s.menuKey('right');s.menu=null;
   const P=s.player;P.st=999;P.fp=P.fpMax=99;P.spCd=0;s.stats.specials=0;const e=s.spawnEnemy('acolyte',P.x+30,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';const h=e.hp,fp=P.fp;P.f=1;P.state='idle';
   let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(r=>setTimeout(r,1500));window.__inp=()=>({});o[w]={eq:s.sv.eq.main===w,special:s.stats.specials,dmg:+(h-e.hp).toFixed(1),fp:fp-P.fp,spFp:WEAPONS[w].spFp,name:WEAPONS[w].name};e.dead=true;e.b.body.enable=false}return o});
@@ -120,7 +120,7 @@ ok('signature_weapons_equippable_with_specials',Object.values(spec).every(o=>o.e
 await ev(()=>{const s=S(),P=s.player;s.spawnEnemy('acolyte',P.x+40,156).temp=1;P.fp=99;P.st=999;press('heavyP')});await wait(500);await shot('g12_signature_special_toll');
 await A.ctx.close();
 // ---------- 10. co-op: host-authoritative bells, chests, drops, mimics, boss signature for both
-const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&stage=belltower&class=knight');
+const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&novideo&stage=belltower&class=knight');
 await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000}).catch(()=>{});const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;
 const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?seed=0&mute&class=pyromancer&join='+code);
 await G.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(1500);

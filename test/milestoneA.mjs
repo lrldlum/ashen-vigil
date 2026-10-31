@@ -11,7 +11,7 @@ async function page(url,opt={}){const ctx=await br.newContext({viewport:opt.vp||
 const ev=(pg,f,a)=>pg.evaluate(f,a);
 const frames=(pg,n)=>pg.evaluate(n=>new Promise(r=>{let k=0;const f=()=>++k>=n?r():requestAnimationFrame(f);requestAnimationFrame(f)}),n);
 // --- roll + stamina
-let pg=await page('?play&mute');
+let pg=await page('?play&mute&novideo');
 await ev(pg,()=>localStorage.clear());
 R.roll=await ev(pg,()=>new Promise(res=>{const s=__G.scene.getScene('stage');const st0=s.player.st;s.keys.SHIFT.isDown=true;s.keys.SHIFT._justDown=true;let fr=0,inv=0,x0=s.player.x,started=false;
  const f=()=>{const P=s.player;if(P.state==='roll'){started=true;fr++;if(P.t>=AV.TUNE.iF0&&P.t<AV.TUNE.iF1)inv++}else if(started){s.keys.SHIFT.isDown=false;return res({frames:fr,iframes:inv,pct:Math.round(inv/fr*100),dist:Math.round(Math.abs(P.x-x0)),cost:Math.round(st0-s.player.st)})}requestAnimationFrame(f)};requestAnimationFrame(f)}));
@@ -59,7 +59,7 @@ await pg.keyboard.press('Enter');await pg.waitForTimeout(2500);R.ng=await ev(pg,
 ok('victory_card_then_onward',R.victory.card&&R.ng.sid==='cathedral'&&R.ng.bossState!=='dead'&&!R.ng.victory,{...R.victory,...R.ng});
 await pg.close();
 // --- touch controls (landscape phone) using real CDP touch events
-pg=await page('?play&mute',{vp:{width:844,height:390},touch:1});await ev(pg,()=>localStorage.clear());
+pg=await page('?play&mute&novideo',{vp:{width:844,height:390},touch:1});await ev(pg,()=>localStorage.clear());
 const cdp=await pg.context().newCDPSession(pg);
 const box=await ev(pg,()=>{const r=document.querySelector('canvas').getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height}});
 const at=(gx,gy)=>({x:box.x+gx*box.w/320,y:box.y+gy*box.h/180});
@@ -72,7 +72,7 @@ await pg.waitForTimeout(500);await hold(298,148,120);const vy=await ev(pg,()=>Ma
 R.touch={touchEnabled:await ev(pg,()=>__G.scene.getScene('stage').touch),moved:Math.round(x1-x0),atkState:st,jumpVy:vy};
 ok('touch_move_attack_jump',R.touch.moved>30&&R.touch.atkState==='atk'&&R.touch.jumpVy<0,R.touch);
 await pg.close();
-pg=await page('?play&mute',{vp:{width:390,height:844},touch:1});R.portrait=await ev(pg,()=>getComputedStyle(document.getElementById('rot')).display);await pg.screenshot({path:S+'15_portrait_prompt.png'});
+pg=await page('?play&mute&novideo',{vp:{width:390,height:844},touch:1});R.portrait=await ev(pg,()=>getComputedStyle(document.getElementById('rot')).display);await pg.screenshot({path:S+'15_portrait_prompt.png'});
 ok('portrait_rotate_prompt',R.portrait==='flex',R.portrait);await pg.close();
 // --- title continue menu
 pg=await page('?mute');await ev(pg,()=>localStorage.setItem('ashenVigil.save.v1',JSON.stringify({bonfire:true,souls:42,bossDown:false})));await pg.reload();await pg.waitForTimeout(2000);

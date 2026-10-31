@@ -5,7 +5,7 @@ const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['-
 const mk=async(touch)=>{const ctx=await br.newContext({viewport:{width:960,height:540},hasTouch:!!touch});const pg=await ctx.newPage();pg.on('pageerror',e=>errs.push(e.message));return pg};
 const ready=pg=>pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive()&&__G.scene.getScene('stage').t>.5,null,{timeout:30000});
 let pg=await mk();await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());
-await pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts&seed=0');await ready(pg);await pg.waitForTimeout(800);
+await pg.goto(B+'?play&mute&novideo&slot=1&class=knight&stage=ramparts&seed=0');await ready(pg);await pg.waitForTimeout(800);
 const S=f=>pg.evaluate(f);
 await S(()=>{const s=__G.scene.getScene('stage');s.msg=null;s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});s.pb.setPosition(s.bonfire.x-4,s.pb.y-4);s.souls=777});await pg.waitForTimeout(400);
 await pg.keyboard.press('ArrowUp');await pg.waitForTimeout(600);

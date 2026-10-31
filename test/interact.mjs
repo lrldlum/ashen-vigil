@@ -12,7 +12,7 @@ await pg.addInitScript(()=>{const st={b:Array(17).fill(0),a:[0,0,0,0],ts:1000};w
 const ev=(f,a)=>pg.evaluate(f,a),wait=ms=>pg.waitForTimeout(ms);
 const tap=async b=>{await ev(b=>btn(b,1),b);await wait(100);await ev(b=>btn(b,0),b);await wait(200)};
 
-const go=async q=>{await pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());await pg.goto(B+'?play&mute&slot=1&class=knight&seed=0&'+q);
+const go=async q=>{await pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());await pg.goto(B+'?play&mute&novideo&slot=1&class=knight&seed=0&'+q);
  await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});
  await ev(()=>{window.S=()=>__G.scene.getScene('stage');const s=S();s.msg=null;s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});window.tp=x=>{const s=S();s.pb.setPosition(x,s.pb.y-4);s.pb.setVelocity(0,0)}});await wait(1000)};
 const tapA=async()=>ev(()=>new Promise(r=>{const s=S();let jumped=false;const iv=setInterval(()=>{if(s.pb.body.velocity.y<-60)jumped=true},5);btn(0,1);setTimeout(()=>btn(0,0),120);setTimeout(()=>{clearInterval(iv);r(jumped)},450)}));
@@ -41,7 +41,7 @@ if(hub){await ev(()=>tp(S().def.keeper-6));await wait(500);ok('prompt_talk',awai
 await pg.goto(B+'assets/README.md');
 await pg.addInitScript(()=>{navigator.getGamepads=()=>[null,null,null,null]});
 const ctx2=await br.newContext({viewport:{width:960,height:540}});const p2=await ctx2.newPage();p2.on('pageerror',e=>errs.push(e.message));
-await p2.goto(B+'?play&mute&slot=2&class=knight&seed=0&stage=ramparts');await p2.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player,null,{timeout:30000});await p2.waitForTimeout(1200);
+await p2.goto(B+'?play&mute&novideo&slot=2&class=knight&seed=0&stage=ramparts');await p2.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player,null,{timeout:30000});await p2.waitForTimeout(1200);
 await p2.evaluate(()=>{const s=__G.scene.getScene('stage');s.msg=null;s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});s.pb.setPosition(s.bonfire.x-4,s.pb.y-4);s.player.hp=1});await p2.waitForTimeout(500);
 ok('nopad_padConnected0',await p2.evaluate(()=>PAD.connected())===0);
 await p2.screenshot({path:'screenshots/interact_prompt_kb.png'});

@@ -5,7 +5,7 @@ const B=`http://127.0.0.1:${process.env.PORT||8171}/`;let pass=0,fail=0;const ok
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});
 const ctx=await br.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true,deviceScaleFactor:1});const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 const S=(f,a)=>pg.evaluate(f,a);const ready=async()=>{await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await pg.waitForTimeout(1200);await S(()=>{window.s=__G.scene.getScene('stage');s.msg=null})};
-await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&slot=1&stage=belltower');await ready();
+await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&novideo&slot=1&stage=belltower');await ready();
 ok('touch_mode',await S(()=>!!s.touch));
 await pg.screenshot({path:'screenshots/r9fix/touch_play_belltower.png'});
 // hero outline: count pale outline pixels around the hero vs none -> sample via the pixel buffer is heavy; check the code path ran

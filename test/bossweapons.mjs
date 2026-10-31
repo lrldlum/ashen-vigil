@@ -5,7 +5,7 @@ const B=`http://127.0.0.1:${process.env.PORT||8171}/`;let pass=0,fail=0;const ok
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});const pg=await br.newPage({viewport:{width:960,height:540}});const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 const S=(f,a)=>pg.evaluate(f,a);
 const ready=async()=>{await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await pg.waitForTimeout(1200);await S(()=>{window.s=__G.scene.getScene('stage')})};
-await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&slot=1');await ready();
+await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&novideo&slot=1');await ready();
 const stages=['ramparts','cathedral','cinderdeep','belltower','catacomb','drowned','keep','spire','cloister','throne'];let first=true;
 for(const st of stages){
  await S(st=>{Save.write({...s.sv,stage:st,bossDown:false,stain:null});s.scene.restart({fresh:false})},st);await pg.waitForTimeout(600);await ready();
@@ -21,7 +21,7 @@ for(const st of stages){
  await pg.waitForFunction(()=>s.victory,null,{timeout:12000}).catch(()=>{});
  const r=await S(w=>({inv:s.sv.inv.includes(w),list:s.invOpts?s.invOpts('main').includes(w):s.eqOpts(0).includes(w),saved:JSON.parse(localStorage.getItem(Save.key())).inv.includes(w)}),w);
  ok(st+'_in_inventory_and_save',r.inv&&r.list&&r.saved,r);first=false}
-await pg.goto(B+'?play&mute&slot=1&continue');await ready();
+await pg.goto(B+'?play&mute&novideo&slot=1&continue');await ready();
 const all=await S(()=>Object.values(SIGNATURE).filter(w=>!s.sv.inv.includes(w)));ok('all_10_survive_reload',all.length===0,all);
 await S(()=>{s.menu={mode:'main',sel:s.mainOpts().indexOf('EQUIPMENT')};s.menuKey('ok');s.menu.focus='grid';s.menu.slot=0;s.menu.gi=s.invOpts('main').indexOf('hollowbrand')});await pg.waitForTimeout(300);
 await pg.screenshot({path:'screenshots/bossweapons/inventory.png'});

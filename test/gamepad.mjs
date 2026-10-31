@@ -25,7 +25,7 @@ await tap(0);const t4=await T();ok('menu_A_confirms_empty_slot_to_class_pick',t4
 await tap(13);const t5=await T();ok('class_menu_navigates',t5.csel===1,t5);
 await tap(1);const t6=await T();ok('menu_B_goes_back',t6.mode==='slots',t6);
 // ---- gameplay
-await pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());await pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts&seed=0');
+await pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());await pg.goto(B+'?play&mute&novideo&slot=1&class=knight&stage=ramparts&seed=0');
 await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});
 await ev(()=>{mkPad(0);const s=__G.scene.getScene('stage');s.msg=null;s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false})});await wait(1500);
 const P=()=>ev(()=>{const s=__G.scene.getScene('stage'),p=s.player;return{x:p.x,y:p.y,vy:s.pb.body.velocity.y,combo:p.combo,atk:p.atkT||p.atk||0,roll:p.roll||p.rollT||0,paused:s.paused,mode:PAD.modeNow,slots:PAD.slots.length}});

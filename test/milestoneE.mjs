@@ -15,7 +15,7 @@ const ready=async()=>{await pg.waitForFunction(()=>window.__G&&__G.scene.getScen
 const go=async q=>{await pg.goto(B+q);await ready()};
 await pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 // 1. every item / weapon / armor / spell / miracle has a cryptic description
-await go('?play&mute&slot=1&class=knight');
+await go('?play&mute&novideo&slot=1&class=knight');
 R.desc=await ev(()=>{const ids=[...Object.keys(WEAPONS),...Object.keys(ARMORS),...Object.keys(SPELLS),...Object.keys(MIRACLES),'flask'];return{n:ids.length,missing:ids.filter(i=>!(DESC[i]&&DESC[i].length>=2)),maxLen:Math.max(...Object.values(DESC).flat().map(s=>s.length)),glyphs:[...new Set(Object.values(DESC).flat().join('').split(''))].filter(c=>!FONT[c]&&c!==' ')}});
 ok('descriptions_for_every_item',R.desc.missing.length===0&&R.desc.n>=22&&R.desc.maxLen<=60&&R.desc.glyphs.length===0,R.desc);
 await ev(()=>{const s=S();tp(1600);s.souls=0;window.__inp=()=>s.menu?{}:{restP:1}});await pg.waitForFunction(()=>!!S().menu,null,{timeout:5000});
@@ -56,7 +56,7 @@ await ev(()=>{const s=S();s.menu.sel=s.mainOpts().indexOf('TRAVEL TO HOME');s.me
 await ev(()=>{idle();S().menu=null;tp(S().def.exit)});await wait(250);await ev(()=>press('restP'));await wait(1500);await ready();R.back2=await ev(()=>({sid:S().sid,x:Math.round(S().player.x),bonfire:S().bonfire.x}));
 ok('shrine_exit_and_bonfire_travel',R.exit.sid==='cathedral'&&R.exit.inv&&R.travelOpt.includes('TRAVEL TO HOME')&&R.back.sid==='shrine'&&R.back.next==='cathedral'&&R.back2.sid==='cathedral'&&Math.abs(R.back2.x-R.back2.bonfire)<30,{exit:R.exit,opts:R.travelOpt,back:R.back,back2:R.back2});
 // 7. faith miracles scale with FTH
-await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await go('?play&mute&slot=3&class=cleric');
+await ev(()=>localStorage.removeItem('ashenVigil.save.v1.s3'));await go('?play&mute&novideo&slot=3&class=cleric');
 R.mir=await ev(()=>new Promise(async res=>{const s=S(),P=s.player,o={};const w=ms=>new Promise(r=>setTimeout(r,ms));arena();
  const heal=async f=>{s.sv.stats.fth=f;s.applyBuild(false);P.hp=20;P.fp=999;P.state='idle';press('healP');await w(700);return P.hp-20};o.inv=s.sv.inv.filter(i=>MIRACLES[i]);o.off=s.sv.eq.off;
  o.heal16=await heal(16);o.heal40=await heal(40);
@@ -71,16 +71,16 @@ ok('faith_miracles_scale_with_fth',R.mir.off==='talisman'&&R.mir.inv.includes('h
 R.herald=await ev(()=>({herald:[CLASSES.herald.off,CLASSES.herald.extra],cleric:[CLASSES.cleric.off,CLASSES.cleric.extra]}));
 ok('herald_and_cleric_start_with_faith_heal',R.herald.herald[0]==='talisman'&&R.herald.herald[1].includes('heal')&&R.herald.cleric[1].includes('heal'),R.herald);
 // 8. distinct lord arenas: cantor glides to a 2-tier loft, vulcrest's lava pits open in phase 2
-await go('?play&mute&slot=3&stage=cathedral');
+await go('?play&mute&novideo&slot=3&stage=cathedral');
 R.loft=await ev(()=>new Promise(async res=>{const s=S();s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(3020,140);await until(()=>s.bossState==='fight',15000);const B=s.boss;B.hp=B.hpMax*.6;s.player.inv=999;s.player.hp=9999;s.player.hpMax=9999;
  const ok1=await until(()=>s.boss.state==='perch',12000);res({perch:ok1,y:Math.round(s.boss.y),plats:s.plats.filter(p=>p[0]>2980).map(p=>p[1])})}));await wait(500);await shot('e15_cantor_choir_loft');
-await go('?play&mute&slot=3&stage=cinderdeep');
+await go('?play&mute&novideo&slot=3&stage=cinderdeep');
 R.lava=await ev(()=>new Promise(async res=>{const s=S();s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(3020,140);await until(()=>s.bossState==='fight',15000);const B=s.boss;B.hp=B.hpMax*.6;await until(()=>B.phase>=2&&B.state!=='roar',6000);
  B.cd=99;B.state='cast';B.dur=99;const pit=s.def.lavaPits[0];s.player.inv=0;s.player.hp=s.player.hpMax;tp((pit[0]+pit[1])/2);const hp0=s.player.hp;await until(()=>s.player.hp<hp0,2500);res({pits:s.def.lavaPits.length,phase:B.phase,hurt:hp0-s.player.hp})}));await wait(300);await shot('e16_vulcrest_lava_pits');
 ok('distinct_lord_arenas',R.loft.perch&&R.loft.y<100&&R.loft.plats.includes(80)&&R.lava.pits===3&&R.lava.phase>=2&&R.lava.hurt>0,{loft:R.loft,lava:R.lava});
 // 9. endings: final lord -> FIRST FLAME choice -> fade cinematic -> card; rekindle via the other option
 // the First Flame (and NG+) is offered only after the final lord, the Hollow Heir (throne); Cinderdeep no longer triggers it
-await go('?play&mute&slot=3&stage=throne&novideo');await ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(ARENA_L+40,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:20000});await ev(()=>{S().boss.hp=0});
+await go('?play&mute&novideo&slot=3&stage=throne&novideo');await ev(()=>{S().enemies.forEach(e=>{e.dead=true;e.b.body.enable=false});tp(ARENA_L+40,140)});await pg.waitForFunction(()=>S().bossState==='fight',null,{timeout:20000});await ev(()=>{S().boss.hp=0});
 await pg.waitForFunction(()=>S().victory&&S().victory.t>1,null,{timeout:12000});R.final=(await ev(()=>S().victoryOpts())).slice(1);await ev(()=>{S().victory.sel=1});await pg.keyboard.press('Enter');await wait(700);await shot('e17_first_flame_choice');
 R.choice=await ev(()=>({phase:S().victory.phase,opts:S().victoryOpts()}));await pg.keyboard.press('ArrowDown');await wait(200);await shot('e18_choice_let_it_fade');await pg.keyboard.press('Enter');
 await pg.waitForFunction(()=>__G.scene.isActive('ending'),null,{timeout:8000});await wait(4500);await shot('e19_fade_cinematic');await wait(4000);await shot('e20_fade_cinematic_late');

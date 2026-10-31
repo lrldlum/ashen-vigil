@@ -32,7 +32,7 @@ const A=await mk(true);const{ev,go,shot}=A;
 fs.mkdirSync(SH,{recursive:true});
 await A.pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 // ---------- 1. specials balanced: every signature heavy (special + swing) on one target lands within 0.7x-1.3x of FROSTBRAND
-await go('?play&mute&slot=3&class=knight&stage=ramparts');
+await go('?play&mute&novideo&slot=3&class=knight&stage=ramparts');
 const SIGW=['frostbrand','requiemspear','crownbreaker','clapper','ashmaul'];
 const bal=await ev(async W=>{const s=S(),o={};clear();for(const w of W){if(!s.sv.inv.includes(w))s.sv.inv.push(w);s.menu={mode:'equip',sel:0,t:1,prev:{}};for(let i=0;i<40&&s.sv.eq.main!==w;i++)s.menuKey('right');s.menu=null;
   const r=[];let spec=0;for(let k=0;k<3;k++){const P=s.player;s.pb.setPosition(400,148);s.pb.setVelocity(0,0);P.st=999;P.fp=P.fpMax=99;P.spCd=0;P.state='idle';P.f=1;s.stats.specials=0;
@@ -53,7 +53,7 @@ const once=await ev(async()=>{const s=S(),P=s.player,o={};for(const w of['crownb
   P.fp=99;(s.player.spCd=0,s).weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,700));s.damageEnemy=od;o[w]=hits;e.dead=true;e.b.body.enable=false}return o});
 ok('special_hits_each_target_once',Object.values(once).every(n=>n===1),once);
 // ---------- 2. stage data: routes, secrets, collectibles, story
-await go('?play&mute&slot=1&class=knight&stage=catacomb');
+await go('?play&mute&novideo&slot=1&class=knight&stage=catacomb');
 const D=await ev(()=>{const d=STAGE_DEFS.catacomb;return{name:d.name,side:d.side,anvils:d.bells.length,kind:d.bellKind,ch:CHESTS.catacomb.length,hidden:CHESTS.catacomb.filter(c=>c.hidden).length,mimic:CHESTS.catacomb.filter(c=>c.mimic).length,
  lock:d.cages.filter(c=>c.lock==='cf_anvils').length,covers:d.covers.length,lore:d.lore.map(l=>l.id),high:d.oneway.filter(r=>r[1]===-60).length,low:d.carve.filter(r=>r[1]>=180).length,boss:d.boss.kind,phases:(d.boss.phases||[]).length+1,
  sig:SIGNATURE.smith,desc:['ashmaul','apron'].every(i=>DESC[i]&&DESC[i].length>=2),lorex:['f1','f2','f3'].every(i=>LORE[i]),secretItem:d.items.some(i=>i.item==='apron'&&i.y<-60),armor:!!ARMORS.apron}});
@@ -126,7 +126,7 @@ await A.pg.goto(B+'?seed=0&mute&slot=1&ending=fade');await wait(9000);const endL
 ok('ending_mentions_the_forge',endL.some(s=>/LAST FORGE COOLED/.test(s)),endL);
 await A.ctx.close();
 // ---------- 7. co-op in the forge
-const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&stage=catacomb&class=knight');
+const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&novideo&stage=catacomb&class=knight');
 await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000}).catch(()=>{});const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;
 const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?seed=0&mute&class=pyromancer&join='+code);
 await G.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(1500);

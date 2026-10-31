@@ -5,7 +5,7 @@ const B=`http://127.0.0.1:${process.env.PORT||8171}/`;let pass=0,fail=0;const ok
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});const pg=await br.newPage({viewport:{width:1280,height:720}});
 const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 const S=['ramparts','cathedral','cinderdeep','belltower','catacomb','drowned','keep','spire','cloister','throne'],HS={},HB={},HO={},COL={};
-for(const st of S){await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());await pg.goto(B+`?play&mute&slot=1&class=knight&stage=${st}&seed=0`);
+for(const st of S){await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());await pg.goto(B+`?play&mute&novideo&slot=1&class=knight&stage=${st}&seed=0`);
  await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await pg.waitForTimeout(500);
  const r=await pg.evaluate(sid=>{const M=TILEMAT[sid];if(!M)return null;const sol=[],bk=[],one=[];for(let y=0;y<32;y++)for(let x=0;x<64;x++){sol.push(M.c[M.solid({X:x+1000,Y:y,dy:y,u:x&7,vv:y&7,i:x>>3,j:y>>3,lE:false,rE:false,bE:false})]);bk.push(M.c[M.back(x+1000,y+40)]);if(y<8)one.push(M.c[M.one(x,y,x&7,y)])}
   const s=__G.scene.getScene('stage'),cv=s.textures.get('lvl_'+sid).getSourceImage(),d=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data,set=new Set();for(let i=0;i<d.length;i+=16)if(d[i+3])set.add((d[i]<<16)|(d[i+1]<<8)|d[i+2]);

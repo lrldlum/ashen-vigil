@@ -5,7 +5,7 @@ const B=`http://127.0.0.1:${process.env.PORT||8171}/`;let pass=0,fail=0;const ok
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});const pg=await br.newPage({viewport:{width:1280,height:720}});
 const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 const S=['ramparts','cathedral','cinderdeep','belltower','catacomb','drowned','keep','spire','cloister','throne'],H={};
-for(const st of S){await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());await pg.goto(B+`?play&mute&slot=1&class=knight&stage=${st}&seed=0`);
+for(const st of S){await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());await pg.goto(B+`?play&mute&novideo&slot=1&class=knight&stage=${st}&seed=0`);
  await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await pg.waitForTimeout(800);
  const r=await pg.evaluate(sid=>{const s=__G.scene.getScene('stage'),tx=sid==='ramparts'?'':'_'+sid;const out={};for(const k of['sky','far','near'])out[k]=s.textures.get(k+tx).getSourceImage().toDataURL();out.amb=!!s.gamb;out.layers=s.children.list.filter(o=>o.depth<=-9.5).length;return out},st);
  H[st]=Object.fromEntries(['sky','far','near'].map(k=>[k,createHash('md5').update(r[k]).digest('hex')]));

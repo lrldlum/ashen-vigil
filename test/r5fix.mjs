@@ -29,7 +29,7 @@ await T.hold(160,100,900);await T.tap(128,155);const e3=await T.tl();
 ok('touch_erase_with_confirm',s0.saves[0]&&e1.erase===0&&e1.mode==='slots'&&e2.erase===-1&&e2.saves[0]&&e3.saves[0]===null&&e3.mode==='slots',{s0,e1,e2,e3});
 await T.ctx.close();
 // 4. desktop: real keyboard shop purchase (4th ware), flask buy doesn't refill, Blessed Weapon
-const D=await mk(false);await D.pg.goto(B+'assets/README.md');await D.ev(()=>localStorage.clear());await D.pg.goto(B+'?play&mute&stage=shrine&class=cleric');await D.stage();
+const D=await mk(false);await D.pg.goto(B+'assets/README.md');await D.ev(()=>localStorage.clear());await D.pg.goto(B+'?play&mute&novideo&stage=shrine&class=cleric');await D.stage();
 await D.ev(()=>{const s=S();s.souls=20000;tp(s.def.keeper-6);idle()});await wait(400);const kb=k=>D.pg.keyboard.press(k).then(()=>wait(90));
 await D.ev(()=>press('restP'));await wait(400);await kb('ArrowDown');const k1=await D.ev(()=>S().menu&&[S().menu.mode,S().menu.sel]);await kb('z');await wait(100);
 const L=await D.ev(()=>S().shopList().map(x=>x[0]));const m0=await D.ev(()=>[S().menu.mode,S().menu.sel]);for(let i=0;i<3;i++)await kb('ArrowDown');const ms=await D.ev(()=>S().menu.sel);
@@ -45,7 +45,7 @@ const sw=()=>D.ev(async()=>{const s=S(),e=s.spawnEnemy('hollow',s.player.x+16,15
 const d0=await sw();await D.ev(()=>press('blessP'));await wait(900);const bl=await D.ev(()=>+(S().player.bless||0).toFixed(1));const d1=await sw();await D.pg.screenshot({path:S+'blessed_weapon.png'});
 ok('blessed_weapon_works',bl>3&&d1>d0*1.15,{d0,d1,bless:bl});
 // 5. cathedral chains at x568/x664 reach the floor
-await D.pg.goto(B+'?play&mute&stage=cathedral');await D.stage();
+await D.pg.goto(B+'?play&mute&novideo&stage=cathedral');await D.stage();
 const ch=await D.ev(()=>{const s=S(),D=s.def;return(D.chain||[]).filter(c=>c[0]===568||c[0]===664).map(c=>({c,floor:s.lv?s.lv.floorAt(c[0]+4,c[3]-4):null}))});
 ok('cathedral_chains_reach_floor',ch.length===2&&ch.every(o=>o.c[3]===300),ch);
 // 6. ending cinematic skips on ONE press

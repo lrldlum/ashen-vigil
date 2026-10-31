@@ -3,7 +3,7 @@ import { chromium } from './node_modules/playwright/index.mjs';
 const B=`http://127.0.0.1:${process.env.PORT||8171}/`;let pass=0,fail=0;const ok=(n,c,d)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+n+(c?'':' '+JSON.stringify(d)))};
 const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--use-gl=swiftshader']});const pg=await br.newPage({viewport:{width:960,height:540}});const errs=[];pg.on('pageerror',e=>errs.push(e.message));
 const S=(f,a)=>pg.evaluate(f,a);
-await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&slot=1&class=knight&stage=belltower');
+await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&novideo&slot=1&class=knight&stage=belltower');
 await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await pg.waitForTimeout(1500);await S(()=>{window.s=__G.scene.getScene('stage');s.msg=null});
 const ks=await S(()=>s.enemies.map(e=>e.k));ok('stage_uses_bt_kinds',['bellbats','clapper','ringer'].every(k=>ks.includes(k))&&!ks.includes('chorister')&&!ks.includes('sentinel'),ks);
 ok('textures_loaded',await S(()=>['bt_bats','bt_clapper','bt_ringer'].every(t=>s.textures.exists(t)&&s.textures.get(t).frameTotal>30)));

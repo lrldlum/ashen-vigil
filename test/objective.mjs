@@ -6,7 +6,7 @@ const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['-
 const errs=[];let pass=0,fail=0;const ok=(n,c,v)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+n+' '+JSON.stringify(v||'').slice(0,300))};
 const pg=await (await br.newContext({viewport:{width:1280,height:720}})).newPage();pg.on('pageerror',e=>errs.push(e.message));
 const S=f=>pg.evaluate(f),wait=ms=>pg.waitForTimeout(ms);
-const load=async(q,lords)=>{await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&class=knight&'+q);
+const load=async(q,lords)=>{await pg.goto(B+'assets/README.md');await S(()=>localStorage.clear());await pg.goto(B+'?play&mute&novideo&class=knight&'+q);
  await pg.waitForFunction(()=>{const s=window.__G&&__G.scene.getScene('stage');return s&&s.player&&s.sys.isActive()},null,{timeout:30000});await wait(800);
  if(lords)await pg.evaluate(l=>{const s=__G.scene.getScene('stage');s.sv.lords=l},lords)};
 const st=()=>S(()=>{const s=__G.scene.getScene('stage');return{text:s.objText(),next:s.nextObj()}});

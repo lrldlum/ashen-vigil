@@ -6,7 +6,7 @@ const errs=[],ext=[],R={};let pass=0,fail=0;const ok=(n,c,v)=>{R[n]={pass:!!c,v}
 const ctx=await br.newContext({viewport:{width:1280,height:720}});const pg=await ctx.newPage();
 pg.on('pageerror',e=>errs.push(e.message));pg.on('request',r=>{const u=r.url();if(!u.startsWith(B)&&!/^(data|blob):/.test(u))ext.push(u)});
 await pg.goto(B+'assets/README.md');await pg.evaluate(()=>localStorage.clear());
-await pg.goto(B+'?play&mute');await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player);await pg.waitForTimeout(1200);
+await pg.goto(B+'?play&mute&novideo');await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player);await pg.waitForTimeout(1200);
 // helpers installed in page
 await pg.evaluate(()=>{window.S=()=>__G.scene.getScene('stage');
  window.tp=(x,y)=>{const s=S();s.pb.setPosition(x,y-8);s.pb.setVelocity(0,0);s.player.state='idle';s.camY=s.camTY=y-156};
@@ -97,7 +97,7 @@ ok('waves_challenge',R.w1.active&&R.w1.gates.every(Boolean)&&R.w1.cageLocked&&R.
 await ev(()=>{tp(2884,300);S().player.inv=99;let n=0;window.__inp=()=>(S().player.y>172?{up:1}:{up:1,r:1})});R.climb2=await ev(()=>until(()=>S().player.y<=157&&S().pb.body.blocked.down,8000));
 ok('climb_out_of_ossuary',R.climb2,await ev(()=>({x:Math.round(S().player.x),y:Math.round(S().player.y)})));
 // 13. persistence: reload keeps freed cages / found rooms / broken wall / trial
-await ev(()=>{idle();const s=S();s.rest&&0});await pg.goto(B+'?play&mute&continue');await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player);await wait(800);
+await ev(()=>{idle();const s=S();s.rest&&0});await pg.goto(B+'?play&mute&novideo&continue');await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player);await wait(800);
 R.persist=await ev(()=>{const s=__G.scene.getScene('stage');return{freed:s.cages.filter(c=>c.freed).map(c=>c.id),found:s.covers.filter(c=>c.found).length,breakables:s.breakables.length,trialDone:s.chs.find(c=>c.id==='c_waves').done}});
 ok('collectibles_persist',R.persist.freed.length===5&&R.persist.found===3&&R.persist.breakables===0&&R.persist.trialDone,R.persist);
 // 14. HUD counter + victory card show embers
@@ -110,7 +110,7 @@ R.best=await ev(()=>({best:+localStorage.getItem('ashenVigil.best.ramparts'),sta
 await pg.close();
 // r2 extras: favicon, parry flash + pop, hero rim, fg/mist layers
 const p3=await ctx.newPage();const c404=[];p3.on('console',m=>{if(m.type()==='error')c404.push(m.text())});p3.on('pageerror',e=>errs.push(e.message));
-await p3.goto(B+'?play&mute');await p3.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player);await p3.waitForTimeout(1000);
+await p3.goto(B+'?play&mute&novideo');await p3.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player);await p3.waitForTimeout(1000);
 R.fav=await p3.evaluate(async()=>{const r=await fetch(document.querySelector('link[rel=icon]').href);return r.status});
 R.parry=await p3.evaluate(()=>new Promise(res=>{const s=__G.scene.getScene('stage'),P=s.player;const e=s.enemies.find(e=>e.k==='hollow'&&!e.dead&&e.gy===156);s.pb.x=e.b.x-14;P.f=1;P.inv=0;
   setTimeout(()=>{e.f=-1;e.state='swing';e.t=0;P.state='parry';P.t=0;setTimeout(()=>res({pflashSet:s.pops.some(p=>p.s==='PARRY'),stag:e.state==='stag',mist:s.mist.length}),40)},300)}));

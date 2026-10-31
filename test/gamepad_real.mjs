@@ -16,7 +16,7 @@ await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('title')&&__G.scene.
 const T=()=>ev(()=>{const t=__G.scene.getScene('title');return{mode:t.mode,sel:t.sel,csel:t.csel}});
 await tap(13);ok('menu_dpad_down',(await T()).sel===1,await T());await tap(12);
 await tap(0);ok('menu_A_confirm',(await T()).mode==='class',await T());await tap(1);ok('menu_B_back',(await T()).mode==='slots',await T());
-await pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts&seed=0');
+await pg.goto(B+'?play&mute&novideo&slot=1&class=knight&stage=ramparts&seed=0');
 await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});
 await ev(()=>{const s=__G.scene.getScene('stage');s.msg=null;s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false})});await wait(1200);
 const P=()=>ev(()=>{const s=__G.scene.getScene('stage'),p=s.player;return{x:p.x,y:p.y,st:p.state,paused:s.paused}});
@@ -29,7 +29,7 @@ ok('B_rolls',await watch(1,"return p.state==='roll'"));await wait(600);
 ok('Y_heavy',await watch(3,"return p.state==='atk'&&p.heavy"));await wait(800);
 await tap(9);ok('start_pauses',(await P()).paused,await P());await tap(9);ok('start_resumes',!(await P()).paused,await P());
 // a duplicate/virtual pad listed first (Steam Input, XInput+DirectInput): the pad receiving input must still drive the player
-await pg.addInitScript(()=>{window.__dup=1});await pg.goto(B+'?play&mute&slot=1&class=knight&stage=ramparts&seed=0');
+await pg.addInitScript(()=>{window.__dup=1});await pg.goto(B+'?play&mute&novideo&slot=1&class=knight&stage=ramparts&seed=0');
 await pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});
 await ev(()=>{const s=__G.scene.getScene('stage');s.msg=null;s.enemies.forEach(e=>{e.dead=true;e.b.body.enable=false})});await wait(1200);
 ok('dup_pad_X_attacks',await watch(2,"return p.state==='atk'"));await wait(500);ok('dup_pad_A_jumps',await watch(0,"return s.pb.body.velocity.y<-60"));

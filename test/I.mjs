@@ -33,7 +33,7 @@ const A=await mk(true);const{ev,go,shot}=A;
 fs.mkdirSync(SH,{recursive:true});
 await A.pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 // ---------- 1. the tide-crook special, balanced against FROSTBRAND (same build, same target), and fired by a real heavy
-await go('?play&mute&slot=3&class=knight&stage=ramparts');
+await go('?play&mute&novideo&slot=3&class=knight&stage=ramparts');
 const iso=await ev(async W=>{const s=S(),P=s.player,o={};clear();for(const w of W){const r=[];for(let k=0;k<3;k++){s.pb.setPosition(400,148);s.pb.setVelocity(0,0);P.f=1;P.fp=99;await new Promise(q=>setTimeout(q,250));
   const e=s.spawnEnemy('acolyte',430,156);e.hp=999;e.temp=1;e.cd=99;e.state='idle';await new Promise(q=>setTimeout(q,150));const h=e.hp;(s.player.spCd=0,s).weaponSpecial(WEAPONS[w]);await new Promise(q=>setTimeout(q,800));r.push(h-e.hp);e.dead=true;e.b.body.enable=false}
   o[w]=+(r.reduce((a,b)=>a+b,0)/r.length).toFixed(2)}return o},['frostbrand','tidecrook','ashmaul']);
@@ -43,7 +43,7 @@ const realF=async()=>{const s=S(),P=s.player;if(!s.sv.inv.includes('tidecrook'))
   let n=0;window.__inp=()=>(n++===0?{heavyP:1}:{});await new Promise(q=>setTimeout(q,1500));window.__inp=()=>({});const o={eq:s.sv.eq.main,sp:s.stats.specials,dmg:+(h-e.hp).toFixed(2),name:WEAPONS.tidecrook.name};e.dead=true;e.b.body.enable=false;return o};let real=await ev(realF);for(let k=0;k<2&&!(real.eq==='tidecrook'&&real.sp===1&&real.dmg>=iso.tidecrook);k++)real=await ev(realF);
 ok('tidecrook_heavy_fires_its_special',real.eq==='tidecrook'&&real.sp===1&&real.dmg>=iso.tidecrook,real);
 // ---------- 2. stage data
-await go('?play&mute&slot=1&class=knight&stage=drowned');
+await go('?play&mute&novideo&slot=1&class=knight&stage=drowned');
 const D=await ev(()=>{const d=STAGE_DEFS.drowned;return{name:d.name,side:d.side,water:d.water.length,drain:d.water.filter(w=>w.drain).length,sigils:d.bells.length,kind:d.bellKind,order:d.bellOrder,ch:CHESTS.drowned.length,hidden:CHESTS.drowned.filter(c=>c.hidden).length,
  mimic:CHESTS.drowned.filter(c=>c.mimic).length,sunk:CHESTS.drowned.filter(c=>c.sunk).length,lock:d.cages.filter(c=>c.lock==='dw_sigils').length,covers:d.covers.length,lore:d.lore.map(l=>l.id),high:d.oneway.filter(r=>r[1]===-60).length,
  boss:d.boss.kind,phases:d.boss.phases.length+1,sig:SIGNATURE.abbess,desc:!!(DESC.tidecrook&&DESC.tidecrook.length>=2),lorex:['w1','w2','w3'].every(i=>LORE[i]),hint:/GANTRY.*CRYPT.*NAVE.*COURT/.test(LORE.w2.join(' '))}});
@@ -121,7 +121,7 @@ await A.pg.goto(B+'?seed=0&mute&slot=1&ending=rekindle');await wait(9000);const 
 ok('ending_mentions_the_drowned_crypt',endL.some(s=>/DROWNED CRYPT, THE WATER WARMED/.test(s)),endL);
 await A.ctx.close();
 // ---------- 9. co-op in the drowned crypt
-const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&stage=drowned&class=knight');
+const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&novideo&stage=drowned&class=knight');
 await H.pg.waitForFunction(()=>NET.peer&&NET.peer.open,null,{timeout:20000}).catch(()=>{});const code=await H.ev(()=>NET.code);pages[await H.ev(()=>NET.peer.id)]=H.pg;
 const G=await mk(false);await G.pg.goto(B+'assets/README.md');await G.ev(()=>localStorage.clear());await G.pg.goto(B+'?seed=0&mute&class=pyromancer&join='+code);
 await G.pg.waitForFunction(()=>window.__G&&__G.scene.getScene('stage')&&__G.scene.getScene('stage').player&&__G.scene.getScene('stage').sys.isActive(),null,{timeout:30000});await wait(1500);

@@ -19,9 +19,9 @@ const climb=async(x,variant)=>{await pg.evaluate(x=>{const s=S();s.pb.setPositio
  await pg.keyboard.down('ArrowUp');if(variant==='upright')await pg.keyboard.down('ArrowRight');await wait(2600);
  if(variant==='jump'){await pg.keyboard.down('ArrowRight');await pg.keyboard.press('z')}else await pg.keyboard.down('ArrowRight');await wait(350);await pg.keyboard.up('ArrowUp');await pg.keyboard.up('ArrowRight');await wait(500);
  return pg.evaluate(()=>window.__landed?{...window.__landed,on:true}:{x:0,y:999,on:false})};// first landing on the slab top (y=20) after the climb
-await pg.evaluate(()=>localStorage.clear());await load('?play&mute');
+await pg.evaluate(()=>localStorage.clear());await load('?play&mute&novideo');
 for(const v of ['up','upright','jump']){const r=await climb(368,v);ok('kbd_chain_roofA_'+v,r.y<=21&&r.x>=376&&r.on,r)}
-for(const s of ['ramparts','cathedral','cinderdeep']){await load('?play&mute&stage='+s);for(const v of ['up','upright','jump']){const r=await climb(2896,v);ok('kbd_ledge_'+s+'_'+v,r.y<=21&&r.x>=2904&&r.on,r)}}
+for(const s of ['ramparts','cathedral','cinderdeep']){await load('?play&mute&novideo&stage='+s);for(const v of ['up','upright','jump']){const r=await climb(2896,v);ok('kbd_ledge_'+s+'_'+v,r.y<=21&&r.x>=2904&&r.on,r)}}
 // 3. numbers
 const N=await pg.evaluate(()=>{const st={vig:20,end:20,vit:20,str:20,dex:20,int:40,fth:20,lck:10},dps=w=>{const W=WEAPONS[w],ar=RPG.ar(W,st),m=W.light;return ar*m.mul/m.t};
  const knight=RPG.classStats('knight');return{cost10:RPG.cost(10),cost14:RPG.cost(14),gs:+dps('greatsword').toFixed(2),dag:+dps('dagger').toFixed(2),ls:+dps('longsword').toFixed(2),gsWeak:+RPG.ar(WEAPONS.greatsword,knight).toFixed(2),lsKnight:+RPG.ar(WEAPONS.longsword,knight).toFixed(2),
