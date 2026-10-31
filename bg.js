@@ -87,8 +87,9 @@ const BGART=(()=>{
  const spike=(x,c,cx,top,len,hw,up=false)=>{x.fillStyle=c;for(let i=0;i<len;i++){const h=Math.round(hw*(1-i/len));x.fillRect(cx-h,up?top-i:top+i,2*h+1,1)}};
  // seeded unique mountains: each peak gets its own height, asymmetric flanks, jagged ridge, optional shoulder peak, snow line and spacing
  const mtns=(w,seed,g0,g1,h0,h1,hw0,hw1,s0,s1)=>{const R=rnd(seed*7919+13),out=[];let xx=R()*30;while(xx<w-g0*.5){out.push({x:xx,h:h0+R()*(h1-h0),hl:hw0+R()*(hw1-hw0),hr:hw0+R()*(hw1-hw0),sn:s0+R()*(s1-s0),f:.18+R()*.35,ph:R()*6.3,a:1+R()*2.5,sh:R()<.55?{dx:(R()<.5?-1:1)*(18+R()*22),k:.45+R()*.3}:null,cap:Math.floor(R()*3)});xx+=g0+R()*(g1-g0)}return out};
- const mtn=(x,body,snow,shade,o,m)=>{const pk=(cx,h,hl,hr,sn,ph)=>{const S=Math.round(h*sn);for(let i=m.cap;i<h;i++){const t=i/h,j=Math.round(Math.sin(i*m.f+ph)*m.a*t),j2=Math.round(Math.cos(i*m.f*1.3+ph)*m.a*t),L=Math.round(hl*t)+j,Rr=Math.round(hr*t)+j2,y=G_-h+i;
-   const sl=S;x.fillStyle=i<sl?snow:body;x.fillRect(Math.round(o+cx-L),y,L+Rr+1,1);if(i<sl&&i>S*.3){x.fillStyle=shade;x.fillRect(Math.round(o+cx+Math.max(1,Rr*.25)),y,Math.max(1,Math.round(Rr*.75)),1)}}};
+ const tint=(c,f)=>'#'+[1,3,5].map(i=>Math.max(0,Math.min(255,Math.round(parseInt(c.substr(i,2),16)*f))).toString(16).padStart(2,'0')).join('');
+ const mtn=(x,body,snow,shade,o,m)=>{const v=1+(((m.ph*1000)|0)%13-6)/100,bc=tint(body,v),rim=tint(body,v*.8);const pk=(cx,h,hl,hr,sn,ph)=>{cx=Math.round(o+cx);h=Math.round(h);const S=Math.round(h*sn);for(let i=m.cap;i<h;i++){const t=i/h,j=Math.round(Math.sin(i*m.f+ph)*m.a*t),j2=Math.round(Math.cos(i*m.f*1.3+ph)*m.a*t),L=Math.round(hl*t)+j,Rr=Math.round(hr*t)+j2,y=G_-h+i;
+   x.fillStyle=i<S?snow:bc;x.fillRect(cx-L,y,L+Rr+1,1);if(i>=S){x.fillStyle=rim;x.fillRect(cx-L,y,1,1);x.fillRect(cx+Rr,y,1,1)}if(i<S&&i>S*.3){x.fillStyle=shade;x.fillRect(cx+Math.max(1,Math.round(Rr*.25)),y,Math.max(1,Math.round(Rr*.75)),1)}}};
   if(m.sh)pk(m.x+m.sh.dx,m.h*m.sh.k,m.hl*m.sh.k*1.2,m.hr*m.sh.k*1.2,m.sn*.8,m.ph+2);pk(m.x,m.h,m.hl,m.hr,m.sn,m.ph)};
  const O=(k,o)=>Object.assign(T[k],o);
  // CATHEDRAL — violet nave lit by a giant rose window, ranks of buttresses
@@ -108,7 +109,7 @@ const BGART=(()=>{
  O('belltower',{fw:2304,nw:2816,sky:['#0e1a3e','#1e3266','#34508e','#5a7ab4','#90b0d8'],
   skyX(x,w){glow(x,236,46,70,'rgba(220,235,255,.45)');disc(x,'#eef4ff',236,46,24);disc(x,'#c8d6ee',228,40,5);disc(x,'#c8d6ee',244,54,4);disc(x,'#d8e2f4',240,36,3);stars(x,w,60,5,90,['#ffffff','#c8dcff'])},
   far(x,w){for(const m of mtns(w,97,80,105,90,135,58,82,.24,.36))wrap(w,o=>mtn(x,'#3a5486','#f4f8ff','#c8d8f0',o,m))},
-  near(x,w){const ms=mtns(w,99,95,130,58,92,68,92,.2,.3);for(let k=0;k<ms.length;k++){const m=ms[k],xx=m.x-55;wrap(w,o=>{mtn(x,'#1a2850','#e8f0ff','#e8f0ff',o,m);for(let p=0;p<3;p++){const px=o+xx+10+p*34;tri(x,'#0c1430',px,G_,24,6);rect(x,'#e8f0ff',px-4,G_-10,9,1)}})}rect(x,'#e8f0ff',0,G_-4,w,4)}});
+  near(x,w){const ms=mtns(w,99,95,130,58,92,68,92,.2,.3);for(let k=0;k<ms.length;k++){const m=ms[k],xx=m.x-55;wrap(w,o=>{mtn(x,'#1a2850','#e8f0ff','#e8f0ff',o,m);for(let p=0;p<3;p++){const px=Math.round(o+xx+10+p*34);tri(x,'#0c1430',px,G_,24,6);rect(x,'#e8f0ff',px-4,G_-10,9,1)}})}rect(x,'#e8f0ff',0,G_-4,w,4)}});
  // FORGE — a lava sea under chimney smoke
  O('catacomb',{sky:['#140606','#3a0c06','#7a1a08','#d04a10','#ffa030'],
   skyX(x,w){glow(x,160,150,220,'rgba(255,190,60,.5)');for(let y=104;y<H_;y++){const t=(y-104)/76;for(let xx=0;xx<w;xx++){const v=Math.sin(xx*.09+y*.7)*.5+.5;x.fillStyle=v>.75-t*.2?'#ffe070':(v>.35?'#ff8a20':'#c83a0c');x.fillRect(xx,y,1,1)}}rect(x,'#fff0a0',0,104,w,1)},
