@@ -11,9 +11,12 @@
  SP.objLords=function(){return(NET.guest()&&this.hostLords)||(this.sv&&this.sv.lords)||[]};
  SP.nextObj=function(){const L=this.objLords(),o=OBJ.find(([s,k])=>!L.includes(k));if(!o)return null;const d=STAGE_DEFS[o[0]];return{sid:o[0],kind:o[1],stage:d.name,boss:d.boss.name}};
  SP.objText=function(){const o=this.nextObj();return o?'NEXT: '+o.stage+', '+short(o.boss):'ALL LORDS ARE ASH'};
+ // touch layouts: the banner must fit the gap between the d-pad (x<=69) and the THR/PRY buttons (x>=209), so drop the boss, then 'NEXT:', then a leading 'THE', then trim
+ SP.objTextTouch=function(){const M=130,o=this.nextObj();if(!o)return 'ALL LORDS ARE ASH';const st=o.stage.replace(/^THE /,'');for(const s of['NEXT: '+o.stage,o.stage,'NEXT: '+st,st])if(textW(s)<=M)return s;let s=st;while(s.length>3&&textW(s+'.')>M)s=s.slice(0,-1);return s.trim()+'.'};
+ SP.objBanner=function(){const s=this.touch?this.objTextTouch():this.objText(),sw=textW(s),y=H-(TXT.big?12:10),x=this.touch?Math.round(139-sw/2):Math.round(W/2-sw/2);return{s,sw,x,y,box:[x-3,y-2,x+sw+3,y-2+(TXT.big?11:9)]}};// touch: centred in the 72-206 gap
  const hud=SP.drawHUD;SP.drawHUD=function(){const r=hud.apply(this,arguments);
   if(!this.def||this.victory||this.menu||this.paused||this.cine||this.bossState==='fight'||this.bossState==='dying'||this.quitQ||this.loreView)return r;
-  const g=this.gu,s=this.objText(),sw=textW(s),y=H-(TXT.big?12:10),x=Math.round(W/2-sw/2);g.fillStyle(0x07050f,.5);g.fillRect(x-3,y-2,sw+6,TXT.big?11:9);drawText(g,s,x,y,0xb8a878,1,0x07050f,.8);return r};
+  const g=this.gu,{s,sw,x,y}=this.objBanner();g.fillStyle(0x07050f,.5);g.fillRect(x-3,y-2,sw+6,TXT.big?11:9);drawText(g,s,x,y,0xb8a878,1,0x07050f,.8);return r};
  const pz=SP.drawPause;SP.drawPause=function(g){pz.call(this,g);const o=this.nextObj(),L=this.objLords(),t=this.t||0;
   // the road: one node per lord in order - cleared dimmed with a check, the next one gold; the line below names the next stage and lord
   const n=OBJ.length,x0=Math.round(W/2-(n-1)*10),y=H-(TXT.big?27:24);g.fillStyle(0x3a3657);g.fillRect(x0,y,(n-1)*20,1);

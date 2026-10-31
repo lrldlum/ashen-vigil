@@ -450,7 +450,7 @@ class Stage extends Phaser.Scene{constructor(){super('stage')}
    for(let x=140;x<WORLD*1.3;x+=260+((x*13)%170)){const k=(x/7|0)%3;
     if(k===0){fg.fillRect(x,GY+6,90,3);for(let p=0;p<=90;p+=10){fg.fillRect(x+p,GY-6,2,14);fg.fillRect(x+p-1,GY-8,4,2)}fg.fillRect(x,GY-4,90,1)}
     else if(k===1){for(let c=0;c<2;c++){const cx=x+c*22;for(let y=-60;y<GY-10-c*30;y+=4){fg.fillRect(cx+(y/4%2?0:1),y,2,3)}}}
-    else{fg.fillRect(x,GY-30,10,48);fg.fillRect(x-3,GY-32,16,4);fg.fillRect(x+10,GY-12,26,30)}}}
+    else{fg.fillRect(x,GY-30,10,30);fg.fillRect(x-3,GY-32,16,4)}}}
   const mk='mist'+tx;if(!this.textures.exists(mk))this.textures.addCanvas(mk,makeCanvas(256,40,(x,w,h)=>{const R=seedRand(5);for(let y=0;y<h;y++)for(let xx=0;xx<w;xx++){const v=Math.sin(xx/w*6.283*2+y*.3)*.5+Math.sin(xx/w*6.283*5)*.3+(1-Math.abs(y-h/2)/(h/2))*1.2-.6;const b=(BAYER[y&3][xx&3]+.5)/16;if(v>b+.2)x.fillStyle=v>b+.7?(C.mist||'rgba(120,130,200,.16)'):(C.mist2||'rgba(90,96,170,.10)'),x.fillRect(xx,y,1,1)}}));
   this.mist=[this.add.tileSprite(0,GY-34,W,40,mk).setOrigin(0).setScrollFactor(0).setDepth(1.6),this.add.tileSprite(0,GY-70,W,40,mk).setOrigin(0).setScrollFactor(0).setDepth(-9.5).setAlpha(.7)];
   if(typeof PIXCH!=='undefined')PIXCH.setup(this);// Artist pixel sprites (pixelchars.js)
