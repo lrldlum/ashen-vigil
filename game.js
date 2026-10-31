@@ -20,7 +20,8 @@ const lerp=(a,b,t)=>a+(b-a)*t, ease=t=>1-Math.pow(1-t,3);
 // ---------- save ----------
 // 3 save slots (milestone D). Slot 1 keeps the original key so older saves still load.
 const slotKey=i=>i?'ashenVigil.save.v1.s'+(i+1):'ashenVigil.save.v1';
-const BOSS_VIDEO={cantor:{mp4:'assets/cine/cantor.mp4',muted:'assets/cine/cantor_muted.mp4'}};
+// pre-rendered boss intros (640p H.264, faststart); a missing/broken file falls back to the code intro
+const BOSS_VIDEO=Object.fromEntries(['cantor','warden','king','toller','smith','abbess','marshal','astronomer','prioress','heir'].map(k=>[k,{mp4:`assets/cine/${k}.mp4`,muted:`assets/cine/${k}_muted.mp4`}]));
 const Save={slot:Q.has('slot')?clamp((+Q.get('slot')||1)-1,0,2):clamp(+(localStorage.getItem('ashenVigil.slot')||0),0,2),
  key(){return slotKey(this.slot)},use(i){this.slot=i;try{localStorage.setItem('ashenVigil.slot',String(i))}catch(e){}},
  load(i=this.slot){try{return JSON.parse(localStorage.getItem(slotKey(i)))||null}catch(e){return null}},
