@@ -73,7 +73,7 @@ const INV_HS=4,INV_HX=52,INV_HY=129;
    else if(t==='axe'){R(8,2,2,15,D);R(4,3,4,6,M);R(3,4,1,4,M)}else if(t==='bow'){R(5,2,1,14,D);R(6,1,2,1,D);R(6,16,2,1,D);R(9,2,1,14,0xd8d0ee)}
    else if(t==='staff'){R(8,4,2,13,D);R(7,1,4,4,0x9fe0ff)}else if(t==='wand'){R(8,6,2,10,D);R(8,4,2,2,0xff8a2a)}else if(t==='talisman'){R(5,4,8,9,0xd8b060);R(8,6,2,5,0x3a2a20);R(6,8,6,1,0x3a2a20)}
    else{R(8,2,2,14,M)}
-   if(stats){const u=this.invUp(id),st=this.sv.stats;const dmg=W0.cat||W0.mir?Math.round(RPG[W0.mir?'mirBuff':'spellBuff'](W0,st)*100):Math.round(RPG.ar(W0,st)*100);
+   if(stats){const u=this.invUp(id),st=this.sv.stats;const dmg=W0.cat||W0.mir?Math.round(RPG[W0.mir?'mirBuff':'spellBuff'](W0,st)*100):Math.round(RPG.ar(W0,st)*(typeof SMITH!=='undefined'?SMITH.mul(u.lv):1)*100);
     tinyO(g,dmg,x+1,y+1,RPG.meets(W0,st)?0xffe2a8:0xd8402a);const sc=Object.values(W0.sc||{}).sort((a,b)=>'SABCDE'.indexOf(a)-'SABCDE'.indexOf(b))[0]||W0.csc;if(sc)tinyO(g,sc,x+s-4,y+1,0x9fd8ff);
     tinyO(g,String(W0.w),x+1,y+s-6,0xa8a0c8);if(u.lv)tinyO(g,'+'+u.lv,x+s-9,y+s-6,0xffd04a);if(u.inf){g.fillStyle(INF[u.inf].c);g.fillRect(x,y,s,1)}}return}
   if(A||G){const sl=A?'chest':G.slot,M=0x9a9ab0,P=(A&&A.pal)?A.pal.b:G&&/rime|cloth|hood/.test(id)?0xb8d0ec:M;
