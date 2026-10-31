@@ -1,0 +1,419 @@
+{
+ "frameWidth": 46,
+ "frameHeight": 46,
+ "totalFrames": 30,
+ "origin": [
+  0.5,
+  0.90625
+ ],
+ "baseNoBlade": "weapons_pixel/hero_strip_noblade.png",
+ "anims": {
+  "idle": [
+   0,
+   8
+  ],
+  "run": [
+   8,
+   8
+  ],
+  "attack": [
+   16,
+   8
+  ],
+  "hit": [
+   24,
+   6
+  ]
+ },
+ "iconSize": [
+  12,
+  12
+ ],
+ "icon2xSize": [
+  24,
+  24
+ ],
+ "note": "Overlay strips match hero_strip_noblade.png frame-for-frame (same as weapons.json). Draw base(noblade) -> weapon/shield overlay. Original art, game palette, flat hard-edged pixels, no glow.",
+ "melee": [
+  {
+   "id": "katana",
+   "file": "arsenal_pixel/weapon_katana.png",
+   "icon": "arsenal_pixel/icon_katana.png",
+   "icon2x": "arsenal_pixel/icon_katana@2x.png"
+  },
+  {
+   "id": "warhalberd",
+   "file": "arsenal_pixel/weapon_warhalberd.png",
+   "icon": "arsenal_pixel/icon_warhalberd.png",
+   "icon2x": "arsenal_pixel/icon_warhalberd@2x.png"
+  },
+  {
+   "id": "whip",
+   "file": "arsenal_pixel/weapon_whip.png",
+   "icon": "arsenal_pixel/icon_whip.png",
+   "icon2x": "arsenal_pixel/icon_whip@2x.png"
+  },
+  {
+   "id": "scythe",
+   "file": "arsenal_pixel/weapon_scythe.png",
+   "icon": "arsenal_pixel/icon_scythe.png",
+   "icon2x": "arsenal_pixel/icon_scythe@2x.png"
+  },
+  {
+   "id": "twinblade",
+   "file": "arsenal_pixel/weapon_twinblade.png",
+   "icon": "arsenal_pixel/icon_twinblade.png",
+   "icon2x": "arsenal_pixel/icon_twinblade@2x.png"
+  },
+  {
+   "id": "catalyst",
+   "file": "arsenal_pixel/weapon_catalyst.png",
+   "icon": "arsenal_pixel/icon_catalyst.png",
+   "icon2x": "arsenal_pixel/icon_catalyst@2x.png"
+  }
+ ],
+ "guns": [
+  {
+   "id": "flintlock",
+   "file": "arsenal_pixel/weapon_flintlock.png",
+   "icon": "arsenal_pixel/icon_flintlock.png",
+   "icon2x": "arsenal_pixel/icon_flintlock@2x.png",
+   "muzzle": [
+    11,
+    1
+   ],
+   "muzzleNote": "muzzle tip in sprite px from grip (+x forward, row) when level"
+  },
+  {
+   "id": "blunderbuss",
+   "file": "arsenal_pixel/weapon_blunderbuss.png",
+   "icon": "arsenal_pixel/icon_blunderbuss.png",
+   "icon2x": "arsenal_pixel/icon_blunderbuss@2x.png",
+   "muzzle": [
+    13,
+    1
+   ],
+   "muzzleNote": "muzzle tip in sprite px from grip (+x forward, row) when level"
+  },
+  {
+   "id": "handcannon",
+   "file": "arsenal_pixel/weapon_handcannon.png",
+   "icon": "arsenal_pixel/icon_handcannon.png",
+   "icon2x": "arsenal_pixel/icon_handcannon@2x.png",
+   "muzzle": [
+    13,
+    1
+   ],
+   "muzzleNote": "muzzle tip in sprite px from grip (+x forward, row) when level"
+  },
+  {
+   "id": "longrifle",
+   "file": "arsenal_pixel/weapon_longrifle.png",
+   "icon": "arsenal_pixel/icon_longrifle.png",
+   "icon2x": "arsenal_pixel/icon_longrifle@2x.png",
+   "muzzle": [
+    22,
+    1
+   ],
+   "muzzleNote": "muzzle tip in sprite px from grip (+x forward, row) when level"
+  },
+  {
+   "id": "runepistol",
+   "file": "arsenal_pixel/weapon_runepistol.png",
+   "icon": "arsenal_pixel/icon_runepistol.png",
+   "icon2x": "arsenal_pixel/icon_runepistol@2x.png",
+   "muzzle": [
+    11,
+    1
+   ],
+   "muzzleNote": "muzzle tip in sprite px from grip (+x forward, row) when level"
+  }
+ ],
+ "ranged": [
+  {
+   "id": "lightxbow",
+   "file": "arsenal_pixel/weapon_lightxbow.png",
+   "icon": "arsenal_pixel/icon_lightxbow.png",
+   "icon2x": "arsenal_pixel/icon_lightxbow@2x.png",
+   "muzzle": [
+    11,
+    2
+   ],
+   "muzzleNote": "muzzle tip in sprite px from grip (+x forward, row) when level",
+   "reload": "arsenal_pixel/reload_lightxbow.png",
+   "reloadFrames": 3,
+   "reloadFps": 6,
+   "reloadBaseFrame": 0
+  },
+  {
+   "id": "heavyxbow",
+   "file": "arsenal_pixel/weapon_heavyxbow.png",
+   "icon": "arsenal_pixel/icon_heavyxbow.png",
+   "icon2x": "arsenal_pixel/icon_heavyxbow@2x.png",
+   "muzzle": [
+    15,
+    2
+   ],
+   "muzzleNote": "muzzle tip in sprite px from grip (+x forward, row) when level",
+   "reload": "arsenal_pixel/reload_heavyxbow.png",
+   "reloadFrames": 3,
+   "reloadFps": 6,
+   "reloadBaseFrame": 0
+  },
+  {
+   "id": "longbow",
+   "file": "arsenal_pixel/weapon_longbow.png",
+   "icon": "arsenal_pixel/icon_longbow.png",
+   "icon2x": "arsenal_pixel/icon_longbow@2x.png"
+  }
+ ],
+ "shields": [
+  {
+   "id": "buckler",
+   "file": "arsenal_pixel/shield_buckler.png",
+   "guard": "arsenal_pixel/shield_buckler_guard.png",
+   "guardFrames": 2,
+   "guardBaseFrames": [
+    0,
+    1
+   ],
+   "guardFps": 4,
+   "icon": "arsenal_pixel/icon_buckler.png",
+   "icon2x": "arsenal_pixel/icon_buckler@2x.png",
+   "drawOrder": "both strips draw AFTER hero (shield is carried low in front)"
+  },
+  {
+   "id": "kite",
+   "file": "arsenal_pixel/shield_kite.png",
+   "guard": "arsenal_pixel/shield_kite_guard.png",
+   "guardFrames": 2,
+   "guardBaseFrames": [
+    0,
+    1
+   ],
+   "guardFps": 4,
+   "icon": "arsenal_pixel/icon_kite.png",
+   "icon2x": "arsenal_pixel/icon_kite@2x.png",
+   "drawOrder": "both strips draw AFTER hero (shield is carried low in front)"
+  },
+  {
+   "id": "towershield",
+   "file": "arsenal_pixel/shield_towershield.png",
+   "guard": "arsenal_pixel/shield_towershield_guard.png",
+   "guardFrames": 2,
+   "guardBaseFrames": [
+    0,
+    1
+   ],
+   "guardFps": 4,
+   "icon": "arsenal_pixel/icon_towershield.png",
+   "icon2x": "arsenal_pixel/icon_towershield@2x.png",
+   "drawOrder": "both strips draw AFTER hero (shield is carried low in front)"
+  },
+  {
+   "id": "magicshield",
+   "file": "arsenal_pixel/shield_magicshield.png",
+   "guard": "arsenal_pixel/shield_magicshield_guard.png",
+   "guardFrames": 2,
+   "guardBaseFrames": [
+    0,
+    1
+   ],
+   "guardFps": 4,
+   "icon": "arsenal_pixel/icon_magicshield.png",
+   "icon2x": "arsenal_pixel/icon_magicshield@2x.png",
+   "drawOrder": "both strips draw AFTER hero (shield is carried low in front)"
+  }
+ ],
+ "thrown": [
+  {
+   "id": "tknife",
+   "spin": "arsenal_pixel/thrown_tknife.png",
+   "spinFrame": [
+    12,
+    12
+   ],
+   "spinFrames": 4,
+   "spinFps": 14,
+   "origin": [
+    0.5,
+    0.5
+   ],
+   "icon": "arsenal_pixel/icon_tknife.png",
+   "icon2x": "arsenal_pixel/icon_tknife@2x.png"
+  },
+  {
+   "id": "firebomb",
+   "spin": "arsenal_pixel/thrown_firebomb.png",
+   "spinFrame": [
+    12,
+    12
+   ],
+   "spinFrames": 4,
+   "spinFps": 14,
+   "origin": [
+    0.5,
+    0.5
+   ],
+   "icon": "arsenal_pixel/icon_firebomb.png",
+   "icon2x": "arsenal_pixel/icon_firebomb@2x.png"
+  },
+  {
+   "id": "frostjar",
+   "spin": "arsenal_pixel/thrown_frostjar.png",
+   "spinFrame": [
+    12,
+    12
+   ],
+   "spinFrames": 4,
+   "spinFps": 14,
+   "origin": [
+    0.5,
+    0.5
+   ],
+   "icon": "arsenal_pixel/icon_frostjar.png",
+   "icon2x": "arsenal_pixel/icon_frostjar@2x.png"
+  },
+  {
+   "id": "boltjar",
+   "spin": "arsenal_pixel/thrown_boltjar.png",
+   "spinFrame": [
+    12,
+    12
+   ],
+   "spinFrames": 4,
+   "spinFps": 14,
+   "origin": [
+    0.5,
+    0.5
+   ],
+   "icon": "arsenal_pixel/icon_boltjar.png",
+   "icon2x": "arsenal_pixel/icon_boltjar@2x.png"
+  }
+ ],
+ "fx": {
+  "muzzle_small": {
+   "file": "arsenal_pixel/fx_muzzle_small.png",
+   "frame": [
+    16,
+    16
+   ],
+   "frames": 3,
+   "fps": 20,
+   "origin": [
+    0,
+    0.5
+   ],
+   "use": "flintlock, runepistol (tint frame 0 by element optional)"
+  },
+  "muzzle_medium": {
+   "file": "arsenal_pixel/fx_muzzle_medium.png",
+   "frame": [
+    24,
+    24
+   ],
+   "frames": 3,
+   "fps": 20,
+   "origin": [
+    0,
+    0.5
+   ],
+   "use": "blunderbuss spread, longrifle"
+  },
+  "muzzle_large": {
+   "file": "arsenal_pixel/fx_muzzle_large.png",
+   "frame": [
+    32,
+    32
+   ],
+   "frames": 3,
+   "fps": 16,
+   "origin": [
+    0,
+    0.5
+   ],
+   "use": "handcannon"
+  },
+  "smoke_puff": {
+   "file": "arsenal_pixel/fx_smoke_puff.png",
+   "frame": [
+    16,
+    16
+   ],
+   "frames": 5,
+   "fps": 10,
+   "origin": [
+    0.5,
+    0.625
+   ]
+  },
+  "impact_fire": {
+   "file": "arsenal_pixel/fx_impact_fire.png",
+   "frame": [
+    24,
+    24
+   ],
+   "frames": 4,
+   "fps": 14,
+   "origin": [
+    0.5,
+    0.5
+   ]
+  },
+  "impact_frost": {
+   "file": "arsenal_pixel/fx_impact_frost.png",
+   "frame": [
+    24,
+    24
+   ],
+   "frames": 4,
+   "fps": 14,
+   "origin": [
+    0.5,
+    0.5
+   ]
+  },
+  "impact_lightning": {
+   "file": "arsenal_pixel/fx_impact_lightning.png",
+   "frame": [
+    24,
+    24
+   ],
+   "frames": 4,
+   "fps": 14,
+   "origin": [
+    0.5,
+    0.5
+   ]
+  },
+  "whip_arc": {
+   "file": "arsenal_pixel/fx_whip_arc.png",
+   "frame": [
+    48,
+    48
+   ],
+   "frames": 4,
+   "fps": 16,
+   "origin": [
+    0.16666666666666666,
+    0.625
+   ],
+   "use": "whip attack lash; origin = hero hand"
+  },
+  "gun_reload": {
+   "file": "arsenal_pixel/hero_reload_powder.png",
+   "frame": [
+    46,
+    46
+   ],
+   "frames": 6,
+   "fps": 8,
+   "baseFrame": 0,
+   "origin": [
+    0.5,
+    0.90625
+   ],
+   "use": "overlay on hero_strip_noblade frame 0 while reloading any gun (generic flintlock shown; hide the equipped gun overlay)"
+  }
+ }
+}

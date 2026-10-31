@@ -1,6 +1,7 @@
 // Arsenal checks (arsenal.js): every melee moveset, shields (guard/absorb/parry window/guard break/magic FP), bows + crossbows,
 // throwables (knife, fire/frost/storm jars), guns (mag, ammo, reload, recoil, spread, pierce, blast, rune FP + element, DEX scaling,
-// smith upgrade, infusion), drops/merchant/save, co-op mirrored shots. usage: node test/arsenal.mjs (server :8171; TMPV=frame dir).
+// smith upgrade, infusion), drops/merchant/save, co-op mirrored shots; r2: gamepad throw/cycle/guard, touch THR/GRD/RLD, smith infusion menu,
+// distinct swing arcs, co-op partner guard; r3: Artist art behind ?arsart=1 (default OFF). usage: node test/arsenal.mjs (server :8171; TMPV=frame dir).
 // Writes screenshots/arsenal/*.png, clips/arsenal.mp4 and one clip per category clips/arsenal_<cat>.mp4
 import { chromium } from 'playwright';import {execSync} from 'child_process';import fs from 'fs';
 const B='http://127.0.0.1:8171/',SH='screenshots/arsenal/';
@@ -31,11 +32,12 @@ fs.mkdirSync(SH,{recursive:true});const MARK={};const mark=(k,end)=>{MARK[k]=MAR
 const A=await mk(true);const{ev,go,shot}=A;
 await A.pg.goto(B+'assets/README.md');await ev(()=>localStorage.clear());
 await go('?play&mute&novideo&slot=1&class=knight&stage=ramparts');
-await ev(()=>{const s=S(),sv=s.sv;clear();for(const k of Object.keys(sv.stats))sv.stats[k]=Math.max(sv.stats[k],30);s.applyBuild(true);s.player.inv=0;
+const setup=()=>ev(()=>{const s=S(),sv=s.sv;clear();for(const k of Object.keys(sv.stats))sv.stats[k]=Math.max(sv.stats[k],30);s.applyBuild(true);s.player.inv=0;
  window.dummy=(dx=40,hp=999)=>{const P=S().player;const e=S().spawnEnemy('acolyte',P.x+dx,150);e.hp=hp;e.temp=1;e.cd=99;e.state='idle';e.b.setPosition(P.x+dx,149);e.b.setVelocity(0,0);e.b.body.moves=false;return e};// pinned standing on the floor (centre y149)
  window.equip=(id,slot='main')=>{const s=S(),sv=s.sv;if(!sv.inv.includes(id))sv.inv.push(id);sv.eq[slot]=id;s.applyBuild(false);s.player.st=s.player.stMax;s.player.fp=s.player.fpMax};
  window.act=(o,ms)=>new Promise(r=>{let n=0;window.__inp=()=>(n++===0?o:{});setTimeout(()=>{window.__inp=()=>({});r()},ms)});
  window.kill=()=>{for(const e of S().enemies)if(e.temp){e.dead=true;e.b.body.enable=false}};tp(400)});
+await setup();
 // ---------- 1. data
 const D=await ev(()=>{const need={melee:['dagger','spear','katana','warhalberd','axe','whip','scythe','twinblade','staff','catalyst'],shields:['buckler','kite','towershield','magicshield'],bows:['bow','longbow','lightxbow','heavyxbow'],thrown:['tknife','firebomb','frostjar','boltjar'],guns:['flintlock','blunderbuss','handcannon','longrifle','runepistol']};
  const o={};for(const[k,L]of Object.entries(need))o[k]=L.filter(i=>k==='thrown'?!THROWN[i]:!WEAPONS[i]);o.types=need.guns.every(i=>WEAPONS[i].type==='gun')&&need.shields.every(i=>WEAPONS[i].hand==='off'&&WEAPONS[i].shield);
@@ -94,6 +96,32 @@ const MB=await ev(()=>{const s=S(),sv=s.sv;s.souls=sv.souls=9999;const a0=sv.amm
  sv.inv=sv.inv.filter(i=>i!=='flintlock');buy('ammo');buy('firebomb');buy('flintlock');const o={ammo:sv.ammo-a0,fb:sv.thr.firebomb,gun:sv.inv.includes('flintlock'),gone:!s.merchRows().some(r=>r[0]==='flintlock'),souls:9999-s.souls};s.menu=null;sv.gmag.flintlock=1;Save.write(sv);return o});
 await go('?play&mute&novideo&slot=1&continue');const SV=await ev(()=>{const sv=S().sv;return{ammo:sv.ammo,fb:sv.thr&&sv.thr.firebomb,mag:sv.gmag&&sv.gmag.flintlock,gun:sv.inv.includes('flintlock')}});
 ok('no_shot_clicks_merchant_and_save',NA.mag===0&&!NA.reload&&MB.ammo===12&&MB.fb===3&&MB.gun&&MB.gone&&MB.souls===3050&&SV.ammo>=12&&SV.fb===3&&SV.mag===1&&SV.gun,{NA,MB,SV});
+await go('?play&mute&novideo&slot=1&continue');await setup();
+// ---------- 9. gamepad: D-pad down tap = throw, hold = cycle; LB = guard
+mark('pad');const PD=await ev(async()=>{const s=S(),sv=s.sv,P=s.player;window.__inp=null;equip('longsword');equip('kite','off');sv.thr={tknife:5,firebomb:3};sv.eq.q2='tknife';P.f=1;
+ const pad=b=>({connected:true,buttons:Array.from({length:17},(_,i)=>({pressed:b.includes(i),value:b.includes(i)?1:0})),axes:[0,0,0,0]});const sl=ms=>new Promise(r=>setTimeout(r,ms));const o={};
+ window.__fakePad=pad([13]);await sl(120);window.__fakePad=pad([]);await sl(500);o.thrown=5-(sv.thr.tknife||0);
+ window.__fakePad=pad([13]);await sl(700);window.__fakePad=pad([]);await sl(200);o.cyc=sv.eq.q2;
+ window.__fakePad=pad([4]);await sl(250);o.guard=!!P.guard;window.__fakePad=null;await sl(200);o.after=!!P.guard;window.__inp=()=>({});return o});
+ok('gamepad_throw_cycle_guard',PD.thrown===1&&PD.cyc!=='tknife'&&PD.guard&&!PD.after,PD);
+// ---------- 10. touch THR / GRD / RLD
+const TC=await ev(async()=>{const s=S(),sv=s.sv,P=s.player;window.__inp=null;const sl=ms=>new Promise(r=>setTimeout(r,ms));const o={btn:['thr','grd','rld'].every(k=>TBTN.some(b=>b.k===k))};const t0=s.touch,ts0=s.touchState;s.touch=true;window.__th={};s.touchState=function(){const o=ts0.call(this);this.tHeld=Object.assign({},this.tHeld,window.__th);return o};// fake fingers on the new buttons
+ sv.eq.q2='tknife';sv.thr.tknife=3;window.__th={thr:1};await sl(120);window.__th={};await sl(400);o.thrown=3-sv.thr.tknife;
+ window.__th={grd:1};await sl(200);o.guard=!!P.guard;window.__th={};await sl(150);
+ equip('flintlock');sv.ammo=5;sv.gmag.flintlock=0;s.ars.reload=0;window.__th={rld:1};await sl(120);window.__th={};o.reload=s.ars.reload>0;await sl(1700);o.mag=sv.gmag.flintlock;s.touchState=ts0;s.touch=t0;window.__inp=()=>({});return o});
+await shot('ars08_touch');mark('pad',1);
+ok('touch_throw_guard_reload',TC.btn&&TC.thrown===1&&TC.guard&&TC.reload&&TC.mag===1,TC);
+// ---------- 11. smith infusion menu
+mark('infuse');const IF=await ev(async()=>{const s=S(),sv=s.sv,o={};equip('katana');sv.embers=5;s.souls=sv.souls=9000;delete (sv.wup||{}).katana;s.applyBuild(false);const ar0=s.build.ar;
+ s.menu={mode:'smith',sel:0,t:1,prev:{}};s.menu.sel=s.smithList().indexOf('katana');s.menuKey('right');o.mode=s.menu&&s.menu.mode;const L=[null,...Object.keys(INF)];s.menu.sel=L.indexOf('fire');s.menuKey('ok');
+ o.inf=(sv.wup.katana||{}).inf;o.embers=sv.embers;o.souls=s.souls;s.applyBuild(false);o.ar=[ar0,s.build.ar];o.poor=(sv.embers=0,s.arsInfuse('katana','dark'));s.menu=null;Save.write(sv);
+ const P=s.player;P.f=1;P.state='idle';const e=dummy(20);s.stats.infHits=0;await act({atkP:1},700);o.burn=(e.burn||0)>0;o.hits=s.stats.infHits;kill();return o});
+await shot('ars09_infused');mark('infuse',1);
+ok('smith_infusion_menu_cost_and_element',IF.mode==='infuse'&&IF.inf==='fire'&&IF.embers===3&&IF.souls===7000&&IF.poor==='SHARDS'&&IF.burn&&IF.hits>0&&IF.ar[1]>0,IF);
+// ---------- 12. distinct swing arcs
+mark('swings');const SW=await ev(async()=>{const s=S(),o={};for(const id of['katana','warhalberd','whip','scythe','twinblade','catalyst']){equip(id);s.stats.arsSwing={};const P=s.player;P.state='idle';P.f=1;await act({atkP:1},700);o[id]=Object.keys(s.stats.arsSwing)}return o});
+mark('swings',1);
+ok('distinct_swing_arcs',Object.values(SW).every(k=>k.length===1)&&new Set(Object.values(SW).map(k=>k[0])).size===6,SW);
 await A.ctx.close();
 // ---------- 8. co-op: a guest's shot is mirrored on the host and its damage lands host-side
 const H=await mk(false);await H.pg.goto(B+'assets/README.md');await H.ev(()=>localStorage.clear());await H.go('?host&mute&novideo&stage=ramparts&class=knight');
@@ -108,7 +136,32 @@ const eh=await H.ev(()=>{const s=S(),e=s.spawnEnemy('acolyte',400,156);e.hp=200;
 await G.ev(()=>{let n=0;window.__inp=()=>(n++===0?{atkP:1}:{})});await wait(1500);
 const CO=[await H.ev(()=>({hp:+window.__e.hp.toFixed(1),net:S().stats.arsNet||0})),await G.ev(()=>({shots:S().stats.shots||0,mag:S().sv.gmag.flintlock}))];await H.shot('ars07_coop_host_sees_guest_shot');
 ok('coop_guest_gun_shot_mirrored_and_damages',linked&&CO[0].net>=1&&CO[0].hp<200&&CO[1].shots===1,{linked,CO});
+await G.ev(()=>{const s=S(),sv=s.sv;sv.inv.push('kite');sv.eq.main='longsword';sv.eq.off='kite';s.applyBuild(false);window.__inp=()=>({guard:1})});await H.ev(()=>{S().stats.arsRemoteGuard=0});await wait(1200);
+const RG=[await H.ev(()=>({n:S().stats.arsRemoteGuard||0,gd:NET.remote&&NET.remote.gd,off:NET.remote&&NET.remote.off})),await G.ev(()=>!!S().player.guard)];await H.shot('ars10_coop_partner_guard');
+await G.ev(()=>{window.__inp=()=>({})});
+ok('coop_partner_sees_shield_guard',RG[1]&&RG[0].n>0&&RG[0].off==='kite',RG);
 await H.ctx.close();await G.ctx.close();
+
+// ---------- 13. Artist art: default OFF loads nothing; ?arsart=1 loads the manifest, wields overlays, guns never on attack frames
+const AO=await mk(false);await AO.pg.goto(B+'assets/README.md');await AO.ev(()=>localStorage.clear());await AO.go('?play&mute&novideo&slot=1&class=knight&stage=ramparts');
+const OFF=await AO.ev(()=>({m:!!ARS.ART,t:S().textures.exists('arsw_katana')}));await AO.ctx.close();
+ok('art_flag_default_off',!OFF.m&&!OFF.t,OFF);
+const AR=await mk(true);FR.length&&0;mark('art');await AR.pg.goto(B+'assets/README.md');await AR.ev(()=>localStorage.clear());await AR.go('?play&mute&novideo&slot=1&class=knight&stage=ramparts&arsart=1');
+const ART=await AR.ev(async()=>{const s=S(),sv=s.sv,P=s.player,o={};clear();for(const k of Object.keys(sv.stats))sv.stats[k]=Math.max(sv.stats[k],30);s.applyBuild(true);
+ window.dummy=(dx=40)=>{const e=s.spawnEnemy('acolyte',P.x+dx,150);e.hp=999;e.temp=1;e.cd=99;e.state='idle';e.b.setPosition(P.x+dx,149);e.b.setVelocity(0,0);e.b.body.moves=false;return e};
+ window.equip=(id,slot='main')=>{if(!sv.inv.includes(id))sv.inv.push(id);sv.eq[slot]=id;s.applyBuild(false);P.st=P.stMax;P.fp=P.fpMax};const sl=ms=>new Promise(r=>setTimeout(r,ms));
+ const act=async(x,ms)=>{let n=0;window.__inp=()=>(n++===0?x:{});await sl(ms);window.__inp=()=>({})};tp(400);
+ o.manifest=!!ARS.ART;const ids=[...Object.keys(ARS.MELEE),...Object.keys(ARS.GUNS),...Object.keys(ARS.RANGED)];o.missing=ids.filter(i=>!s.textures.exists('arsw_'+i)).concat(Object.keys(ARS.SHIELDS).filter(i=>!s.textures.exists('arss_'+i)),Object.keys(ARS.THROWN).filter(i=>!s.textures.exists('arst_'+i)));
+ const R=s.pxc.rig;o.melee={};for(const id of['katana','whip','scythe']){equip(id);P.f=1;await act({atkP:1},700);o.melee[id]=!!(R.arsW&&R.arsW.texture.key==='arsw_'+id)}
+ o.gunFrames=[];for(const id of['flintlock','blunderbuss','handcannon','lightxbow','longbow']){equip(id);sv.ammo=9;delete sv.gmag[id];s.ars.reload=0;P.f=1;P.state='idle';dummy(60);let n=0;window.__inp=()=>(n++===0?{atkP:1}:{});
+  for(let i=0;i<25;i++){await sl(30);o.gunFrames.push(+R.base.frame.name)}window.__inp=()=>({});await sl(900);for(const e of s.enemies)if(e.temp){e.dead=true;e.b.body.enable=false}}
+ o.badFrames=o.gunFrames.filter(f=>f>=16&&f<24).length;o.fx=s.stats.arsFxArt||0;
+ equip('flintlock');sv.ammo=5;sv.gmag.flintlock=0;s.gunReload('flintlock');await sl(150);o.reloadOverlay=R.arsW&&R.arsW.texture.key;await sl(1500);
+ equip('longsword');equip('towershield','off');window.__inp=()=>({guard:1});await sl(400);o.guardArt=R.arsS&&R.arsS.visible&&R.arsS.texture.key;window.__inp=()=>({});
+ sv.thr={firebomb:3};sv.eq.q2='firebomb';P.f=1;dummy(95);await act({throwP:1},250);o.spin=(s.arsSpr&&s.arsSpr.size)||0;await sl(1200);
+ const g=s.add.graphics();o.icon=WEAPART.icon(s,g,'blunderbuss',0,0,24);g.destroy();return o});
+await AR.shot('ars11_art_on');mark('art',1);await AR.ctx.close();
+ok('art_flag_on_loads_artist_manifest',ART.manifest&&!ART.missing.length&&Object.values(ART.melee).every(Boolean)&&ART.badFrames===0&&ART.fx>0&&ART.reloadOverlay==='arsfx_gun_reload'&&ART.guardArt==='arsg_towershield'&&ART.spin>0&&ART.icon===true,{...ART,gunFrames:undefined});
 ok('no_errors',errs.length===0,errs);
 const clip=(out,a,b)=>{let s='';for(let i=a;i<b;i++)s+=`file '${VD}/${String(i).padStart(5,'0')}.jpg'\nduration ${Math.min(.5,((FR[i+1]||FR[i]+100)-FR[i])/1000).toFixed(3)}\n`;fs.writeFileSync(VD+'/l.txt',s);
  execSync(`ffmpeg -y -loglevel error -f concat -safe 0 -i ${VD}/l.txt -vf "scale=640:360,fps=30" -c:v libx264 -pix_fmt yuv420p -crf 27 ${out}`)};

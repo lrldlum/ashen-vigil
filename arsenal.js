@@ -147,7 +147,7 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  // ---- drawing (after the scene, before lights) ----
  const rl=SP.renderLights;SP.renderLights=function(...a){try{this.arsDraw(this.gn,this.ga)}catch(e){}return rl.apply(this,a)};
  SP.arsDraw=function(g,ga){const P=this.player,W=this.wp;
-  if(P&&!P.dead&&W&&W.gun){const f=P.f,x=Math.round(P.x+f*4-(P.recoil>0?f*2:0)),y=Math.round(P.y-12-(P.recoil>0?1:0)),L=W.gun.pellets>1?9:W.gun.recoil>200?11:W.gun.spd>800?14:W.gun.rune?8:8;P.recoil=(P.recoil||0)-(this.dt||.016);
+  if(P&&!P.dead&&W&&W.gun&&!this.arsArtHas('arsw_',this.sv.eq.main)){const f=P.f,x=Math.round(P.x+f*4-(P.recoil>0?f*2:0)),y=Math.round(P.y-12-(P.recoil>0?1:0)),L=W.gun.pellets>1?9:W.gun.recoil>200?11:W.gun.spd>800?14:W.gun.rune?8:8;P.recoil=(P.recoil||0)-(this.dt||.016);
    g.fillStyle(0x5a3a1c);g.fillRect(f>0?x-3:x,y,4,3);g.fillStyle(W.gun.rune?0x6a5aa0:0x3a3a44);g.fillRect(f>0?x:x-L,y-1,L,2);if(W.gun.pellets>1){g.fillRect(f>0?x+L-2:x-L-1,y-2,3,4)}if(W.gun.recoil>200){g.fillStyle(0x2a2a30);g.fillRect(f>0?x:x-L,y-2,L,4)}}
   if(P&&P.guard){const S=WEAPONS[this.sv.eq.off],h=S.shield.abs>=1?16:S.shield.parry>.12?7:12,x=Math.round(P.x+P.f*7);g.fillStyle(S.shield.magic?0x6a5ab8:0x7a6a58);g.fillRect(x-1,Math.round(P.y-6-h),3,h);g.fillStyle(0xd8c8a0);g.fillRect(x-1,Math.round(P.y-6-h),3,1);if(S.shield.magic)glow(ga,x,P.y-12,10,0xb8a8ff,.2)}
   for(const p of this.arsP||[]){const x=Math.round(p.x),y=Math.round(p.y),d=Math.sign(p.vx)||1;
@@ -164,4 +164,105 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  // ---- co-op: mirror shots/throws as visuals ----
  if(typeof NET!=='undefined'){const nr=NET.recv;NET.recv=function(d){if(d&&d.t==='ars'){const S=this.scene;if(S&&S.sys&&S.sys.isActive()&&S.arsShot){S.arsShot({...d.p},1);S.stats.arsNet=(S.stats.arsNet||0)+1}return}return nr.call(this,d)}}
 }
+
+// ===================== r2: pad + touch bindings, partner guard, smith infusions, distinct swing arcs, real-sprite loading =====================
+// Pad (read straight from navigator.getGamepads, so gamepad.js stays untouched): D-pad DOWN tap = throw, hold 0.4 s = next throwable,
+// LB held = shield guard (LB tap still parries via gamepad.js). Touch: THR (throw), GRD (hold guard), RLD (reload) buttons.
+ARS.INF_COST={heavy:[1,1000],sharp:[1,1000],fire:[2,2000],frost:[2,2000],lightning:[2,2000],dark:[3,3000],holy:[3,3000]};// [Ember Shards, souls]
+ARS.INF_FX={heavy:{stat:'str',mul:1.1},sharp:{stat:'dex',mul:1.1},fire:{mul:1,elem:'fire'},frost:{mul:1,elem:'frost'},lightning:{mul:1,elem:'lightning'},dark:{mul:1.05,elem:'frost'},holy:{mul:1.05,elem:'lightning'}};
+// swing styles drawn over the generic slash (one per new moveset)
+ARS.SWING={katana:{k:'crescent',col:0xd8f0ff},warhalberd:{k:'thrust',col:0xe8d8b8},whip:{k:'lash',col:0xc89060},scythe:{k:'reap',col:0xb070ff},twinblade:{k:'twin',col:0xffd070},catalyst:{k:'runes',col:0x9fd8ff}};
+ARS.SPRITE_KEYS=[...Object.keys(ARS.MELEE),...Object.keys(ARS.RANGED),...Object.keys(ARS.GUNS),...Object.keys(ARS.SHIELDS),...Object.keys(ARS.THROWN)];
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ if(typeof TBTN!=='undefined'&&!TBTN.some(b=>b.k==='thr'))TBTN.push({k:'thr',x:218,y:162,r:9,lab:'THR'},{k:'grd',x:218,y:138,r:9,lab:'GRD'},{k:'rld',x:298,y:116,r:8,lab:'RLD'});
+ SP.arsPadInput=function(now=performance.now()){const o={};let g=null;try{g=window.__fakePad||[...(navigator.getGamepads?navigator.getGamepads():[])].find(q=>q&&q.connected)}catch(e){}if(!g)return o;
+  const b=i=>!!(g.buttons[i]&&(g.buttons[i].pressed||g.buttons[i].value>.5)),dn=b(13)||((g.axes[7]||0)>.5),A=this.arsPadS||(this.arsPadS={});
+  if(dn&&!A.dn){A.t=now;A.cyc=0}if(dn&&!A.cyc&&now-A.t>=400){A.cyc=1;o.thrCyc=1}if(!dn&&A.dn&&!A.cyc&&now-A.t<400)o.throwP=1;A.dn=dn;if(b(4))o.guard=true;return o};
+ SP.arsTouchInput=function(){const o={};if(!this.touch)return o;const h=this.tHeld||{},A=this.arsTch||(this.arsTch={});if(h.thr&&!A.thr)o.throwP=1;if(h.rld&&!A.rld)o.reloadP=1;if(h.grd)o.guard=true;A.thr=h.thr;A.rld=h.rld;return o};
+ const ri2=SP.readInput;SP.readInput=function(){const o=ri2.call(this)||{};if(window.__inp)return o;for(const x of[this.arsPadInput(),this.arsTouchInput()])for(const k in x)o[k]=o[k]||x[k];return o};
+ const ua2=SP.updateArrows;SP.updateArrows=function(dt){const inp=this.inp||{},P=this.player;if(inp.reloadP&&P&&!P.dead&&!this.menu){const W=this.wp;if(W&&W.gun)this.gunReload(this.sv.eq.main)}return ua2.call(this,dt)};
+ // ---- partner sees my shield guard ----
+ if(typeof NET!=='undefined'){const me=NET.me;NET.me=function(){const o=me.call(this);const S=this.scene;if(o&&S&&S.player){o.gd=S.player.guard?1:0;o.off=S.sv&&S.sv.eq&&S.sv.eq.off||null}return o}}
+ SP.arsDrawShield=function(g,ga,x,y,f,id){const S=WEAPONS[id];if(!S||!S.shield||this.arsArtHas('arss_',id))return;const sx=Math.round(x+f*7);const h=S.shield.abs>=1?16:S.shield.parry>.12?7:12;g.fillStyle(S.shield.magic?0x6a5ab8:0x7a6a58);g.fillRect(sx-1,Math.round(y-6-h),3,h);g.fillStyle(0xd8c8a0);g.fillRect(sx-1,Math.round(y-6-h),3,1);if(S.shield.magic)glow(ga,sx,y-12,10,0xb8a8ff,.2)};
+ // ---- smith infusions (opened from the smith menu with RIGHT on a weapon) ----
+ RPG.derive=(d0=>function(st,eq,...a){const d=d0.call(this,st,eq,...a);const sv=typeof SMITH!=='undefined'&&SMITH.cur;const inf=sv&&eq&&eq.main&&((sv.wup||{})[eq.main]||{}).inf,F=inf&&ARS.INF_FX[inf];
+  if(d&&F){const ok=!F.stat||(F.stat==='str'?st.str>=st.dex:st.dex>st.str);if(ok)d.ar*=F.mul}return d})(RPG.derive);
+ SP.arsInfuse=function(id,inf){const sv=this.sv;sv.wup=sv.wup||{};const cur=(sv.wup[id]||{}).inf||null;if(inf===cur)return'SAME';if(inf){const[e,s]=ARS.INF_COST[inf];if((sv.embers||0)<e)return'SHARDS';if(this.souls<s)return'SOULS';sv.embers-=e;this.souls-=s;sv.souls=this.souls}
+  sv.wup[id]={...(sv.wup[id]||{}),inf:inf||undefined};if(!inf)delete sv.wup[id].inf;Save.write(sv);SMITH.cur=sv;this.applyBuild(false);this.stats.infusions=(this.stats.infusions||0)+1;return'OK'};
+ const mk=SP.menuKey;SP.menuKey=function(k){const M=this.menu;
+  if(M&&M.mode==='smith'&&k==='right'){const L=[...this.smithList(),null],id=L[M.sel];if(id){this.menu={mode:'infuse',id,sel:0,t:1,prev:M};this.sfx('menu',.2)}return}
+  if(!M||M.mode!=='infuse')return mk.call(this,k);const L=[null,...Object.keys(INF)],n=L.length;this.sfx('menu',.2);
+  if(k==='up')M.sel=(M.sel+n-1)%n;else if(k==='down')M.sel=(M.sel+1)%n;else if(k==='back'||k==='left')this.menu=M.prev;
+  else if(k==='ok'){const r=this.arsInfuse(M.id,L[M.sel]);M.say=r==='OK'?(L[M.sel]?INF[L[M.sel]].name+' INFUSION TAKES HOLD.':'THE STEEL IS PLAIN AGAIN.'):r==='SAME'?'IT IS ALREADY SO.':r==='SHARDS'?'NOT ENOUGH EMBER SHARDS.':'YOU LACK THE SOULS.';this.sfx(r==='OK'?'clang':'clang',r==='OK'?.5:.15)}};
+ const dm=SP.drawMenu0;SP.drawMenu0=function(g,ga){const M=this.menu;if(M.mode==='smith'){dm.call(this,g,ga);drawText(g,'> RIGHT: INFUSE',178,128,0xb8a070);return}if(M.mode!=='infuse')return dm.call(this,g,ga);
+  const sv=this.sv,L=[null,...Object.keys(INF)],cur=((sv.wup||{})[M.id]||{}).inf||null;g.fillStyle(0x07050f,.92);g.fillRect(6,14,308,160);g.fillStyle(0x7a5a24);g.fillRect(6,14,308,1);g.fillRect(6,173,308,1);
+  drawText(g,'THE SMITH - INFUSE '+itemName(M.id),12,19,0xffb04a);drawText(g,'SHARDS '+(sv.embers||0)+'  SOULS '+this.souls,180,30,0xff9a3a);
+  L.forEach((id,i)=>{const y=34+i*11,on=i===M.sel,nm=id?INF[id].name:'NONE';if(id){g.fillStyle(INF[id].c);g.fillRect(14,y+1,5,5)}drawText(g,(on?'> ':'  ')+nm+(id===cur?' *':''),22,y,on?0xffe2a8:0xb8b4d8);
+   if(id){const[e,s]=ARS.INF_COST[id];drawText(g,e+' SH  '+s,110,y,(sv.embers||0)>=e&&this.souls>=s?0x9fd8ff:0x6b4a4a)}});
+  const F=L[M.sel]&&ARS.INF_FX[L[M.sel]];if(F)drawText(g,(F.stat?'+10% ATTACK IF '+F.stat.toUpperCase()+' LEADS':F.elem?F.elem.toUpperCase()+' ON HIT'+(F.mul>1?', +5% ATTACK':''):''),180,60,0xd8c8a0);
+  drawText(g,M.say||'LEFT: BACK',12,160,0xd8c8a0)};
+ // melee hits carry the infusion's element
+ const mh=SP.meleeHit;SP.meleeHit=function(m){const inf=((this.sv.wup||{})[this.sv.eq.main]||{}).inf,F=inf&&ARS.INF_FX[inf];this._arsEl=F&&F.elem||null;try{return mh.call(this,m)}finally{this._arsEl=null}};
+ const de=SP.damageEnemy;SP.damageEnemy=function(e,n,dir,fromNet){const r=de.call(this,e,n,dir,fromNet);const el=this._arsEl;if(el&&e&&!e.dead){if(el==='frost')e.slowT=Math.max(e.slowT||0,2);else if(el==='fire')e.burn=1.5;else if(el==='lightning'&&Math.random()<.35){e.state='stag';e.t=0}this.stats.infHits=(this.stats.infHits||0)+1}return r};
+ const ae=SP.arsElem;SP.arsElem=function(id){const r=ae.call(this,id);if(r)return r;const u=(this.sv.wup||{})[id]||{},F=u.inf&&ARS.INF_FX[u.inf];return F&&F.elem||null};
+ // ---- distinct swing arcs + partner guard + sprites (drawn with the arsenal layer) ----
+ const ad=SP.arsDraw;SP.arsDraw=function(g,ga){const P=this.player,id=this.sv&&this.sv.eq&&this.sv.eq.main,R=typeof NET!=='undefined'&&NET.remote;
+  if(P&&P.guard){P._g=1}const pg=P&&P.guard;if(P)P.guard=false;try{ad.call(this,g,ga)}finally{if(P)P.guard=pg}
+  if(P&&P.guard)this.arsDrawShield(g,ga,P.x,P.y,P.f,this.sv.eq.off);
+  if(R&&R.gd&&R.off&&R.sid===this.sid&&R.rx!=null){this.arsDrawShield(g,ga,R.rx,R.ry,R.f||1,R.off);this.stats.arsRemoteGuard=(this.stats.arsRemoteGuard||0)+1}
+  const Sw=ARS.SWING[id];if(P&&Sw&&P.state==='atk'&&!P.dead){const m=this.move(),k=Math.min(1,P.t/Math.max(.05,m.t)),f=P.f,x=P.x,y=P.y-10,c=Sw.col;this.stats.arsSwing=this.stats.arsSwing||{};this.stats.arsSwing[Sw.k]=(this.stats.arsSwing[Sw.k]||0)+1;
+   if(Sw.k==='crescent'){for(let i=0;i<10;i++){const a=(-80+k*160-i*9)*Math.PI/180,r=17+(m.reach||0)*.3;px(ga,x+f*Math.cos(a)*r,y+Math.sin(a)*r*.7,i<2?0xffffff:c)}}
+   else if(Sw.k==='thrust'){const L=(m.reach||20)+10;for(let i=0;i<L*k;i+=2)px(ga,x+f*(6+i),y+1,c);if(P.heavy)for(let i=0;i<14;i++){const a=(-110+k*220-i*10)*Math.PI/180;px(ga,x+f*Math.cos(a)*24,y+Math.sin(a)*14,c)}}
+   else if(Sw.k==='lash'){const L=(m.reach||30)+6;for(let i=0;i<L;i+=1.5){const u=i/L;if(u>k*1.2)break;px(ga,x+f*(4+i),y-6+Math.sin(u*9-this.t*30)*3*(1-u)+u*8,c)}}
+   else if(Sw.k==='reap'){for(let i=0;i<18;i++){const a=(-150+k*300-i*8)*Math.PI/180;const r=24;px(ga,x+f*Math.cos(a)*r,y+Math.sin(a)*r*.55,i<3?0xe8d0ff:c);px(ga,x+f*Math.cos(a)*(r-2),y+Math.sin(a)*(r-2)*.55,c)}}
+   else if(Sw.k==='twin'){for(let i=0;i<10;i++){const a=(k*360-i*10)*Math.PI/180;px(ga,x+Math.cos(a)*18,y+Math.sin(a)*9,c);px(ga,x-Math.cos(a)*18,y-Math.sin(a)*9,c)}}
+   else if(Sw.k==='runes'){for(let i=0;i<6;i++){const a=i/6*6.283+this.t*6;px(ga,x+f*10+Math.cos(a)*8*k,y+Math.sin(a)*8*k,c);px(ga,x+f*10+Math.cos(a)*8*k+1,y+Math.sin(a)*8*k,0xffffff)}glow(ga,x+f*10,y,8,c,.2)}}
+};
+}
+
+// ===================== r3: Artist's arsenal art (assets/art/arsenal_pixel/arsenal.json) — behind an art flag, default OFF =====================
+// ON with ?arsart=1 (or localStorage ashenVigil.arsArt='1'; ?arsart=0 forces off) and the pixel hero (PIXCH) on. Missing textures -> placeholders.
+// In hand: hero_strip_noblade base + weapon_<id> 46x46x30 overlay frame-for-frame; guns/bows/crossbows never show attack frames 16-23
+// (sword baked in): the base holds idle frame 0 and recoil/flash/smoke sell the shot. Shields: shield_<id> (30f) / shield_<id>_guard (2f, 4fps)
+// after the hero. Reload: hero_reload_powder (6f, 8fps) over frame 0 with the gun hidden; crossbows reload_<id> (3f, 6fps).
+ARS.ART_DIR='assets/art/arsenal_pixel/';ARS.ART=null;
+ARS.artOn=()=>{try{const q=new URLSearchParams(location.search).get('arsart');if(q!=null)return q==='1';return localStorage.getItem('ashenVigil.arsArt')==='1'}catch(e){return false}};
+if(typeof Boot!=='undefined'){const bp=Boot.prototype.preload;Boot.prototype.preload=function(){bp.call(this);if(!ARS.artOn()||typeof PIXCH==='undefined'||!PIXCH.ON())return;const L=this.load,D=ARS.ART_DIR,fn=f=>D+String(f).split('/').pop();
+ L.json('ars_art',D+'arsenal.json');L.on('filecomplete-json-ars_art',(k,t,M)=>{ARS.ART=M;const ss=(key,f,w,h)=>L.spritesheet(key,fn(f),{frameWidth:w,frameHeight:h}),ic=it=>{L.image('arsi_'+it.id,fn(it.icon));L.image('arsi2_'+it.id,fn(it.icon2x))};
+  for(const it of[...(M.melee||[]),...(M.guns||[]),...(M.ranged||[])]){if(!WEAPONS[it.id])continue;ss('arsw_'+it.id,it.file,M.frameWidth||46,M.frameHeight||46);ic(it);if(it.reload)ss('arsr_'+it.id,it.reload,46,46)}
+  for(const it of M.shields||[]){if(!WEAPONS[it.id])continue;ss('arss_'+it.id,it.file,46,46);ss('arsg_'+it.id,it.guard,46,46);ic(it)}
+  for(const it of M.thrown||[]){if(!ARS.THROWN[it.id])continue;ss('arst_'+it.id,it.spin,it.spinFrame[0],it.spinFrame[1]);ic(it)}
+  for(const[k,f]of Object.entries(M.fx||{}))ss('arsfx_'+k,f.file,f.frame[0],f.frame[1])})}}
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ SP.arsArtHas=function(pre,id){return!!(id&&ARS.artOn()&&this.textures&&this.textures.exists(pre+id))};
+ SP.arsFxSprite=function(k,x,y,f,o){const key='arsfx_'+k;if(!this.arsArtHas('arsfx_',k))return null;const F=ARS.ART.fx[k];if(!this.anims.exists(key))this.anims.create({key,frames:this.anims.generateFrameNumbers(key,{start:0,end:F.frames-1}),frameRate:F.fps||14,repeat:0});
+  const sp=this.add.sprite(Math.round(x),Math.round(y),key,0).setOrigin(f<0?1-F.origin[0]:F.origin[0],F.origin[1]).setFlipX(f<0).setDepth(7);if(o&&o.tint)sp.setTint(o.tint);sp.play(key);sp.once('animationcomplete',()=>sp.destroy());this.stats.arsFxArt=(this.stats.arsFxArt||0)+1;return sp};
+ // muzzle / smoke / impacts / whip arc
+ const gf=SP.gunFire;SP.gunFire=function(W,id){gf.call(this,W,id);if(!this.arsArtHas('arsw_',id))return;const P=this.player,f=P.f,G=W.gun,it=(ARS.ART.guns||[]).find(q=>q.id===id),mz=it&&it.muzzle||[12,1];
+  const k=G.recoil>200?'muzzle_large':G.pellets>1||G.spd>800?'muzzle_medium':'muzzle_small';const x=P.x+f*(4+mz[0]),y=P.y-12+mz[1];
+  if(this.arsFxSprite(k,x,y,f,{tint:G.rune?ARS.ELEM[this.sv.rune||'fire']:null})){this.arsFx=(this.arsFx||[]).filter(q=>q.k!=='flash'&&q.k!=='smoke');this.arsFxSprite('smoke_puff',x+f*4,y-2,f)}};
+ const bl=SP.arsBlast;SP.arsBlast=function(p){bl.call(this,p);if(p.elem)this.arsFxSprite('impact_'+p.elem,p.x,p.y-4,1)};
+ const sa=SP.startAtk;SP.startAtk=function(hv,combo,on){const r=sa.call(this,hv,combo,on);if(this.sv.eq.main==='whip'&&this.player.state==='atk'&&this.arsArtHas('arsfx_','whip_arc'))this.arsFxSprite('whip_arc',this.player.x+this.player.f*4,this.player.y-10,this.player.f);return r};
+ // thrown spin sprites follow their projectiles
+ const ad=SP.arsDraw;SP.arsDraw=function(g,ga){const L=this.arsP||[],keep=new Set();for(const p of L){if(!ARS.THROWN[p.k]||!this.arsArtHas('arst_',p.k))continue;if(!p.spr)p.spr=this.add.sprite(0,0,'arst_'+p.k,0).setDepth(6);p.spr.setPosition(Math.round(p.x),Math.round(p.y)).setFrame(Math.floor(p.t*14)%4).setFlipX(p.vx<0);keep.add(p.spr);p.hide=1}
+  for(const sp of this.arsSpr||[])if(!keep.has(sp))sp.destroy();this.arsSpr=keep;
+  const hid=L.filter(p=>p.hide);for(const p of hid)p._k=p.k,p.k='__art';try{return ad.call(this,g,ga)}finally{for(const p of hid)p.k=p._k}};
+}
+if(typeof WEAPART!=='undefined'){
+ const icon0=WEAPART.icon,cache={};WEAPART.icon=function(s,g,id,x,y,sz){const key=(sz>=24?'arsi2_':'arsi_')+id;if(id&&ARS.artOn()&&s.textures.exists(key)){let I=cache[key];if(!I){const src=s.textures.get(key).getSourceImage(),cv=document.createElement('canvas');cv.width=src.width;cv.height=src.height;const c=cv.getContext('2d');c.drawImage(src,0,0);const d=c.getImageData(0,0,cv.width,cv.height).data,o=[];
+   for(let j=0;j<cv.height;j++)for(let i=0;i<cv.width;i++){const k=(j*cv.width+i)*4;if(d[k+3]>40)o.push([i,j,(d[k]<<16)|(d[k+1]<<8)|d[k+2]])}I=cache[key]={w:cv.width,h:cv.height,p:o}}
+   const ox=x+((sz-I.w)>>1),oy=y+((sz-I.h)>>1);for(const[i,j,c]of I.p){g.fillStyle(c);g.fillRect(ox+i,oy+j,1,1)}return true}return icon0.call(this,s,g,id,x,y,sz)};
+ const wo=WEAPART.wield;WEAPART.wield=function(s,R,id,flash,tint){const on=ARS.artOn()&&s.textures.exists('av_hero_nb'),mine=on&&id&&s.textures.exists('arsw_'+id),c=s.pxc,local=c&&R===c.rig,Rm=typeof NET!=='undefined'&&NET.remote;
+  wo.call(this,s,R,mine?null:id,flash,tint);const B=R.base;
+  const tf=sp=>{if(flash)sp.setTintFill(0xffffff);else if(tint!=null)sp.setTint(tint);else sp.clearTint()};
+  const off=local?s.sv&&s.sv.eq&&s.sv.eq.off:Rm&&Rm.off,guard=local?s.player&&s.player.guard:Rm&&Rm.gd;
+  if(mine&&B.visible){if(B.texture.key!=='av_hero_nb')B.setTexture('av_hero_nb',B.frame.name);const W=WEAPONS[id],ranged=!!(W.gun||ARS.RANGED[id]);let fr=+B.frame.name;if(ranged&&fr>=16&&fr<24){fr=0;B.setFrame(0)}
+   const rl=local&&W.gun&&s.ars&&s.ars.reload>0,xr=local&&/xbow/.test(id)&&s.player.state==='atk'&&s.player.t>.12&&s.textures.exists('arsr_'+id);
+   let w=R.arsW;const key=xr?'arsr_'+id:rl?'arsfx_gun_reload':'arsw_'+id;if(!w||w.texture.key!==key){if(w)w.destroy();w=R.arsW=s.add.sprite(0,0,key,0).setOrigin(B.originX,B.originY)}
+   const wf=xr?Math.min(2,Math.floor((s.player.t-.12)*6)):rl?Math.floor(s.t*8)%6:fr;if(xr||rl)B.setFrame(0);
+   if(s.textures.exists(key)){w.setVisible(true).setFrame(wf).setPosition(B.x,B.y).setFlipX(B.flipX).setDepth(B.depth+.0025);tf(w);s.stats&&(s.stats.arsWield=(s.stats.arsWield||0)+1)}else w.setVisible(false)}
+  else if(R.arsW)R.arsW.setVisible(false);
+  if(on&&off&&B.visible&&s.textures.exists('arss_'+off)){const key=guard?'arsg_'+off:'arss_'+off;let sp=R.arsS;if(!sp||sp.texture.key!==key){if(sp)sp.destroy();sp=R.arsS=s.add.sprite(0,0,key,0).setOrigin(B.originX,B.originY)}
+   sp.setVisible(true).setFrame(guard?Math.floor(s.t*4)%2:+B.frame.name).setPosition(B.x,B.y).setFlipX(B.flipX).setDepth(B.depth+.004);tf(sp);s.stats&&(s.stats.arsShieldArt=(s.stats.arsShieldArt||0)+1)}
+  else if(R.arsS)R.arsS.setVisible(false)}}
 if(typeof module!=='undefined')module.exports={ARS};
