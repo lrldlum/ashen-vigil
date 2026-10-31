@@ -297,7 +297,7 @@ if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  const pi6=SP.arsPadInput;SP.arsPadInput=function(now){const o=pi6.call(this,now),P=this.player,b=this.pb&&this.pb.body;
   const still=P&&!P.swim&&b&&b.blocked.down&&Math.abs(b.velocity.x)<8&&P.state!=='climb';if(!still&&(o.throwP||o.thrCyc)){delete o.throwP;delete o.thrCyc;this.stats.padThrowBlocked=(this.stats.padThrowBlocked||0)+1}return o};
  // P3-9: pause screen lists the arsenal controls
- const dp6=SP.drawPause;SP.drawPause=function(g){dp6.call(this,g);if(this.touch)return;const st=TXT.big?10:11,L=['G THROW  T NEXT ITEM','HOLD V  SHIELD GUARD','HOLD X  RELOAD  PAD DN THROW'];let mx=0;L.forEach((s,i)=>{const x=W-textW(s)-8;mx=Math.max(mx,x+textW(s));drawText(g,s,x,38+(6+i)*st,0xd8d0ee)});this.stats.pauseArs=L.length;this.stats.pauseArsR=mx};
+ const dp6=SP.drawPause;SP.drawPause=function(g){dp6.call(this,g);if(this.touch)return;const st=TXT.big?10:11,L=['G THROW  T NEXT ITEM','HOLD V  SHIELD GUARD','HOLD X  RELOAD  PAD DN THROW','PAD VIEW INVENTORY  UP FLASK'];let mx=0;L.forEach((s,i)=>{const x=W-textW(s)-8;mx=Math.max(mx,x+textW(s));drawText(g,s,x,38+(6+i)*st,0xd8d0ee)});this.stats.pauseArs=L.length;this.stats.pauseArsR=mx};
  // P3-12: merchant panel text for shot / throwables (rings.js prints a generic consumable line)
  const dm6=SP.drawMenu0;SP.drawMenu0=function(g,ga){const r=dm6.call(this,g,ga),M=this.menu;if(M&&M.mode==='lmerch'){const row=this.merchRows()[M.sel],id=row&&row[0],T=id&&ARS.MTXT[id];
   if(T){g.fillStyle(0x07050f);g.fillRect(199,58,118,24);T.forEach((s,i)=>drawText(g,s,202,60+i*10,0xd8c8b0));this.stats.merchTxt=T[0]}}return r};
@@ -387,6 +387,53 @@ ARS.GUARD_REGEN=.3;ARS.GUARD_FATIGUE=2;ARS.BOSS_BLOCK_ST=.4;// (c) a held guard 
 if(typeof Stage!=='undefined'){const SP=Stage.prototype;
  SP.arsBossAtt=function(src,att){if(att==='env')return false;if(att==='boss')return true;const B=this.boss;if(!B||this.bossState!=='fight')return false;return!(att&&typeof att==='object'&&att!==B)};
  const up10g=SP.update;SP.update=function(t,dms){const P=this.player,st0=P&&P.st,g=P&&P.guard;const r=up10g.call(this,t,dms);if(P){P.arsGuardT=P.guard?(P.arsGuardT||0)+(dms||16)/1000:0}if(P&&g&&P.guard&&P.st>st0){P.st=st0+(P.st-st0)*(P.arsGuardT>ARS.GUARD_FATIGUE?0:ARS.GUARD_REGEN);this.stats.arsGuardRegen=(this.stats.arsGuardRegen||0)+1}return r};
+}
+// ---- r10b: regen rings (ring slots ring1/ring2, rings.js). Each player's ring runs on their own character (each side simulates
+// its own stamina / FP / HP); NET.me sends rg (ring ids) so the partner/host sees them (NET.remote.rg). They live in sv.inv / sv.eq,
+// so they survive save/load and NG+ like every ring. Icons in assets/rings/ring_<id>(@2x).png are PLACEHOLDERS (recoloured
+// existing ring art) until the Artist draws them. All three are sold by the wandering merchant (every stage from the Ramparts on).
+ARS.RRING={
+ second_wind:{name:'SECOND WIND RING',st:.35,delay:.3,price:1600,desc:'+35% STAMINA REGEN, -30% DELAY',lines:['+35% STAMINA REGEN.','STAMINA RETURNS 30% SOONER','AFTER AN ACTION. A RING.']},
+ deep_well:{name:'DEEP WELL RING',fp:.75,price:1800,desc:'+75% FP REGEN',lines:['+75% FP REGEN.','FOR SORCERY AND MIRACLES.','A RING.']},
+ mending_ember:{name:'MENDING EMBER RING',hp:.8,price:2200,desc:'REGAIN 0.8 HP PER SECOND',lines:['REGAIN 0.8 HP PER SECOND,','EVEN IN BATTLE.','A RING.']}};
+ARS.SW={id:'second_wind',regen:.35,delay:.3,price:1600};
+if(typeof GEAR!=='undefined'){for(const[id,R]of Object.entries(ARS.RRING)){GEAR[id]={slot:'ring',name:R.name,w:.5,desc:R.desc,arsRegen:1};
+  if(typeof DESC!=='undefined')DESC[id]=R.lines;if(typeof RING_ART!=='undefined')RING_ART[id]=1;
+  if(typeof MERCH_STOCK!=='undefined'&&!MERCH_STOCK.some(r=>r[0]===id)){const i=MERCH_STOCK.findIndex(r=>r[0]==='ember_signet');MERCH_STOCK.splice(i<0?MERCH_STOCK.length:i,0,[id,R.price])}}}
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ SP.arsRing=function(k){const e=this.sv&&this.sv.eq;if(!e)return 0;let v=0;for(const r of[e.ring1,e.ring2]){const R=ARS.RRING[r];if(R&&R[k])v+=R[k]}return v};
+ SP.arsSW=function(){return this.arsRing('st')>0};
+ const sp10=SP.spend;SP.spend=function(n){const r=sp10.call(this,n);const P=this.player,d=this.arsRing('delay');if(P&&P.stDelay>0&&d)P.stDelay*=1-d;return r};
+ const up10r=SP.update;SP.update=function(t,dms){const P=this.player,st0=P&&P.st,fp0=P&&P.fp,dt=Math.min(.05,(dms||16)/1000);const r=up10r.call(this,t,dms);if(!P||P.dead)return r;
+  const st=this.arsRing('st'),fp=this.arsRing('fp'),hp=this.arsRing('hp');
+  if(st&&P.st>st0){P.st=Math.min(P.stMax,st0+(P.st-st0)*(1+st));this.stats.arsSW=(this.stats.arsSW||0)+1}
+  if(fp&&P.fp>fp0&&P.fp-fp0<=2*dt*1.05+.001){P.fp=Math.min(P.fpMax,fp0+(P.fp-fp0)*(1+fp))}// only the passive 2 FP/s trickle, not flasks or refunds
+  if(hp&&!(this.menu&&this.arsInvOpen&&!(typeof NET!=='undefined'&&NET.on()))&&!this.paused&&P.hp<P.hpMax)P.hp=Math.min(P.hpMax,P.hp+hp*dt);return r};
+}
+if(typeof NET!=='undefined'){const me10=NET.me;NET.me=function(){const o=me10.call(this);const S=this.scene;if(o&&S&&S.sv&&S.sv.eq)o.rg=[S.sv.eq.ring1||null,S.sv.eq.ring2||null];return o}}
+// ---- Inventory any time: I / Tab (keyboard), View/Select (pad) open AND close the inventory in the field, mid-combat, in boss
+// rooms and in co-op. Solo: the world is frozen while it is open. Co-op: the world keeps running for host and guest, only
+// this player's character input is suppressed (the game already sends no input to the character while a menu is up).
+// Pad: View used to be the flask; the flask moves to D-pad Up when there is nothing to interact with (keyboard F / R unchanged).
+if(typeof Stage!=='undefined'){const SP=Stage.prototype;
+ const cr10=SP.create;SP.create=function(...a){const r=cr10.apply(this,a);this.arsInvOpen=false;const kd=e=>{if(!e.repeat&&(e.key==='Tab'||e.key==='i'||e.key==='I'))this.arsInvKey=1};
+  try{this.input.keyboard.on('keydown',kd)}catch(e){}return r};
+ const pi10=SP.arsPadInput;SP.arsPadInput=function(now){const o=pi10.call(this,now);let g=null;try{g=window.__fakePad||[...(navigator.getGamepads?navigator.getGamepads():[])].find(q=>q&&q.connected)}catch(e){}if(!g)return o;
+  const b=i=>!!(g.buttons[i]&&(g.buttons[i].pressed||g.buttons[i].value>.5)),A=this.arsPadI||(this.arsPadI={}),v=b(8),u=b(12)||((g.axes[7]||0)<-.5);
+  if(v&&!A.v)this.arsInvPad=1;if(u&&!A.u&&!this.menu&&!(this.interactHint&&this.interactHint())&&!(this.player&&this.player.state==='climb'))o.flaskP=1;A.v=v;A.u=u;return o};
+ // the pad View latch (PAD.take) still reports flaskP: drop it when the press came from View
+ const ri10=SP.readInput;SP.readInput=function(){const o=ri10.call(this)||{};if(window.__inp)return o;if(this.arsInvPad||this.arsInvFresh)delete o.flaskP;return o};
+ SP.arsInvToggle=function(){if(this.paused||this.victory||this.cine)return;const P=this.player;if(this.arsInvOpen&&this.menu){this.menu=null;this.arsInvOpen=false;try{const K=this.keys;if(K){Phaser.Input.Keyboard.JustDown(K.TAB);Phaser.Input.Keyboard.JustDown(K.I)}if(this.kl){delete this.kl[9];delete this.kl[73]}}catch(e){}this.sfx('menu',.2);return}
+  if(this.menu||!P||P.dead)return;this.menu={mode:'main',sel:1,t:1,prev:{}};this.menuKey('ok');this.arsInvOpen=!!this.menu;this.stats.arsInvOpen=(this.stats.arsInvOpen||0)+1};
+ const up10i=SP.update;SP.update=function(t,dms){
+  // keyboard: the game itself opens on Tab/I (J() in readInput); we only add closing + the pad, and track who opened it
+  const pre=!!this.menu,key=this.arsInvKey,pad=this.arsInvPad;this.arsInvKey=0;this.arsInvPad=0;this.arsInvFresh=pad;
+  if(pre&&this.arsInvOpen&&(key||pad)){this.arsInvToggle();if(this.physics&&this.physics.world&&this.physics.world.isPaused&&!(this.hs>0))this.physics.resume();return up10i.call(this,t,dms)}
+  if(!pre&&pad)this.arsInvToggle();
+  const solo=!(typeof NET!=='undefined'&&NET.on());
+  if(this.menu&&this.arsInvOpen&&solo&&!this.paused){const dt=Math.min(.05,(dms||16)/1000);const inp=this.readInput();this.menu.t+=dt;this.menuInput(inp);
+   if(this.physics&&!this.physics.world.isPaused)this.physics.pause();this.stats.arsInvFrozen=(this.stats.arsInvFrozen||0)+1;if(!this.menu){this.arsInvOpen=false;this.physics.resume()}this.render(0);return}
+  const r=up10i.call(this,t,dms);if(!pre&&this.menu&&key&&!this.arsInvOpen)this.arsInvOpen=true;if(!this.menu){if(this.arsInvOpen&&solo&&this.physics.world.isPaused&&!(this.hs>0))this.physics.resume();this.arsInvOpen=false}return r};
 }
 // ---- Merchant shop UI (r10): one renderer for every merchant: the wandering merchant (mode 'lmerch', rings.js, one per
 // non-hub stage) and the spell merchant (mode 'merchant', spells.js: bonfire MERCHANT and the shrine pedlar). The buy logic
